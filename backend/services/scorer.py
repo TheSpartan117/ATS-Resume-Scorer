@@ -10,11 +10,11 @@ def score_contact_info(resume: ResumeData) -> Dict:
     Score contact information completeness (10 points max).
 
     Scoring breakdown:
-    - Name: 3 points (critical)
-    - Email: 3 points (critical)
-    - Phone: 2 points (important)
-    - Location: 1 point (nice to have)
-    - LinkedIn/Website: 1 point (nice to have)
+    - Name: 2 points
+    - Email: 2 points
+    - Phone: 2 points
+    - Location: 2 points
+    - LinkedIn/Website: 2 points
 
     Args:
         resume: ResumeData object with parsed resume information
@@ -27,35 +27,35 @@ def score_contact_info(resume: ResumeData) -> Dict:
     issues: List[Tuple[str, str]] = []
     contact = resume.contact
 
-    # Name (3 points)
+    # Name (2 points)
     if contact.get("name"):
-        score += 3
+        score += 2
     else:
-        issues.append(("critical", "Missing name in resume"))
+        issues.append(("critical", "Missing: Full name"))
 
-    # Email (3 points)
+    # Email (2 points)
     if contact.get("email"):
-        score += 3
+        score += 2
     else:
-        issues.append(("critical", "Missing email address"))
+        issues.append(("critical", "Missing: Email address"))
 
     # Phone (2 points)
     if contact.get("phone"):
         score += 2
     else:
-        issues.append(("warning", "Missing phone number"))
+        issues.append(("warning", "Missing: Phone number"))
 
-    # Location (1 point)
+    # Location (2 points)
     if contact.get("location"):
-        score += 1
+        score += 2
     else:
-        issues.append(("info", "Missing location information"))
+        issues.append(("suggestion", "Add location (City, State)"))
 
-    # LinkedIn or Website (1 point)
+    # LinkedIn or Website (2 points)
     if contact.get("linkedin") or contact.get("website"):
-        score += 1
+        score += 2
     else:
-        issues.append(("info", "Missing LinkedIn profile or personal website"))
+        issues.append(("suggestion", "Add LinkedIn profile or portfolio"))
 
     return {
         "score": score,
