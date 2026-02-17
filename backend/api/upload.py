@@ -1,11 +1,8 @@
 """Upload endpoint for resume file upload and initial scoring"""
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from typing import Optional
 from datetime import datetime, timezone
 import io
-
-from database import get_db
 from services.parser import parse_pdf, parse_docx
 from services.scorer import calculate_overall_score
 from schemas.resume import UploadResponse, ContactInfoResponse, MetadataResponse, ScoreResponse, CategoryBreakdown
@@ -20,8 +17,7 @@ ALLOWED_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocume
 async def upload_resume(
     file: UploadFile = File(...),
     jobDescription: Optional[str] = Form(None),
-    industry: Optional[str] = Form(None),
-    db: Session = Depends(get_db)
+    industry: Optional[str] = Form(None)
 ):
     """
     Upload a resume file (PDF or DOCX), parse it, and get an initial ATS score.
@@ -40,15 +36,20 @@ async def upload_resume(
             detail="Invalid file type. Please upload PDF or DOCX only"
         )
 
-    # Read file content
-    file_content = await file.read()
+    # Validate file size before reading into memory
+    if hasattr(file.file, 'seek') and hasattr(file.file, 'tell'):
+        file.file.seek(0, 2)  # Seek to end to get size
+        file_size = file.file.tell()
+        file.file.seek(0)  # Reset to beginning
 
-    # Validate file size
-    if len(file_content) > MAX_FILE_SIZE:
-        raise HTTPException(
-            status_code=400,
-            detail=f"File too large. Maximum {MAX_FILE_SIZE // (1024*1024)}MB"
-        )
+        if file_size > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=400,
+                detail=f"File too large. Maximum {MAX_FILE_SIZE // (1024*1024)}MB"
+            )
+
+    # Now read file content
+    file_content = await file.read()
 
     # Parse resume based on file type
     try:
