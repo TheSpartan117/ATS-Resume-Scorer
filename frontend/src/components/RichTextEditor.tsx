@@ -4,7 +4,7 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 interface RichTextEditorProps {
   content: string
@@ -19,6 +19,8 @@ export default function RichTextEditor({
   placeholder = 'Start editing your resume...',
   editable = true
 }: RichTextEditorProps) {
+  const isUpdatingFromProp = useRef(false)
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -29,7 +31,9 @@ export default function RichTextEditor({
     content,
     editable,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML())
+      if (!isUpdatingFromProp.current) {
+        onChange(editor.getHTML())
+      }
     },
     editorProps: {
       attributes: {
@@ -41,7 +45,12 @@ export default function RichTextEditor({
   // Update editor content when prop changes
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
+      isUpdatingFromProp.current = true
       editor.commands.setContent(content)
+      // Reset flag after a microtask to allow editor update to complete
+      queueMicrotask(() => {
+        isUpdatingFromProp.current = false
+      })
     }
   }, [content, editor])
 
@@ -51,6 +60,13 @@ export default function RichTextEditor({
       editor.setEditable(editable)
     }
   }, [editable, editor])
+
+  // Cleanup editor on unmount
+  useEffect(() => {
+    return () => {
+      editor?.destroy()
+    }
+  }, [editor])
 
   if (!editor) {
     return null
