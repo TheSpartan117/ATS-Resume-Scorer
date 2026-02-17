@@ -1,5 +1,5 @@
 import pytest
-from services.scorer import score_contact_info, score_keywords
+from services.scorer import score_contact_info, score_keywords, score_content
 from services.parser import ResumeData
 
 def test_complete_contact_info_gets_full_score():
@@ -77,3 +77,16 @@ def test_keywords_without_job_description():
     result = score_keywords(resume)
     assert result["score"] == 10  # Default score
     assert any("job description" in issue[1].lower() for issue in result["issues"])
+
+def test_content_with_action_verbs_and_numbers():
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John"},
+        experience=[{"text": "Led team of 10 engineers, increased productivity by 40%, managed $2M budget, developed 5 products"}],
+        education=[],
+        skills=[],
+        metadata={"pageCount": 1, "wordCount": 500, "hasPhoto": False, "fileFormat": "pdf"}
+    )
+
+    result = score_content(resume)
+    assert result["score"] > 15  # Should score well with verbs and numbers

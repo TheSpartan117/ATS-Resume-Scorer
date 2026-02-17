@@ -143,23 +143,88 @@ def score_content(resume: ResumeData) -> Dict:
     """
     Score resume content quality (25 points max).
 
-    TODO: Implement content scoring based on:
-    - Experience section completeness
-    - Education section
-    - Quantifiable achievements
-    - Action verbs usage
-
-    Args:
-        resume: ResumeData object with parsed resume information
-
-    Returns:
-        Dict with "score" (int) and "issues" (List[Tuple[str, str]])
+    Scoring:
+    - Action verbs usage: 5 points
+    - Quantified achievements: 8 points
+    - Low buzzword count: 5 points
+    - No excessive repetition: 4 points
+    - Optimal bullet length: 3 points
     """
-    # Placeholder implementation
-    return {
-        "score": 0,
-        "issues": [("info", "Content scoring not yet implemented")]
-    }
+    score = 0
+    issues: List[Tuple[str, str]] = []
+
+    # Get all text
+    experience_text = " ".join([str(exp) for exp in resume.experience])
+    all_text = experience_text + " " + " ".join([str(edu) for edu in resume.education])
+
+    # Check for action verbs (5 points)
+    action_verbs = ['led', 'managed', 'developed', 'created', 'implemented', 'designed',
+                    'built', 'launched', 'improved', 'increased', 'decreased', 'achieved',
+                    'established', 'optimized', 'streamlined', 'spearheaded']
+
+    action_verb_count = sum(1 for verb in action_verbs if verb in all_text.lower())
+    if action_verb_count >= 5:
+        score += 5
+    elif action_verb_count >= 3:
+        score += 3
+        issues.append(("suggestion", f"Use more action verbs (found {action_verb_count}, aim for 5+)"))
+    else:
+        score += 1
+        issues.append(("warning", f"Few action verbs found ({action_verb_count}) - start bullets with strong action verbs"))
+
+    # Check for quantified achievements (8 points)
+    numbers_found = len(re.findall(r'\d+[%$,\d]*', all_text))
+    if numbers_found >= 5:
+        score += 8
+    elif numbers_found >= 3:
+        score += 5
+        issues.append(("suggestion", f"Add more quantified achievements (found {numbers_found}, aim for 5+)"))
+    elif numbers_found >= 1:
+        score += 3
+        issues.append(("warning", f"Few quantified achievements ({numbers_found}) - add numbers, percentages, dollar amounts"))
+    else:
+        issues.append(("critical", "No quantified achievements - add measurable results"))
+
+    # Check buzzwords (5 points) - FEWER is better
+    buzzwords = ['synergy', 'rockstar', 'ninja', 'guru', 'passionate', 'team player',
+                 'think outside', 'go-getter', 'self-starter', 'results-driven']
+
+    buzzword_count = sum(1 for word in buzzwords if word in all_text.lower())
+    if buzzword_count == 0:
+        score += 5
+    elif buzzword_count <= 2:
+        score += 3
+        issues.append(("info", f"Minimize buzzwords (found {buzzword_count}) - use specific achievements instead"))
+    else:
+        score += 1
+        issues.append(("warning", f"Too many buzzwords ({buzzword_count}) - replace with concrete achievements"))
+
+    # Check repetition (4 points)
+    words = all_text.lower().split()
+    word_freq = {}
+    for word in words:
+        if len(word) > 4:  # Only check meaningful words
+            word_freq[word] = word_freq.get(word, 0) + 1
+
+    repeated_words = [word for word, count in word_freq.items() if count > 5]
+    if len(repeated_words) == 0:
+        score += 4
+    elif len(repeated_words) <= 2:
+        score += 2
+        issues.append(("info", f"Some word repetition detected - vary your language"))
+    else:
+        score += 1
+        issues.append(("warning", f"Excessive repetition of words: {', '.join(repeated_words[:3])}"))
+
+    # Check bullet length (3 points) - check experience bullets if available
+    if resume.experience:
+        # Placeholder: assume bullets are in experience dicts
+        score += 2  # Partial credit for having experience section
+        issues.append(("info", "Bullet length analysis requires detailed parsing"))
+    else:
+        issues.append(("suggestion", "Add experience section with concise bullet points (50-150 characters each)"))
+
+    return {"score": score, "issues": issues}
 
 
 def score_keywords(resume: ResumeData, job_description: str = "") -> Dict:
