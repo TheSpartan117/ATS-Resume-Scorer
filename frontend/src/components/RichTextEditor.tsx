@@ -4,7 +4,7 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 
 interface RichTextEditorProps {
   content: string
@@ -19,8 +19,6 @@ export default function RichTextEditor({
   placeholder = 'Start editing your resume...',
   editable = true
 }: RichTextEditorProps) {
-  const isUpdatingFromProp = useRef(false)
-
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -31,8 +29,10 @@ export default function RichTextEditor({
     content,
     editable,
     onUpdate: ({ editor }) => {
-      if (!isUpdatingFromProp.current) {
-        onChange(editor.getHTML())
+      // Only call onChange if content actually changed
+      const newContent = editor.getHTML()
+      if (newContent !== content) {
+        onChange(newContent)
       }
     },
     editorProps: {
@@ -45,12 +45,7 @@ export default function RichTextEditor({
   // Update editor content when prop changes
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
-      isUpdatingFromProp.current = true
       editor.commands.setContent(content)
-      // Reset flag after a microtask to allow editor update to complete
-      queueMicrotask(() => {
-        isUpdatingFromProp.current = false
-      })
     }
   }, [content, editor])
 
@@ -61,12 +56,13 @@ export default function RichTextEditor({
     }
   }, [editable, editor])
 
-  // Cleanup editor on unmount
+  // Cleanup editor on unmount - NO dependencies, runs once
   useEffect(() => {
     return () => {
       editor?.destroy()
     }
-  }, [editor])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   if (!editor) {
     return null
