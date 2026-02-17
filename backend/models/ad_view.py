@@ -3,7 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 import uuid
-from backend.database import Base
+from database import Base
 
 class AdView(Base):
     __tablename__ = "ad_views"

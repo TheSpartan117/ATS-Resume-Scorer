@@ -44,10 +44,12 @@ app.add_middleware(
 # Import routers
 from api.upload import router as upload_router
 from api.score import router as score_router
+from api.auth import router as auth_router
 
 # Include routers
 app.include_router(upload_router)
 app.include_router(score_router)
+app.include_router(auth_router)
 
 # Global exception handler
 @app.exception_handler(Exception)
