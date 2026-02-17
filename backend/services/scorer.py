@@ -372,10 +372,10 @@ def score_industry_specific(resume: ResumeData, industry: str = "") -> Dict:
     """
     Score industry-specific requirements (20 points max).
 
-    TODO: Implement industry-specific scoring:
-    - Tech: GitHub, portfolio, technical skills
-    - Finance: Certifications, quantitative achievements
-    - Healthcare: Licenses, certifications
+    Scoring:
+    - Tech: Technical skills (5), GitHub/portfolio (5), tech keywords (10)
+    - Sales/Marketing: Metrics (10), client keywords (10)
+    - Other: Generic professional scoring
 
     Args:
         resume: ResumeData object with parsed resume information
@@ -384,11 +384,92 @@ def score_industry_specific(resume: ResumeData, industry: str = "") -> Dict:
     Returns:
         Dict with "score" (int) and "issues" (List[Tuple[str, str]])
     """
-    # Placeholder implementation
-    return {
-        "score": 0,
-        "issues": [("info", "Industry-specific scoring not yet implemented")]
-    }
+    score = 0
+    issues: List[Tuple[str, str]] = []
+
+    if not industry:
+        score = 10  # Default score
+        issues.append(("suggestion", "Specify industry for tailored scoring"))
+        return {"score": score, "issues": issues}
+
+    industry_lower = industry.lower()
+
+    # Get resume text
+    all_text = " ".join([
+        " ".join([str(exp) for exp in resume.experience]),
+        " ".join(resume.skills)
+    ]).lower()
+
+    if "tech" in industry_lower or "software" in industry_lower or "engineer" in industry_lower:
+        # Tech role scoring
+
+        # Technical skills section (5 points)
+        if resume.skills and len(resume.skills) >= 5:
+            score += 5
+        elif resume.skills and len(resume.skills) >= 3:
+            score += 3
+            issues.append(("suggestion", f"Add more technical skills (found {len(resume.skills)}, aim for 5+)"))
+        else:
+            score += 1
+            issues.append(("warning", "Add technical skills section with relevant technologies"))
+
+        # GitHub/portfolio link (5 points)
+        if resume.contact.get("website") or "github" in all_text:
+            score += 5
+        else:
+            issues.append(("warning", "Add GitHub profile or portfolio link for tech roles"))
+
+        # Tech keywords (10 points)
+        tech_keywords = ['python', 'javascript', 'java', 'react', 'node', 'aws', 'docker',
+                         'kubernetes', 'sql', 'api', 'cloud', 'agile', 'git', 'ci/cd']
+
+        tech_keyword_count = sum(1 for keyword in tech_keywords if keyword in all_text)
+        if tech_keyword_count >= 5:
+            score += 10
+        elif tech_keyword_count >= 3:
+            score += 6
+            issues.append(("suggestion", f"Add more technical keywords (found {tech_keyword_count})"))
+        else:
+            score += 2
+            issues.append(("warning", "Add relevant technical keywords and technologies"))
+
+    elif "sales" in industry_lower or "marketing" in industry_lower:
+        # Sales/Marketing role scoring
+
+        # Metrics-heavy (10 points)
+        metrics_patterns = [r'\d+%', r'\$\d+', r'\d+\s*million', r'\d+\s*clients',
+                           r'revenue', r'growth', r'roi', r'\d+x']
+
+        metrics_count = sum(len(re.findall(pattern, all_text)) for pattern in metrics_patterns)
+        if metrics_count >= 5:
+            score += 10
+        elif metrics_count >= 3:
+            score += 6
+            issues.append(("suggestion", f"Add more quantified results (found {metrics_count}, aim for 5+)"))
+        else:
+            score += 2
+            issues.append(("warning", "Sales/Marketing resumes need quantified achievements (revenue, growth %)"))
+
+        # Client/relationship keywords (10 points)
+        client_keywords = ['client', 'customer', 'relationship', 'stakeholder', 'partnership',
+                          'negotiated', 'closed', 'pipeline', 'forecast', 'quota']
+
+        client_keyword_count = sum(1 for keyword in client_keywords if keyword in all_text)
+        if client_keyword_count >= 4:
+            score += 10
+        elif client_keyword_count >= 2:
+            score += 6
+            issues.append(("suggestion", "Add more client-facing and relationship keywords"))
+        else:
+            score += 2
+            issues.append(("warning", "Emphasize client relationships and business development"))
+
+    else:
+        # Generic professional scoring
+        score = 10
+        issues.append(("info", f"Generic scoring applied for {industry} industry"))
+
+    return {"score": score, "issues": issues}
 
 
 def calculate_overall_score(resume: ResumeData, job_description: str = "", industry: str = "") -> Dict:

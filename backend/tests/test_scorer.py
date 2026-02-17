@@ -1,5 +1,5 @@
 import pytest
-from services.scorer import score_contact_info, score_keywords, score_content, score_length_density
+from services.scorer import score_contact_info, score_keywords, score_content, score_length_density, score_industry_specific
 from services.parser import ResumeData
 
 def test_complete_contact_info_gets_full_score():
@@ -103,3 +103,16 @@ def test_length_density_optimal():
 
     result = score_length_density(resume)
     assert result["score"] == 10  # Perfect score for 1 page, 500 words
+
+def test_industry_tech_role():
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John", "website": "github.com/john"},
+        experience=[{"text": "Developed React apps with Python backend using AWS and Docker"}],
+        education=[],
+        skills=["Python", "React", "AWS", "Docker", "Kubernetes", "SQL"],
+        metadata={"pageCount": 1, "wordCount": 500, "hasPhoto": False, "fileFormat": "pdf"}
+    )
+
+    result = score_industry_specific(resume, "tech")
+    assert result["score"] >= 15  # Should score well with skills and tech keywords
