@@ -57,3 +57,15 @@ export interface UploadResponse {
 export interface ApiError {
   detail: string
 }
+
+/**
+ * Editable resume content for rich text editor
+ */
+export interface ResumeContent {
+  fileName: string
+  rawText: string  // HTML content from editor
+  contact: ContactInfo
+  metadata: ResumeMetadata
+  jobDescription?: string
+  industry?: string
+}
