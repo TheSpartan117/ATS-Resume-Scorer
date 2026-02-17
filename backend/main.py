@@ -41,6 +41,12 @@ app.add_middleware(
     allow_headers=allow_headers,
 )
 
+# Import routers
+from api.upload import router as upload_router
+
+# Include routers
+app.include_router(upload_router)
+
 # Global exception handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
