@@ -140,7 +140,7 @@ def score_formatting(resume: ResumeData) -> Dict:
 
 def score_content(resume: ResumeData) -> Dict:
     """
-    Score resume content quality (30 points max).
+    Score resume content quality (25 points max).
 
     TODO: Implement content scoring based on:
     - Experience section completeness
@@ -163,7 +163,7 @@ def score_content(resume: ResumeData) -> Dict:
 
 def score_keywords(resume: ResumeData, job_description: str = "") -> Dict:
     """
-    Score keyword optimization for ATS (20 points max).
+    Score keyword optimization for ATS (15 points max).
 
     TODO: Implement keyword matching against job description:
     - Extract key skills and requirements from job description
@@ -184,14 +184,15 @@ def score_keywords(resume: ResumeData, job_description: str = "") -> Dict:
     }
 
 
-def score_skills(resume: ResumeData) -> Dict:
+def score_length_density(resume: ResumeData) -> Dict:
     """
-    Score skills section quality (10 points max).
+    Score resume length and content density (10 points max).
 
-    TODO: Implement skills scoring based on:
-    - Presence of skills section
-    - Number of relevant skills
-    - Categorization of skills
+    TODO: Implement length and density scoring based on:
+    - Optimal length (1-2 pages)
+    - Content density (text vs whitespace ratio)
+    - Section balance
+    - Conciseness metrics
 
     Args:
         resume: ResumeData object with parsed resume information
@@ -202,13 +203,13 @@ def score_skills(resume: ResumeData) -> Dict:
     # Placeholder implementation
     return {
         "score": 0,
-        "issues": [("info", "Skills scoring not yet implemented")]
+        "issues": [("info", "Length and density scoring not yet implemented")]
     }
 
 
 def score_industry_specific(resume: ResumeData, industry: str = "") -> Dict:
     """
-    Score industry-specific requirements (10 points max).
+    Score industry-specific requirements (20 points max).
 
     TODO: Implement industry-specific scoring:
     - Tech: GitHub, portfolio, technical skills
@@ -236,10 +237,10 @@ def calculate_overall_score(resume: ResumeData, job_description: str = "", indus
     Total possible score: 100 points
     - Contact info: 10 points
     - Formatting: 20 points
-    - Content quality: 30 points
-    - Keywords: 20 points
-    - Skills: 10 points
-    - Industry-specific: 10 points
+    - Content quality: 25 points
+    - Keywords: 15 points
+    - Length & Density: 10 points
+    - Industry-specific: 20 points
 
     Args:
         resume: ResumeData object with parsed resume information
@@ -254,7 +255,7 @@ def calculate_overall_score(resume: ResumeData, job_description: str = "", indus
     formatting_result = score_formatting(resume)
     content_result = score_content(resume)
     keywords_result = score_keywords(resume, job_description)
-    skills_result = score_skills(resume)
+    length_density_result = score_length_density(resume)
     industry_result = score_industry_specific(resume, industry)
 
     # Calculate total score
@@ -263,7 +264,7 @@ def calculate_overall_score(resume: ResumeData, job_description: str = "", indus
         formatting_result["score"] +
         content_result["score"] +
         keywords_result["score"] +
-        skills_result["score"] +
+        length_density_result["score"] +
         industry_result["score"]
     )
 
@@ -273,13 +274,14 @@ def calculate_overall_score(resume: ResumeData, job_description: str = "", indus
         formatting_result["issues"] +
         content_result["issues"] +
         keywords_result["issues"] +
-        skills_result["issues"] +
+        length_density_result["issues"] +
         industry_result["issues"]
     )
 
     # Categorize issues by severity
     critical_issues = [issue for issue in all_issues if issue[0] == "critical"]
     warnings = [issue for issue in all_issues if issue[0] == "warning"]
+    suggestions = [issue for issue in all_issues if issue[0] == "suggestion"]
     info = [issue for issue in all_issues if issue[0] == "info"]
 
     return {
@@ -298,28 +300,29 @@ def calculate_overall_score(resume: ResumeData, job_description: str = "", indus
             },
             "content": {
                 "score": content_result["score"],
-                "maxScore": 30,
+                "maxScore": 25,
                 "issues": content_result["issues"]
             },
             "keywords": {
                 "score": keywords_result["score"],
-                "maxScore": 20,
+                "maxScore": 15,
                 "issues": keywords_result["issues"]
             },
-            "skills": {
-                "score": skills_result["score"],
+            "lengthDensity": {
+                "score": length_density_result["score"],
                 "maxScore": 10,
-                "issues": skills_result["issues"]
+                "issues": length_density_result["issues"]
             },
             "industrySpecific": {
                 "score": industry_result["score"],
-                "maxScore": 10,
+                "maxScore": 20,
                 "issues": industry_result["issues"]
             }
         },
         "issues": {
             "critical": critical_issues,
             "warnings": warnings,
+            "suggestions": suggestions,
             "info": info
         }
     }
