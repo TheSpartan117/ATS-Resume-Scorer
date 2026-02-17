@@ -1,5 +1,5 @@
 import pytest
-from services.scorer import score_contact_info, score_keywords, score_content
+from services.scorer import score_contact_info, score_keywords, score_content, score_length_density
 from services.parser import ResumeData
 
 def test_complete_contact_info_gets_full_score():
@@ -90,3 +90,16 @@ def test_content_with_action_verbs_and_numbers():
 
     result = score_content(resume)
     assert result["score"] > 15  # Should score well with verbs and numbers
+
+def test_length_density_optimal():
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John"},
+        experience=[],
+        education=[],
+        skills=[],
+        metadata={"pageCount": 1, "wordCount": 500, "hasPhoto": False, "fileFormat": "pdf"}
+    )
+
+    result = score_length_density(resume)
+    assert result["score"] == 10  # Perfect score for 1 page, 500 words

@@ -298,11 +298,9 @@ def score_length_density(resume: ResumeData) -> Dict:
     """
     Score resume length and content density (10 points max).
 
-    TODO: Implement length and density scoring based on:
-    - Optimal length (1-2 pages)
-    - Content density (text vs whitespace ratio)
-    - Section balance
-    - Conciseness metrics
+    Scoring:
+    - Optimal word count for page count: 5 points
+    - Good white space ratio: 5 points
 
     Args:
         resume: ResumeData object with parsed resume information
@@ -310,11 +308,64 @@ def score_length_density(resume: ResumeData) -> Dict:
     Returns:
         Dict with "score" (int) and "issues" (List[Tuple[str, str]])
     """
-    # Placeholder implementation
-    return {
-        "score": 0,
-        "issues": [("info", "Length and density scoring not yet implemented")]
-    }
+    score = 0
+    issues: List[Tuple[str, str]] = []
+
+    page_count = resume.metadata.get("pageCount", 1)
+    word_count = resume.metadata.get("wordCount", 0)
+
+    # Word count for page count (5 points)
+    if page_count == 1:
+        if 400 <= word_count <= 600:
+            score += 5
+        elif 300 <= word_count < 400 or 600 < word_count <= 700:
+            score += 3
+            issues.append(("info", f"1-page resume with {word_count} words - ideal is 400-600"))
+        else:
+            score += 1
+            if word_count < 300:
+                issues.append(("warning", f"Too brief for 1 page ({word_count} words) - add more detail"))
+            else:
+                issues.append(("warning", f"Too dense for 1 page ({word_count} words) - consider 2 pages"))
+
+    elif page_count == 2:
+        if 600 <= word_count <= 900:
+            score += 5
+        elif 500 <= word_count < 600 or 900 < word_count <= 1100:
+            score += 3
+            issues.append(("info", f"2-page resume with {word_count} words - ideal is 600-900"))
+        else:
+            score += 1
+            if word_count < 500:
+                issues.append(("warning", f"Too brief for 2 pages ({word_count} words) - consolidate to 1 page"))
+            else:
+                issues.append(("warning", f"Too wordy for 2 pages ({word_count} words) - be more concise"))
+
+    else:
+        score += 2
+        issues.append(("warning", f"{page_count} pages is non-standard - use 1-2 pages"))
+
+    # White space / density (5 points)
+    # Approximate: chars_per_page should be 2000-3500 for good density
+    if word_count and page_count:
+        chars_per_page = (word_count * 5) / page_count  # Assume avg 5 chars per word
+
+        if 2000 <= chars_per_page <= 3500:
+            score += 5
+        elif 1500 <= chars_per_page < 2000 or 3500 < chars_per_page <= 4000:
+            score += 3
+            if chars_per_page < 2000:
+                issues.append(("info", "Resume has good white space - could add more content"))
+            else:
+                issues.append(("info", "Resume is fairly dense - consider more white space"))
+        else:
+            score += 1
+            if chars_per_page < 1500:
+                issues.append(("warning", "Too much white space - add more content"))
+            else:
+                issues.append(("warning", "Too dense - needs more white space for readability"))
+
+    return {"score": score, "issues": issues}
 
 
 def score_industry_specific(resume: ResumeData, industry: str = "") -> Dict:
