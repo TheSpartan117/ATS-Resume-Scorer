@@ -2,6 +2,7 @@
 PDF and DOCX parser service for extracting structured data from resumes.
 """
 import re
+from io import BytesIO
 from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 import fitz  # PyMuPDF
@@ -111,18 +112,19 @@ def extract_name_from_header(text: str) -> Optional[str]:
     return None
 
 
-def parse_pdf(file_path: str) -> ResumeData:
+def parse_pdf(file_content: bytes, filename: str) -> ResumeData:
     """
     Parse a PDF resume and extract structured data.
 
     Args:
-        file_path: Path to the PDF file
+        file_content: PDF file content as bytes
+        filename: Original filename of the PDF
 
     Returns:
         ResumeData object with extracted information
     """
-    # Open PDF
-    doc = fitz.open(file_path)
+    # Open PDF from bytes using PyMuPDF
+    doc = fitz.open(stream=file_content, filetype="pdf")
 
     # Extract text from all pages
     full_text = ""
@@ -161,7 +163,7 @@ def parse_pdf(file_path: str) -> ResumeData:
 
     # Create ResumeData object
     resume_data = ResumeData(
-        fileName=file_path.split('/')[-1],
+        fileName=filename,
         contact=contact_info,
         experience=[],  # TODO: Implement section extraction
         education=[],   # TODO: Implement section extraction
@@ -173,18 +175,19 @@ def parse_pdf(file_path: str) -> ResumeData:
     return resume_data
 
 
-def parse_docx(file_path: str) -> ResumeData:
+def parse_docx(file_content: bytes, filename: str) -> ResumeData:
     """
     Parse a DOCX resume and extract structured data.
 
     Args:
-        file_path: Path to the DOCX file
+        file_content: DOCX file content as bytes
+        filename: Original filename of the DOCX
 
     Returns:
         ResumeData object with extracted information
     """
-    # Open DOCX
-    doc = Document(file_path)
+    # Open DOCX from bytes using BytesIO
+    doc = Document(BytesIO(file_content))
 
     # Extract text from all paragraphs
     full_text = "\n".join([para.text for para in doc.paragraphs])
@@ -217,7 +220,7 @@ def parse_docx(file_path: str) -> ResumeData:
 
     # Create ResumeData object
     resume_data = ResumeData(
-        fileName=file_path.split('/')[-1],
+        fileName=filename,
         contact=contact_info,
         experience=[],  # TODO: Implement section extraction
         education=[],   # TODO: Implement section extraction
