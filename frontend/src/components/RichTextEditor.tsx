@@ -56,13 +56,7 @@ export default function RichTextEditor({
     }
   }, [editable, editor])
 
-  // Cleanup editor on unmount - NO dependencies, runs once
-  useEffect(() => {
-    return () => {
-      editor?.destroy()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  // Note: useEditor automatically handles cleanup, no manual destroy needed
 
   if (!editor) {
     return null
