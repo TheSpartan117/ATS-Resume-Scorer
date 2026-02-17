@@ -17,6 +17,10 @@ RUN python -m spacy download en_core_web_sm
 # Copy application code
 COPY . .
 
+# Create non-root user for security
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
+
 # Expose port
 EXPOSE 8000
 
