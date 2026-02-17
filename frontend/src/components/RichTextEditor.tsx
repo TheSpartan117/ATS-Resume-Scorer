@@ -5,6 +5,7 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import { useEffect } from 'react'
+import EditorToolbar from './EditorToolbar'
 
 interface RichTextEditorProps {
   content: string
@@ -63,7 +64,8 @@ export default function RichTextEditor({
   }
 
   return (
-    <div className="border border-gray-300 rounded-lg overflow-hidden">
+    <div className="border border-gray-300 rounded-lg overflow-hidden bg-white">
+      {editable && <EditorToolbar editor={editor} />}
       <EditorContent editor={editor} />
     </div>
   )
