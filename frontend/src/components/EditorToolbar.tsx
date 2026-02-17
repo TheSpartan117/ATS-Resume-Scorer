@@ -13,9 +13,11 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
     return null
   }
 
-  const ButtonClass = useCallback((isActive: boolean) =>
+  const ButtonClass = useCallback((isActive: boolean, isDisabled: boolean = false) =>
     `px-3 py-1 rounded text-sm font-medium transition-colors ${
-      isActive
+      isDisabled
+        ? 'bg-gray-100 text-gray-700 opacity-50 cursor-not-allowed'
+        : isActive
         ? 'bg-blue-600 text-white'
         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
     }`, [])
@@ -31,6 +33,7 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
           title="Bold (Ctrl+B)"
           aria-label="Bold"
           aria-keyshortcuts="Control+B"
+          aria-pressed={editor.isActive('bold')}
         >
           <strong>B</strong>
         </button>
@@ -41,6 +44,7 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
           title="Italic (Ctrl+I)"
           aria-label="Italic"
           aria-keyshortcuts="Control+I"
+          aria-pressed={editor.isActive('italic')}
         >
           <em>I</em>
         </button>
@@ -50,6 +54,7 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
           className={ButtonClass(editor.isActive('strike'))}
           title="Strikethrough"
           aria-label="Strikethrough"
+          aria-pressed={editor.isActive('strike')}
         >
           <s>S</s>
         </button>
@@ -66,6 +71,7 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
           className={ButtonClass(editor.isActive('heading', { level: 1 }))}
           title="Heading 1"
           aria-label="Heading 1"
+          aria-pressed={editor.isActive('heading', { level: 1 })}
         >
           H1
         </button>
@@ -75,6 +81,7 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
           className={ButtonClass(editor.isActive('heading', { level: 2 }))}
           title="Heading 2"
           aria-label="Heading 2"
+          aria-pressed={editor.isActive('heading', { level: 2 })}
         >
           H2
         </button>
@@ -84,6 +91,7 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
           className={ButtonClass(editor.isActive('heading', { level: 3 }))}
           title="Heading 3"
           aria-label="Heading 3"
+          aria-pressed={editor.isActive('heading', { level: 3 })}
         >
           H3
         </button>
@@ -100,6 +108,7 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
           className={ButtonClass(editor.isActive('bulletList'))}
           title="Bullet List"
           aria-label="Bullet List"
+          aria-pressed={editor.isActive('bulletList')}
         >
           • List
         </button>
@@ -109,6 +118,7 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
           className={ButtonClass(editor.isActive('orderedList'))}
           title="Numbered List"
           aria-label="Numbered List"
+          aria-pressed={editor.isActive('orderedList')}
         >
           1. List
         </button>
@@ -132,7 +142,7 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
           type="button"
           onClick={() => editor.chain().focus().undo().run()}
           disabled={!editor.can().undo()}
-          className="px-3 py-1 rounded text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className={ButtonClass(false, !editor.can().undo())}
           title="Undo (Ctrl+Z)"
           aria-label="Undo"
           aria-keyshortcuts="Control+Z"
@@ -143,7 +153,7 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
           type="button"
           onClick={() => editor.chain().focus().redo().run()}
           disabled={!editor.can().redo()}
-          className="px-3 py-1 rounded text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className={ButtonClass(false, !editor.can().redo())}
           title="Redo (Ctrl+Y)"
           aria-label="Redo"
           aria-keyshortcuts="Control+Y"
