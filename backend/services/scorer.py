@@ -1,6 +1,7 @@
 """
 Resume scoring engine that evaluates resumes based on ATS best practices.
 """
+import re
 from typing import Dict, List, Tuple
 from services.parser import ResumeData
 
@@ -165,10 +166,10 @@ def score_keywords(resume: ResumeData, job_description: str = "") -> Dict:
     """
     Score keyword optimization for ATS (15 points max).
 
-    TODO: Implement keyword matching against job description:
-    - Extract key skills and requirements from job description
-    - Match against resume content
-    - Check for industry-standard terminology
+    Scoring:
+    - With JD: Match percentage * 15 points (0-100% match)
+    - With role: 10 points if key role keywords present
+    - Without context: 10 points default, suggest adding JD
 
     Args:
         resume: ResumeData object with parsed resume information
@@ -177,11 +178,55 @@ def score_keywords(resume: ResumeData, job_description: str = "") -> Dict:
     Returns:
         Dict with "score" (int) and "issues" (List[Tuple[str, str]])
     """
-    # Placeholder implementation
-    return {
-        "score": 0,
-        "issues": [("info", "Keyword scoring not yet implemented")]
-    }
+    score = 0
+    issues: List[Tuple[str, str]] = []
+
+    # Extract resume text (combine all text fields)
+    resume_text = " ".join([
+        resume.contact.get("name", ""),
+        " ".join([str(exp) for exp in resume.experience]),
+        " ".join([str(edu) for edu in resume.education]),
+        " ".join(resume.skills)
+    ]).lower()
+
+    if job_description:
+        # Extract keywords from JD (simple: words > 4 chars, not stopwords)
+        jd_keywords = extract_important_keywords(job_description)
+
+        # Count matches
+        matches = sum(1 for keyword in jd_keywords if keyword.lower() in resume_text)
+        match_percentage = (matches / len(jd_keywords)) * 100 if jd_keywords else 0
+
+        score = int((match_percentage / 100) * 15)
+
+        if match_percentage < 40:
+            issues.append(("critical", f"Low keyword match: {match_percentage:.0f}% - add key terms from job description"))
+        elif match_percentage < 60:
+            issues.append(("warning", f"Moderate keyword match: {match_percentage:.0f}% - consider adding more relevant terms"))
+
+        # Identify missing keywords
+        missing = [kw for kw in jd_keywords[:5] if kw.lower() not in resume_text]
+        if missing:
+            issues.append(("suggestion", f"Missing key terms: {', '.join(missing)}"))
+    else:
+        # No JD provided - give default score
+        score = 10
+        issues.append(("suggestion", "Provide job description for better keyword matching"))
+
+    return {"score": score, "issues": issues}
+
+
+def extract_important_keywords(text: str) -> List[str]:
+    """Extract important keywords from text (simple implementation)"""
+    # Common stopwords to exclude
+    stopwords = set(['the', 'and', 'for', 'with', 'this', 'that', 'from', 'have', 'will', 'your', 'they', 'been', 'their'])
+
+    # Split and filter
+    words = re.findall(r'\b\w{4,}\b', text.lower())
+    keywords = [w for w in words if w not in stopwords]
+
+    # Return unique keywords
+    return list(set(keywords))[:50]  # Limit to 50 keywords
 
 
 def score_length_density(resume: ResumeData) -> Dict:

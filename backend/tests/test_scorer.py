@@ -1,5 +1,5 @@
 import pytest
-from services.scorer import score_contact_info
+from services.scorer import score_contact_info, score_keywords
 from services.parser import ResumeData
 
 def test_complete_contact_info_gets_full_score():
@@ -48,3 +48,32 @@ def test_missing_email_reduces_score():
     assert result["score"] < 10
     assert any("email" in issue[1].lower() for issue in result["issues"])
     assert any(issue[0] == "critical" for issue in result["issues"])
+
+def test_keywords_with_job_description():
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John", "email": "j@ex.com"},
+        skills=["Python", "React", "AWS"],
+        experience=[{"title": "Python developer", "company": "Tech Corp", "description": "React and AWS experience"}],
+        education=[],
+        metadata={"pageCount": 1, "wordCount": 500, "hasPhoto": False, "fileFormat": "pdf"}
+    )
+
+    jd = "Looking for Python developer with React and AWS experience"
+    result = score_keywords(resume, jd)
+
+    assert result["score"] > 10  # Should have good match
+
+def test_keywords_without_job_description():
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John"},
+        experience=[],
+        education=[],
+        skills=[],
+        metadata={"pageCount": 1, "wordCount": 500, "hasPhoto": False, "fileFormat": "pdf"}
+    )
+
+    result = score_keywords(resume)
+    assert result["score"] == 10  # Default score
+    assert any("job description" in issue[1].lower() for issue in result["issues"])
