@@ -172,23 +172,24 @@ export default function EditorPage() {
       return
     }
 
+    // TEMPORARILY BYPASS AD CHECK FOR DEBUGGING
     // Check if ad should be shown before re-scoring
-    console.log('Checking if ad should be shown...')
-    setAdCheckPending(true)
-    try {
-      const adResult = await shouldShowAd()
-      console.log('Ad check result:', adResult)
-      if (adResult.showAd) {
-        console.log('Showing ad, blocking re-score')
-        setShowAd(true)
-        setAdCheckPending(false)
-        return // Exit early to prevent re-scoring
-      }
-    } catch (err) {
-      console.error('Ad check failed:', err)
-    } finally {
-      setAdCheckPending(false)
-    }
+    // console.log('Checking if ad should be shown...')
+    // setAdCheckPending(true)
+    // try {
+    //   const adResult = await shouldShowAd()
+    //   console.log('Ad check result:', adResult)
+    //   if (adResult.showAd) {
+    //     console.log('Showing ad, blocking re-score')
+    //     setShowAd(true)
+    //     setAdCheckPending(false)
+    //     return // Exit early to prevent re-scoring
+    //   }
+    // } catch (err) {
+    //   console.error('Ad check failed:', err)
+    // } finally {
+    //   setAdCheckPending(false)
+    // }
 
     console.log('Starting re-score...')
     setIsRescoring(true)
