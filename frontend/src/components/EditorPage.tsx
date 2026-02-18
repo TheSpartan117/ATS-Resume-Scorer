@@ -3,8 +3,7 @@
  */
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import ReactQuill from 'react-quill'
-import 'react-quill/dist/quill.snow.css'
+import { WYSIWYGEditor } from './WYSIWYGEditor'
 import IssuesList from './IssuesList'
 import LoadingSpinner from './LoadingSpinner'
 import UserMenu from './UserMenu'
@@ -416,30 +415,9 @@ export default function EditorPage() {
                   {wordCount} words
                 </span>
               </div>
-              <ReactQuill
+              <WYSIWYGEditor
                 value={editorContent}
                 onChange={handleEditorChange}
-                modules={{
-                  toolbar: [
-                    [{ 'header': [1, 2, 3, false] }],
-                    ['bold', 'italic', 'underline', 'strike'],
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                    [{ 'indent': '-1'}, { 'indent': '+1' }],
-                    [{ 'align': [] }],
-                    ['link'],
-                    ['clean']
-                  ],
-                }}
-                formats={[
-                  'header',
-                  'bold', 'italic', 'underline', 'strike',
-                  'list', 'bullet',
-                  'indent',
-                  'align',
-                  'link'
-                ]}
-                style={{ height: '550px', marginBottom: '50px' }}
-                theme="snow"
               />
             </div>
           </div>
