@@ -404,18 +404,18 @@ export default function EditorPage() {
 
         {/* Main Content - Split View */}
         <div className="flex gap-4 h-[calc(100vh-200px)]">
-          {/* Left Panel: PDF Preview */}
-          {result.originalFileUrl && result.metadata.fileFormat === 'pdf' && (
+          {/* Left Panel: PDF Preview - Show for both PDF and DOCX */}
+          {(result.originalFileUrl || result.previewPdfUrl) && (
             <div className="w-1/2 border border-gray-300 rounded-lg overflow-hidden">
               <PDFViewer
-                fileUrl={`http://localhost:8000${result.originalFileUrl}`}
+                fileUrl={`http://localhost:8000${result.previewPdfUrl || result.originalFileUrl}`}
                 fileName={result.fileName}
               />
             </div>
           )}
 
           {/* Right Panel: Editor & Score */}
-          <div className={`${result.originalFileUrl && result.metadata.fileFormat === 'pdf' ? 'w-1/2' : 'w-full'} flex flex-col gap-4`}>
+          <div className={`${(result.originalFileUrl || result.previewPdfUrl) ? 'w-1/2' : 'w-full'} flex flex-col gap-4`}>
             {/* Editor */}
             <div className="flex-1 bg-white rounded-lg shadow-sm p-4 overflow-auto">
               <div className="flex items-center justify-between mb-3">

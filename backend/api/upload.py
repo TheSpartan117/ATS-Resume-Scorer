@@ -12,6 +12,7 @@ from backend.services.parser import parse_pdf, parse_docx
 from backend.services.scorer import calculate_overall_score
 from backend.services.scorer_v2 import AdaptiveScorer
 from backend.services.format_checker import ATSFormatChecker
+from backend.services.docx_to_pdf import convert_docx_to_pdf
 from backend.schemas.resume import UploadResponse, ContactInfoResponse, MetadataResponse, ScoreResponse, CategoryBreakdown, FormatCheckResponse
 
 logger = logging.getLogger(__name__)
@@ -77,6 +78,21 @@ async def upload_resume(
         f.write(file_content)
 
     logger.info(f"Saved original file: {file_path}")
+
+    # For DOCX files, also convert to PDF for preview
+    preview_pdf_url = None
+    if file.content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        try:
+            logger.info("Converting DOCX to PDF for preview...")
+            pdf_bytes = convert_docx_to_pdf(file_content)
+            preview_pdf_path = UPLOAD_DIR / f"{file_id}_preview.pdf"
+            with open(preview_pdf_path, "wb") as f:
+                f.write(pdf_bytes)
+            preview_pdf_url = f"/api/files/{file_id}_preview.pdf"
+            logger.info(f"Saved preview PDF: {preview_pdf_path}")
+        except Exception as e:
+            logger.error(f"Failed to convert DOCX to PDF: {str(e)}")
+            # Continue without preview - not critical
 
     # Parse resume based on file type
     try:
@@ -185,6 +201,7 @@ async def upload_resume(
         fileName=file.filename,
         fileId=file_id,
         originalFileUrl=f"/api/files/{file_id}{file_extension}",
+        previewPdfUrl=preview_pdf_url,  # Only set for DOCX files
         contact=contact_response,
         experience=resume_data.experience,
         education=resume_data.education,

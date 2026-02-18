@@ -68,6 +68,9 @@ export interface FormatCheckResult {
 export interface UploadResponse {
   resumeId?: string
   fileName: string
+  fileId?: string
+  originalFileUrl?: string
+  previewPdfUrl?: string
   contact: ContactInfo
   experience?: any[]
   education?: any[]

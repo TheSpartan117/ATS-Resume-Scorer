@@ -54,6 +54,7 @@ class UploadResponse(BaseModel):
     fileName: str
     fileId: Optional[str] = None  # ID to retrieve original file
     originalFileUrl: Optional[str] = None  # URL to access original file
+    previewPdfUrl: Optional[str] = None  # URL to preview PDF (for DOCX files)
     contact: ContactInfoResponse
     experience: List[Dict] = []
     education: List[Dict] = []
