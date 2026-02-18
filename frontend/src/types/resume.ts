@@ -43,6 +43,17 @@ export interface ScoreResult {
     info: string[]
   }
   strengths: string[]
+  mode: string  // "ats_simulation" or "quality_coach"
+  keywordDetails?: {
+    required_matched?: number
+    required_total?: number
+    required_match_pct?: number
+    preferred_matched?: number
+    preferred_total?: number
+    preferred_match_pct?: number
+    match_percentage?: number
+  }
+  autoReject?: boolean
 }
 
 export interface FormatCheckResult {
@@ -69,6 +80,7 @@ export interface UploadResponse {
   jobDescription?: string
   role?: string
   level?: string
+  scoringMode?: string  // "ats_simulation" or "quality_coach"
   industry?: string  // Kept for backward compatibility
 }
 

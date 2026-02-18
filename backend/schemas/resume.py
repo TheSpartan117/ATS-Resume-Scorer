@@ -36,6 +36,8 @@ class ScoreResponse(BaseModel):
     issues: Dict[str, List[str]]  # critical, warnings, suggestions, info
     strengths: List[str]
     mode: str  # "ats_simulation" or "quality_coach"
+    keywordDetails: Optional[Dict] = None  # Keyword matching details for ATS mode
+    autoReject: Optional[bool] = None  # Auto-reject flag for ATS mode
 
 
 class FormatCheckResponse(BaseModel):

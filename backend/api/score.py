@@ -4,7 +4,8 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from backend.services.parser import ResumeData
-from backend.services.scorer import calculate_overall_score
+from backend.services.scorer_v2 import ScorerV2
+from backend.services.role_taxonomy import RoleTaxonomy
 from backend.schemas.resume import ScoreResponse, CategoryBreakdown
 
 
@@ -53,13 +54,21 @@ async def score_resume(request: ScoreRequest):
         metadata=request.metadata
     )
 
-    # Calculate score with role and level (or fall back to industry)
-    score_result = calculate_overall_score(
+    # Determine scoring mode
+    scoring_mode = "ats_simulation" if request.jobDescription else "quality_coach"
+
+    # Get role taxonomy and scorer
+    taxonomy = RoleTaxonomy()
+    role_data = taxonomy.get_role(request.role or "software_engineer")
+
+    # Calculate score using ScorerV2
+    scorer = ScorerV2()
+    score_result = scorer.score_resume(
         resume_data,
+        role_data=role_data,
+        level=request.level or "mid",
         job_description=request.jobDescription or "",
-        role_id=request.role or "",
-        level=request.level or "",
-        industry=request.industry or ""
+        mode=scoring_mode
     )
 
     # Convert breakdown to response format
@@ -82,5 +91,8 @@ async def score_resume(request: ScoreRequest):
         overallScore=score_result["overallScore"],
         breakdown=breakdown_response,
         issues=issues_response,
-        strengths=score_result.get("strengths", [])
+        strengths=score_result.get("strengths", []),
+        mode=score_result.get("mode", scoring_mode),
+        keywordDetails=score_result.get("keyword_details"),
+        autoReject=score_result.get("auto_reject")
     )

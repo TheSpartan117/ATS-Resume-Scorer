@@ -149,7 +149,9 @@ async def upload_resume(
         breakdown=breakdown_response,
         issues=issues_response,
         strengths=score_result.get("strengths", []),
-        mode=score_result.get("mode", scoring_mode)
+        mode=score_result.get("mode", scoring_mode),
+        keywordDetails=score_result.get("keyword_details"),
+        autoReject=score_result.get("auto_reject")
     )
 
     # Format check response

@@ -4,12 +4,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import RichTextEditor from './RichTextEditor'
-import ScoreCard from './ScoreCard'
-import CategoryBreakdown from './CategoryBreakdown'
 import IssuesList from './IssuesList'
 import LoadingSpinner from './LoadingSpinner'
 import UserMenu from './UserMenu'
 import AdDisplay from './AdDisplay'
+import { ModeIndicator } from './ModeIndicator'
+import { DownloadMenu } from './DownloadMenu'
 import { useDebounce } from '../hooks/useDebounce'
 import { useAuth } from '../hooks/useAuth'
 import { rescoreResume, shouldShowAd, saveResume, updateResume, type ScoreRequest } from '../api/client'
@@ -313,6 +313,31 @@ export default function EditorPage() {
               ← Back to Results
             </button>
             <div className="flex items-center space-x-4">
+              <DownloadMenu
+                resumeContent={editorContent}
+                resumeName={result.contact?.name || 'Resume'}
+                resumeData={{
+                  fileName: result.fileName,
+                  contact: result.contact,
+                  experience: result.experience || [],
+                  education: result.education || [],
+                  skills: result.skills || [],
+                  certifications: result.certifications || [],
+                  metadata: result.metadata,
+                  jobDescription: result.jobDescription,
+                  industry: result.industry
+                }}
+                scoreData={{
+                  overallScore: currentScore.overallScore,
+                  breakdown: currentScore.breakdown,
+                  issues: currentScore.issues,
+                  strengths: currentScore.strengths,
+                  mode: currentScore.mode || result.scoringMode || 'quality_coach'
+                }}
+                mode={currentScore.mode || result.scoringMode || 'quality_coach'}
+                role={result.role || 'Software Engineer'}
+                level={result.level || 'Mid-Level'}
+              />
               {isAuthenticated && (
                 <button
                   onClick={handleSave}
@@ -400,23 +425,22 @@ export default function EditorPage() {
           {/* Right Column: Live Score */}
           <div className="lg:col-span-1">
             <div className="sticky top-4 space-y-3">
-              {/* Score Card */}
-              <div className="bg-white rounded-lg shadow-sm p-4">
-                <h2 className="text-base font-semibold text-gray-900 mb-3">
-                  Live Score
-                </h2>
-                <ScoreCard score={currentScore.overallScore} />
-                {isRescoring && (
-                  <div className="mt-3 flex justify-center">
-                    <LoadingSpinner size="sm" />
-                  </div>
-                )}
-              </div>
-
-              {/* Category Breakdown */}
-              <div className="bg-white rounded-lg shadow-sm p-4">
-                <CategoryBreakdown breakdown={currentScore.breakdown} />
-              </div>
+              {/* Mode Indicator with Score */}
+              <ModeIndicator
+                mode={(currentScore.mode || result.scoringMode || 'quality_coach') as 'ats_simulation' | 'quality_coach'}
+                score={currentScore.overallScore}
+                keywordDetails={currentScore.keywordDetails}
+                breakdown={Object.entries(currentScore.breakdown).reduce((acc, [key, value]) => {
+                  acc[key] = value.score
+                  return acc
+                }, {} as Record<string, number>)}
+                autoReject={currentScore.autoReject}
+              />
+              {isRescoring && (
+                <div className="flex justify-center">
+                  <LoadingSpinner size="sm" />
+                </div>
+              )}
 
               {/* Issues Summary */}
               <div className="bg-white rounded-lg shadow-sm p-4">
