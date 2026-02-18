@@ -470,7 +470,11 @@ export default function EditorPage() {
                     {wordCount} words
                   </span>
                   <button
-                    onClick={() => performRescore()}
+                    onClick={() => {
+                      console.log('BUTTON CLICKED!')
+                      alert('Button clicked! Check console for details.')
+                      performRescore()
+                    }}
                     disabled={isRescoring}
                     className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
