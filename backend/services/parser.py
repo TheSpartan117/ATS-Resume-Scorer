@@ -96,10 +96,51 @@ def extract_phone(text: str) -> Optional[str]:
 
 
 def extract_linkedin(text: str) -> Optional[str]:
-    """Extract LinkedIn URL from text"""
+    """Extract LinkedIn URL or reference from text"""
+    # Try full URL first
     linkedin_pattern = r'(?:https?://)?(?:www\.)?linkedin\.com/in/[\w-]+'
     match = re.search(linkedin_pattern, text, re.IGNORECASE)
-    return match.group(0) if match else None
+    if match:
+        return match.group(0)
+
+    # Try "LinkedIn: username" or "LinkedIn Profile" patterns
+    linkedin_ref = r'linkedin\s*(?:profile)?:?\s*([\w-]+)'
+    match = re.search(linkedin_ref, text, re.IGNORECASE)
+    if match:
+        username = match.group(1) if match.group(1) not in ['profile', 'Profile'] else None
+        if username:
+            return f"linkedin.com/in/{username}"
+
+    # Check if "LinkedIn" is mentioned in header (likely has hyperlink in PDF)
+    if re.search(r'\blinkedin\b', text[:500], re.IGNORECASE):
+        return "LinkedIn (see resume)"
+
+    return None
+
+
+def extract_location(text: str) -> Optional[str]:
+    """Extract location (City, State/Country) from text"""
+    # Common patterns: "City, State", "City, Country", "City | State"
+    # Look for: Capital Letter(s), comma/pipe, Capital Letter(s)
+    location_pattern = r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*[,|]\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b'
+    match = re.search(location_pattern, text)
+    if match:
+        return f"{match.group(1)}, {match.group(2)}"
+
+    # Try simpler pattern: City Name (single or two words)
+    # Look for lines that end with country/state names
+    common_places = ['India', 'USA', 'UK', 'Canada', 'California', 'New York', 'Texas', 'London', 'Mumbai', 'Delhi', 'Bangalore', 'Gurugram', 'Hyderabad']
+    for place in common_places:
+        if re.search(rf'\b{place}\b', text, re.IGNORECASE):
+            # Find the full location string around this place
+            pattern = rf'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*[,|•]\s*{place}'
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                return f"{match.group(1)}, {place}"
+            # Just return the place itself if no city found
+            return place
+
+    return None
 
 
 def extract_name_from_header(text: str) -> Optional[str]:
@@ -514,7 +555,8 @@ def parse_pdf_with_pdfplumber(file_content: bytes, filename: str) -> ResumeData:
                 "name": name,
                 "email": email,
                 "phone": phone,
-                "linkedin": linkedin
+                "linkedin": linkedin,
+                "location": extract_location(header_text)
             }
 
             metadata = {
@@ -621,7 +663,8 @@ def parse_pdf(file_content: bytes, filename: str) -> ResumeData:
                 "name": name,
                 "email": email,
                 "phone": phone,
-                "linkedin": linkedin
+                "linkedin": linkedin,
+                "location": extract_location(header_text)
             }
 
             metadata = {
