@@ -11,7 +11,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from backend.services.parser import ResumeData
-from backend.services.scorer import calculate_overall_score
+from backend.services.scorer_legacy import calculate_overall_score
 
 
 # Test corpus directory

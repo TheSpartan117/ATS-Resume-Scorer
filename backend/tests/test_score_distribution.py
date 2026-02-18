@@ -557,7 +557,7 @@ def test_score_all_resumes_adaptive_scorer_quality_mode():
         result = scorer.score(
             resume_data=resume_data,
             role_id=role_id,
-            level=ExperienceLevel(level.upper()),
+            level=ExperienceLevel(level),
             job_description=None,
             mode="auto"
         )
@@ -665,7 +665,7 @@ def test_score_all_resumes_adaptive_scorer_ats_mode():
         result = scorer.score(
             resume_data=resume_data,
             role_id=role_id,
-            level=ExperienceLevel(level.upper()),
+            level=ExperienceLevel(level),
             job_description=job_description,
             mode="auto"
         )
@@ -768,7 +768,7 @@ def test_score_distribution_comparison():
         adaptive_result = scorer.score(
             resume_data=resume_data,
             role_id=role_id,
-            level=ExperienceLevel(level.upper()),
+            level=ExperienceLevel(level),
             job_description=None,
             mode="auto"
         )
