@@ -9,7 +9,7 @@ import uuid
 import logging
 from pathlib import Path
 from backend.services.parser import parse_pdf, parse_docx
-from backend.services.scorer import calculate_overall_score
+# Removed legacy scorer import - using scorer_v2.AdaptiveScorer instead
 from backend.services.scorer_v2 import AdaptiveScorer
 from backend.services.format_checker import ATSFormatChecker
 from backend.services.docx_to_pdf import convert_docx_to_pdf
@@ -34,18 +34,23 @@ async def upload_resume(
     role: str = Form(...),
     level: str = Form(...),
     jobDescription: Optional[str] = Form(None),
+    mode: Optional[str] = Form("auto"),  # "ats", "quality", or "auto" (default)
     industry: Optional[str] = Form(None)  # Kept for backward compatibility
 ):
     """
-    Upload a resume file (PDF or DOCX), parse it, and get an initial ATS score.
+    Upload a resume file (PDF or DOCX), parse it, and get an initial score.
 
     - **file**: PDF or DOCX resume file (max 10MB)
     - **jobDescription**: (Optional) Job description for keyword matching
     - **role**: (Optional) Role identifier for tailored scoring (e.g., "software_engineer", "product_manager")
     - **level**: (Optional) Experience level ("entry", "mid", "senior", "lead", "executive")
+    - **mode**: (Optional) Scoring mode: "ats", "quality", or "auto" (default: "auto")
+        - "ats" or "ats_simulation": ATS Simulation mode (keyword-heavy)
+        - "quality" or "quality_coach": Quality Coach mode (balanced quality)
+        - "auto": Auto-detect based on job description presence
     - **industry**: (Optional, deprecated) Use role+level instead
 
-    Returns parsed resume data with comprehensive ATS score (0-100).
+    Returns parsed resume data with comprehensive score (0-100) in selected mode.
     """
 
     # Validate file type
@@ -151,15 +156,24 @@ async def upload_resume(
         logger.error(f"Format check failed: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Format check failed: {str(e)}")
 
-    # Determine scoring mode
-    scoring_mode = "ats_simulation" if jobDescription else "quality_coach"
+    # Normalize mode parameter (support both "ats" and "ats_simulation", etc.)
+    scoring_mode = mode or "auto"
+    if scoring_mode == "ats":
+        scoring_mode = "ats_simulation"
+    elif scoring_mode == "quality":
+        scoring_mode = "quality_coach"
+
+    # Auto-detect mode if mode="auto"
+    if scoring_mode == "auto":
+        scoring_mode = "ats_simulation" if jobDescription else "quality_coach"
+
     logger.info(f"Scoring mode: {scoring_mode}")
 
     # Use adaptive scorer
     scorer = AdaptiveScorer()
 
     try:
-        logger.info(f"Calculating score with role={role}, level={level}")
+        logger.info(f"Calculating score with role={role}, level={level}, mode={scoring_mode}")
         score_result = scorer.score(
             resume_data=resume_data,
             role_id=role,
@@ -192,6 +206,13 @@ async def upload_resume(
     for severity, issue_list in score_result["issues"].items():
         issues_response[severity] = [issue[1] if isinstance(issue, tuple) else issue for issue in issue_list]
 
+    # Calculate issue counts for frontend
+    issue_counts = {
+        "critical": len(issues_response.get("critical", [])),
+        "warnings": len(issues_response.get("warnings", [])),
+        "suggestions": len(issues_response.get("suggestions", []))
+    }
+
     score_response = ScoreResponse(
         overallScore=score_result["overallScore"],
         breakdown=breakdown_response,
@@ -199,7 +220,8 @@ async def upload_resume(
         strengths=score_result.get("strengths", []),
         mode=score_result.get("mode", scoring_mode),
         keywordDetails=score_result.get("keyword_details"),
-        autoReject=score_result.get("auto_reject")
+        autoReject=score_result.get("auto_reject"),
+        issueCounts=issue_counts
     )
 
     # Format check response

@@ -1,5 +1,19 @@
 """
 Resume scoring engine that evaluates resumes based on ATS best practices.
+
+DEPRECATION NOTICE:
+===================
+This is the legacy scorer implementation preserved for backward compatibility
+and comparison purposes. For new development, use scorer_v2.py (AdaptiveScorer)
+which provides mode-specific scoring with ATS simulation and quality coaching modes.
+
+This legacy scorer will be maintained for:
+- Backward compatibility with existing tests
+- Comparison and validation against the new adaptive scorer
+- Historical reference
+
+Date deprecated: 2026-02-19
+Replacement: backend.services.scorer_v2.AdaptiveScorer
 """
 import re
 from typing import Dict, List, Tuple, Optional

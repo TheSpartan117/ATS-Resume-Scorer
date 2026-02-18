@@ -2,7 +2,8 @@ import pytest
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-from backend.services.scorer import score_contact_info, score_keywords, score_content, score_length_density, score_industry_specific, score_role_specific, calculate_overall_score
+# Import from legacy scorer for backward compatibility testing
+from backend.services.scorer_legacy import score_contact_info, score_keywords, score_content, score_length_density, score_industry_specific, score_role_specific, calculate_overall_score
 from backend.services.parser import ResumeData
 from backend.services.role_taxonomy import ExperienceLevel
 
