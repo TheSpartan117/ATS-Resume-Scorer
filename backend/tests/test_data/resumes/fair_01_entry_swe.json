@@ -1,0 +1,49 @@
+{
+  "fileName": "fair_01_entry_swe.json",
+  "contact": {
+    "name": "Chris Johnson",
+    "email": "chris.j@email.com",
+    "phone": null,
+    "location": "San Francisco, CA",
+    "linkedin": null,
+    "website": null
+  },
+  "experience": [
+    {
+      "title": "Developer",
+      "company": "Small Tech Co",
+      "location": "San Francisco, CA",
+      "dates": "2022 - Present",
+      "description": "Working on web development projects. Writing code in Python and JavaScript. Fixing bugs when they come up. Attending team meetings. Learning new technologies as needed."
+    },
+    {
+      "title": "Intern",
+      "company": "Startup",
+      "location": "SF",
+      "dates": "2021",
+      "description": "Helped with various coding tasks. Wrote some scripts. Learned about software development."
+    }
+  ],
+  "education": [
+    {
+      "degree": "BS Computer Science",
+      "institution": "State University",
+      "location": "California",
+      "graduationDate": "2021"
+    }
+  ],
+  "skills": [
+    "Python",
+    "JavaScript",
+    "HTML",
+    "CSS",
+    "Git"
+  ],
+  "certifications": [],
+  "metadata": {
+    "pageCount": 1,
+    "wordCount": 125,
+    "hasPhoto": false,
+    "fileFormat": "json"
+  }
+}

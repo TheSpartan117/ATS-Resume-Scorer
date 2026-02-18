@@ -1,0 +1,95 @@
+{
+  "fileName": "outstanding_02_senior_pm.json",
+  "contact": {
+    "name": "Marcus Thompson",
+    "email": "marcus.thompson@email.com",
+    "phone": "(650) 555-0189",
+    "location": "Mountain View, CA",
+    "linkedin": "linkedin.com/in/marcus-thompson",
+    "website": "marcusthompson.com"
+  },
+  "experience": [
+    {
+      "title": "Senior Product Manager",
+      "company": "Innovation Labs",
+      "location": "Mountain View, CA",
+      "dates": "2019 - Present",
+      "description": "Drove product strategy for enterprise SaaS platform serving 500+ Fortune 1000 clients, generating $50M+ annual revenue. Spearheaded go-to-market strategy for 3 major product launches, achieving 150% of adoption targets within first quarter. Led cross-functional team of 15 engineers, designers, and analysts to deliver data-driven product improvements. Established strategic partnerships with 8 major technology vendors, expanding market reach by 200%. Pioneered customer-centric product development process using advanced analytics, increasing NPS from 42 to 78. Transformed product roadmap using quantitative KPIs, resulting in 45% increase in user engagement and 35% boost in revenue."
+    },
+    {
+      "title": "Product Manager",
+      "company": "TechVentures Inc",
+      "location": "San Francisco, CA",
+      "dates": "2016 - 2019",
+      "description": "Managed product lifecycle for B2B analytics platform used by 200+ enterprise customers. Led market research initiatives identifying $20M revenue opportunity in new vertical. Designed and launched 4 key features resulting in 60% increase in customer retention. Optimized pricing strategy through A/B testing, improving conversion rate by 25%. Collaborated with engineering teams to reduce technical debt by 40% while maintaining feature velocity."
+    },
+    {
+      "title": "Associate Product Manager",
+      "company": "Digital Solutions Corp",
+      "location": "Palo Alto, CA",
+      "dates": "2014 - 2016",
+      "description": "Developed product requirements and user stories for mobile application with 1M+ downloads. Analyzed user behavior data using SQL and Python, uncovering insights that improved retention by 30%. Coordinated with stakeholders across 5 departments to deliver 8 product releases on schedule. Implemented agile methodologies reducing sprint planning time by 50%."
+    }
+  ],
+  "education": [
+    {
+      "degree": "Master of Business Administration (MBA)",
+      "institution": "Harvard Business School",
+      "location": "Boston, MA",
+      "graduationDate": "2014",
+      "honors": "Baker Scholar"
+    },
+    {
+      "degree": "Bachelor of Science in Computer Science",
+      "institution": "MIT",
+      "location": "Cambridge, MA",
+      "graduationDate": "2012",
+      "gpa": "3.9/4.0"
+    }
+  ],
+  "skills": [
+    "Product Strategy",
+    "Product Management",
+    "Roadmap Planning",
+    "Go-to-Market Strategy",
+    "Market Research",
+    "KPIs",
+    "Analytics",
+    "Data-Driven Decision Making",
+    "A/B Testing",
+    "User Research",
+    "Stakeholder Management",
+    "Cross-functional Leadership",
+    "Agile",
+    "Scrum",
+    "SQL",
+    "Python",
+    "Tableau",
+    "Google Analytics",
+    "Product Launches",
+    "Revenue Growth",
+    "Strategic Partnerships",
+    "Customer Success",
+    "Product-Market Fit",
+    "Prioritization",
+    "Business Strategy"
+  ],
+  "certifications": [
+    {
+      "name": "Certified Scrum Product Owner (CSPO)",
+      "issuer": "Scrum Alliance",
+      "date": "2020"
+    },
+    {
+      "name": "Product Management Certificate",
+      "issuer": "Pragmatic Institute",
+      "date": "2018"
+    }
+  ],
+  "metadata": {
+    "pageCount": 2,
+    "wordCount": 445,
+    "hasPhoto": false,
+    "fileFormat": "json"
+  }
+}

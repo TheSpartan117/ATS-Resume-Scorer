@@ -1,0 +1,37 @@
+{
+  "fileName": "poor_03_mid.json",
+  "contact": {
+    "name": "Bob Wilson",
+    "email": "bobwilson123@yahoo.com",
+    "phone": null,
+    "location": "USA",
+    "linkedin": null,
+    "website": null
+  },
+  "experience": [
+    {
+      "title": "Software person",
+      "company": "Tech place",
+      "dates": "2018-now",
+      "description": "Responsibilities include writing code and attending meetings. Duties were to complete assignments. Projects involved software. Technologies used were computer programs."
+    },
+    {
+      "title": "Previous role",
+      "dates": "Before 2018",
+      "description": "I did work there. Tasks were given to me. I completed them."
+    }
+  ],
+  "education": [],
+  "skills": [
+    "computers",
+    "software",
+    "technology"
+  ],
+  "certifications": [],
+  "metadata": {
+    "pageCount": 3,
+    "wordCount": 95,
+    "hasPhoto": true,
+    "fileFormat": "json"
+  }
+}

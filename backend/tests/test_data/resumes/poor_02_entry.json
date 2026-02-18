@@ -1,0 +1,38 @@
+{
+  "fileName": "poor_02_entry.json",
+  "contact": {
+    "name": "Jane Doe",
+    "email": "jane@gmail",
+    "phone": "123-4567",
+    "location": null,
+    "linkedin": null,
+    "website": null
+  },
+  "experience": [
+    {
+      "title": "Job Title",
+      "company": "Workplace",
+      "dates": "Recently",
+      "description": "I was responsible for various duties including but not limited to tasks that were assigned to me by my supervisor. I believe I am a hard worker and team player. I am detail-oriented and results-driven."
+    }
+  ],
+  "education": [
+    {
+      "degree": "Bachelor Degree",
+      "graduationDate": "2022"
+    }
+  ],
+  "skills": [
+    "Microsoft Office",
+    "Team Player",
+    "Hard Worker",
+    "Communication"
+  ],
+  "certifications": [],
+  "metadata": {
+    "pageCount": 1,
+    "wordCount": 78,
+    "hasPhoto": false,
+    "fileFormat": "json"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "fileName": "poor_04_entry.json",
+  "contact": {
+    "name": "Alex",
+    "email": null,
+    "phone": "555-1234",
+    "location": null,
+    "linkedin": null,
+    "website": null
+  },
+  "experience": [
+    {
+      "description": "Job where I worked with stuff and did things for the company to help them achieve goals and objectives."
+    },
+    {
+      "title": "Another position",
+      "description": "Was tasked with responsibilities. Duties included various activities. Skills were utilized."
+    }
+  ],
+  "education": [
+    {
+      "degree": "College",
+      "graduationDate": "sometime in 2020s"
+    }
+  ],
+  "skills": [],
+  "certifications": [],
+  "metadata": {
+    "pageCount": 1,
+    "wordCount": 68,
+    "hasPhoto": false,
+    "fileFormat": "json"
+  }
+}

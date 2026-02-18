@@ -1,0 +1,53 @@
+{
+  "fileName": "good_02_mid_pm.json",
+  "contact": {
+    "name": "Jennifer Lee",
+    "email": "jennifer.lee@email.com",
+    "phone": "(415) 555-0176",
+    "location": "San Francisco, CA",
+    "linkedin": "linkedin.com/in/jenniferlee",
+    "website": null
+  },
+  "experience": [
+    {
+      "title": "Product Manager",
+      "company": "SaaS Company",
+      "location": "San Francisco, CA",
+      "dates": "2020 - Present",
+      "description": "Managed product roadmap for customer-facing features. Worked with engineering team to deliver releases. Analyzed user data to improve product decisions. Created user stories and requirements documents. Conducted stakeholder meetings to gather feedback."
+    },
+    {
+      "title": "Product Analyst",
+      "company": "Tech Startup",
+      "location": "Palo Alto, CA",
+      "dates": "2018 - 2020",
+      "description": "Analyzed product metrics and created reports. Supported product launches with market research. Helped prioritize feature requests from customers. Used SQL to query databases for insights."
+    }
+  ],
+  "education": [
+    {
+      "degree": "Bachelor of Arts in Business Administration",
+      "institution": "Santa Clara University",
+      "location": "Santa Clara, CA",
+      "graduationDate": "2018"
+    }
+  ],
+  "skills": [
+    "Product Management",
+    "Roadmap",
+    "User Stories",
+    "Agile",
+    "SQL",
+    "Analytics",
+    "Market Research",
+    "Stakeholder Management",
+    "Requirements Gathering"
+  ],
+  "certifications": [],
+  "metadata": {
+    "pageCount": 1,
+    "wordCount": 168,
+    "hasPhoto": false,
+    "fileFormat": "json"
+  }
+}

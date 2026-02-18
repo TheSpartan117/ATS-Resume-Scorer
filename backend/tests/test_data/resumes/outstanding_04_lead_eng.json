@@ -1,0 +1,112 @@
+{
+  "fileName": "outstanding_04_lead_eng.json",
+  "contact": {
+    "name": "James Rodriguez",
+    "email": "james.rodriguez@email.com",
+    "phone": "(925) 555-0178",
+    "location": "Oakland, CA",
+    "linkedin": "linkedin.com/in/jamesrodriguez",
+    "website": "jamesrodriguez.dev"
+  },
+  "experience": [
+    {
+      "title": "Engineering Lead",
+      "company": "CloudScale Technologies",
+      "location": "Oakland, CA",
+      "dates": "2021 - Present",
+      "description": "Directed engineering organization of 25+ engineers across 4 teams, delivering cloud-native platform serving 100M+ users globally. Established technical roadmap and architectural decisions for microservices infrastructure processing $500M+ annual transactions. Transformed engineering culture through implementation of DevOps practices, reducing deployment time by 90% and improving system reliability to 99.99% uptime. Orchestrated migration to Kubernetes-based architecture, cutting infrastructure costs by $2M annually while improving performance by 60%. Defined and championed engineering best practices including code reviews, testing standards, and documentation, improving team velocity by 45%. Built mentorship program developing 10 engineers into senior roles within 18 months."
+    },
+    {
+      "title": "Senior Software Engineer",
+      "company": "Enterprise Solutions Inc",
+      "location": "San Francisco, CA",
+      "dates": "2017 - 2021",
+      "description": "Architected distributed systems handling 50M+ daily transactions with sub-100ms latency using Java, Spring Boot, and Apache Kafka. Led technical design for real-time analytics platform processing 20TB+ data daily, enabling business insights that generated $15M additional revenue. Spearheaded adoption of microservices architecture, breaking monolith into 30+ services with 99.9% uptime. Mentored 12 engineers on system design, scalability patterns, and performance optimization. Drove implementation of comprehensive monitoring and alerting system reducing MTTR by 75%."
+    },
+    {
+      "title": "Software Engineer",
+      "company": "TechStartup Co",
+      "location": "Palo Alto, CA",
+      "dates": "2014 - 2017",
+      "description": "Developed highly scalable REST APIs using Python and Flask serving 5M+ requests daily. Optimized database performance achieving 50% reduction in query latency through indexing and caching strategies. Implemented CI/CD pipeline with Jenkins and Docker, enabling 20+ deployments per week. Built automated testing framework increasing code coverage from 30% to 90%."
+    },
+    {
+      "title": "Junior Developer",
+      "company": "Software Corp",
+      "location": "San Jose, CA",
+      "dates": "2012 - 2014",
+      "description": "Built web applications using JavaScript, React, and Node.js. Contributed to open-source projects gaining 1000+ GitHub stars. Automated deployment processes reducing release time by 60%. Collaborated with senior engineers to deliver 15+ features on schedule."
+    }
+  ],
+  "education": [
+    {
+      "degree": "Master of Science in Computer Science",
+      "institution": "Carnegie Mellon University",
+      "location": "Pittsburgh, PA",
+      "graduationDate": "2012",
+      "gpa": "3.9/4.0",
+      "specialization": "Distributed Systems"
+    },
+    {
+      "degree": "Bachelor of Science in Computer Engineering",
+      "institution": "Georgia Institute of Technology",
+      "location": "Atlanta, GA",
+      "graduationDate": "2010",
+      "gpa": "3.85/4.0",
+      "honors": "Magna Cum Laude"
+    }
+  ],
+  "skills": [
+    "Technical Leadership",
+    "Team Management",
+    "System Architecture",
+    "Distributed Systems",
+    "Microservices",
+    "Cloud Architecture",
+    "Java",
+    "Python",
+    "Go",
+    "Spring Boot",
+    "Kubernetes",
+    "Docker",
+    "AWS",
+    "GCP",
+    "Apache Kafka",
+    "Redis",
+    "PostgreSQL",
+    "MongoDB",
+    "Scalability",
+    "Performance Optimization",
+    "DevOps",
+    "CI/CD",
+    "Monitoring",
+    "Engineering Culture",
+    "Mentorship",
+    "Roadmap Planning",
+    "Strategic Planning",
+    "Agile Leadership"
+  ],
+  "certifications": [
+    {
+      "name": "Google Cloud Professional Architect",
+      "issuer": "Google Cloud",
+      "date": "2022"
+    },
+    {
+      "name": "AWS Certified Solutions Architect - Professional",
+      "issuer": "Amazon Web Services",
+      "date": "2020"
+    },
+    {
+      "name": "Certified Kubernetes Administrator",
+      "issuer": "CNCF",
+      "date": "2019"
+    }
+  ],
+  "metadata": {
+    "pageCount": 2,
+    "wordCount": 520,
+    "hasPhoto": false,
+    "fileFormat": "json"
+  }
+}

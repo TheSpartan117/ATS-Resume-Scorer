@@ -1,0 +1,71 @@
+{
+  "fileName": "excellent_02_mid_pm.json",
+  "contact": {
+    "name": "David Park",
+    "email": "david.park@email.com",
+    "phone": "(415) 555-0198",
+    "location": "San Francisco, CA",
+    "linkedin": "linkedin.com/in/davidpark",
+    "website": "davidpark.io"
+  },
+  "experience": [
+    {
+      "title": "Product Manager",
+      "company": "Digital Products Inc",
+      "location": "San Francisco, CA",
+      "dates": "2020 - Present",
+      "description": "Led product strategy for mobile application with 500K+ active users, increasing retention by 40%. Designed go-to-market plan for 2 major feature launches achieving 120% of adoption targets. Managed cross-functional team of 8 engineers and designers delivering data-driven improvements. Analyzed user metrics using SQL and analytics tools identifying opportunities that boosted engagement by 30%."
+    },
+    {
+      "title": "Associate Product Manager",
+      "company": "SaaS Innovations",
+      "location": "Palo Alto, CA",
+      "dates": "2018 - 2020",
+      "description": "Developed product requirements and roadmap for B2B platform. Conducted market research identifying new feature opportunities. Collaborated with stakeholders to deliver 6 product releases on schedule. Implemented A/B testing improving conversion rate by 18%."
+    }
+  ],
+  "education": [
+    {
+      "degree": "Master of Business Administration (MBA)",
+      "institution": "UC Berkeley Haas",
+      "location": "Berkeley, CA",
+      "graduationDate": "2018"
+    },
+    {
+      "degree": "Bachelor of Science in Economics",
+      "institution": "UCLA",
+      "location": "Los Angeles, CA",
+      "graduationDate": "2016",
+      "gpa": "3.6/4.0"
+    }
+  ],
+  "skills": [
+    "Product Management",
+    "Product Strategy",
+    "Roadmap",
+    "Go-to-Market",
+    "Market Research",
+    "Analytics",
+    "SQL",
+    "A/B Testing",
+    "User Research",
+    "Agile",
+    "Scrum",
+    "Stakeholder Management",
+    "KPIs",
+    "Data Analysis"
+  ],
+  "certifications": [
+    {
+      "name": "Certified Scrum Product Owner",
+      "issuer": "Scrum Alliance",
+      "date": "2021"
+    }
+  ],
+  "metadata": {
+    "pageCount": 1,
+    "wordCount": 235,
+    "hasPhoto": false,
+    "fileFormat": "json"
+  }
+}

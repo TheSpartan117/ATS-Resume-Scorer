@@ -1,0 +1,46 @@
+{
+  "fileName": "fair_03_entry_analyst.json",
+  "contact": {
+    "name": "Mike Davis",
+    "email": "mdavis@email.com",
+    "phone": null,
+    "location": "San Jose, CA",
+    "linkedin": null,
+    "website": null
+  },
+  "experience": [
+    {
+      "title": "Data Analyst",
+      "company": "Company ABC",
+      "location": "San Jose, CA",
+      "dates": "2022 - Present",
+      "description": "Analyze data and create reports. Use Excel and SQL. Make charts for presentations. Work with team on projects."
+    },
+    {
+      "title": "Analyst Intern",
+      "company": "Business Corp",
+      "dates": "Summer 2021",
+      "description": "Did data entry and analysis. Helped create reports. Learned SQL basics."
+    }
+  ],
+  "education": [
+    {
+      "degree": "Bachelor of Science",
+      "institution": "State College",
+      "graduationDate": "2021"
+    }
+  ],
+  "skills": [
+    "Excel",
+    "SQL",
+    "Data Analysis",
+    "PowerPoint"
+  ],
+  "certifications": [],
+  "metadata": {
+    "pageCount": 1,
+    "wordCount": 98,
+    "hasPhoto": false,
+    "fileFormat": "json"
+  }
+}

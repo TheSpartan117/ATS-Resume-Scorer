@@ -1,0 +1,67 @@
+{
+  "fileName": "excellent_01_mid_swe.json",
+  "contact": {
+    "name": "Emily Watson",
+    "email": "emily.watson@email.com",
+    "phone": "(510) 555-0142",
+    "location": "Berkeley, CA",
+    "linkedin": "linkedin.com/in/emilywatson",
+    "website": null
+  },
+  "experience": [
+    {
+      "title": "Software Engineer",
+      "company": "TechCo Solutions",
+      "location": "Berkeley, CA",
+      "dates": "2020 - Present",
+      "description": "Architected and implemented RESTful APIs using Python and Django serving 500K+ daily requests. Optimized database queries reducing response time by 35%. Mentored 2 junior developers on coding best practices and agile methodologies. Developed CI/CD pipeline using Docker and Jenkins, improving deployment efficiency by 50%. Built microservices architecture handling 50K concurrent users with 99.5% uptime."
+    },
+    {
+      "title": "Junior Software Developer",
+      "company": "StartupHub",
+      "location": "San Francisco, CA",
+      "dates": "2018 - 2020",
+      "description": "Developed web applications using JavaScript, React, and Node.js. Implemented automated testing with Jest increasing code coverage to 80%. Collaborated with team of 4 developers to deliver features on schedule. Refactored legacy code improving performance by 25%."
+    }
+  ],
+  "education": [
+    {
+      "degree": "Bachelor of Science in Computer Science",
+      "institution": "UC Berkeley",
+      "location": "Berkeley, CA",
+      "graduationDate": "2018",
+      "gpa": "3.7/4.0"
+    }
+  ],
+  "skills": [
+    "Python",
+    "JavaScript",
+    "React",
+    "Node.js",
+    "Django",
+    "Docker",
+    "AWS",
+    "PostgreSQL",
+    "MongoDB",
+    "Git",
+    "CI/CD",
+    "Jenkins",
+    "Agile",
+    "REST API",
+    "Microservices",
+    "Testing"
+  ],
+  "certifications": [
+    {
+      "name": "AWS Certified Developer",
+      "issuer": "Amazon Web Services",
+      "date": "2021"
+    }
+  ],
+  "metadata": {
+    "pageCount": 1,
+    "wordCount": 245,
+    "hasPhoto": false,
+    "fileFormat": "json"
+  }
+}

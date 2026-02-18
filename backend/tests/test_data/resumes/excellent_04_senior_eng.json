@@ -1,0 +1,72 @@
+{
+  "fileName": "excellent_04_senior_eng.json",
+  "contact": {
+    "name": "Michael Zhang",
+    "email": "michael.zhang@email.com",
+    "phone": "(408) 555-0134",
+    "location": "Sunnyvale, CA",
+    "linkedin": "linkedin.com/in/michaelzhang",
+    "website": "github.com/mzhang"
+  },
+  "experience": [
+    {
+      "title": "Senior Software Engineer",
+      "company": "CloudTech Systems",
+      "location": "Sunnyvale, CA",
+      "dates": "2019 - Present",
+      "description": "Spearheaded migration to microservices architecture reducing deployment time by 60%. Architected scalable APIs using Java and Spring Boot serving 1M+ requests daily. Mentored team of 5 engineers on best practices and system design. Implemented monitoring and alerting system improving incident response time by 50%. Optimized performance achieving 40% reduction in latency."
+    },
+    {
+      "title": "Software Engineer",
+      "company": "Enterprise Software Inc",
+      "location": "San Jose, CA",
+      "dates": "2016 - 2019",
+      "description": "Developed distributed systems using Python and Kafka. Built CI/CD pipeline with Docker and Kubernetes. Led code reviews improving code quality by 30%. Automated testing increasing coverage to 85%."
+    }
+  ],
+  "education": [
+    {
+      "degree": "Master of Science in Computer Science",
+      "institution": "University of Southern California",
+      "location": "Los Angeles, CA",
+      "graduationDate": "2016",
+      "gpa": "3.75/4.0"
+    },
+    {
+      "degree": "Bachelor of Engineering in Software Engineering",
+      "institution": "San Jose State University",
+      "location": "San Jose, CA",
+      "graduationDate": "2014"
+    }
+  ],
+  "skills": [
+    "Java",
+    "Python",
+    "Spring Boot",
+    "Microservices",
+    "Kafka",
+    "Docker",
+    "Kubernetes",
+    "AWS",
+    "PostgreSQL",
+    "Redis",
+    "System Design",
+    "CI/CD",
+    "Performance Optimization",
+    "Mentoring",
+    "Agile"
+  ],
+  "certifications": [
+    {
+      "name": "AWS Solutions Architect",
+      "issuer": "Amazon Web Services",
+      "date": "2020"
+    }
+  ],
+  "metadata": {
+    "pageCount": 1,
+    "wordCount": 242,
+    "hasPhoto": false,
+    "fileFormat": "json"
+  }
+}

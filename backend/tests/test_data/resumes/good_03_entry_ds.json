@@ -1,0 +1,54 @@
+{
+  "fileName": "good_03_entry_ds.json",
+  "contact": {
+    "name": "Amanda Torres",
+    "email": "amanda.torres@email.com",
+    "phone": "(510) 555-0145",
+    "location": "Berkeley, CA",
+    "linkedin": "linkedin.com/in/amandatorres",
+    "website": null
+  },
+  "experience": [
+    {
+      "title": "Data Analyst",
+      "company": "Analytics Co",
+      "location": "Berkeley, CA",
+      "dates": "2021 - Present",
+      "description": "Analyzed customer data using Python and SQL. Created visualizations and dashboards for business teams. Built predictive models for forecasting. Worked with stakeholders to understand data needs. Used pandas and matplotlib for data analysis."
+    },
+    {
+      "title": "Data Science Intern",
+      "company": "Tech Company",
+      "location": "San Francisco, CA",
+      "dates": "Summer 2020",
+      "description": "Performed exploratory data analysis on large datasets. Created machine learning models using scikit-learn. Presented findings to team members. Learned best practices for data science projects."
+    }
+  ],
+  "education": [
+    {
+      "degree": "Bachelor of Science in Statistics",
+      "institution": "UC Berkeley",
+      "location": "Berkeley, CA",
+      "graduationDate": "2021",
+      "gpa": "3.6/4.0"
+    }
+  ],
+  "skills": [
+    "Python",
+    "SQL",
+    "pandas",
+    "scikit-learn",
+    "Machine Learning",
+    "Statistics",
+    "Data Visualization",
+    "Excel",
+    "Tableau"
+  ],
+  "certifications": [],
+  "metadata": {
+    "pageCount": 1,
+    "wordCount": 172,
+    "hasPhoto": false,
+    "fileFormat": "json"
+  }
+}

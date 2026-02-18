@@ -1,0 +1,55 @@
+{
+  "fileName": "good_01_entry_swe.json",
+  "contact": {
+    "name": "Ryan Martinez",
+    "email": "ryan.martinez@email.com",
+    "phone": "(925) 555-0121",
+    "location": "Oakland, CA",
+    "linkedin": null,
+    "website": "github.com/ryanm"
+  },
+  "experience": [
+    {
+      "title": "Software Developer",
+      "company": "Tech Solutions",
+      "location": "Oakland, CA",
+      "dates": "2021 - Present",
+      "description": "Developed web applications using Python and React. Built REST APIs serving requests to multiple clients. Implemented features for user authentication and data management. Worked with team to improve code quality through reviews. Used Git for version control and Docker for containerization."
+    },
+    {
+      "title": "Software Engineering Intern",
+      "company": "StartupXYZ",
+      "location": "San Francisco, CA",
+      "dates": "Summer 2020",
+      "description": "Created frontend components using JavaScript and React. Fixed bugs and added new features to existing codebase. Participated in daily standups and sprint planning. Learned agile development practices."
+    }
+  ],
+  "education": [
+    {
+      "degree": "Bachelor of Science in Computer Science",
+      "institution": "San Francisco State University",
+      "location": "San Francisco, CA",
+      "graduationDate": "2021",
+      "gpa": "3.5/4.0"
+    }
+  ],
+  "skills": [
+    "Python",
+    "JavaScript",
+    "React",
+    "HTML",
+    "CSS",
+    "Git",
+    "Docker",
+    "SQL",
+    "REST API",
+    "Agile"
+  ],
+  "certifications": [],
+  "metadata": {
+    "pageCount": 1,
+    "wordCount": 185,
+    "hasPhoto": false,
+    "fileFormat": "json"
+  }
+}

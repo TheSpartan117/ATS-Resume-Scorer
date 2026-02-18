@@ -1,0 +1,39 @@
+{
+  "fileName": "poor_01_entry.json",
+  "contact": {
+    "name": "John Smith",
+    "email": null,
+    "phone": null,
+    "location": null,
+    "linkedin": null,
+    "website": null
+  },
+  "experience": [
+    {
+      "title": "Developer",
+      "company": "Company",
+      "description": "Did programming work. Was responsible for coding. Worked on projects."
+    },
+    {
+      "title": "Intern",
+      "description": "Helped with tasks. Learned things."
+    }
+  ],
+  "education": [
+    {
+      "degree": "Degree",
+      "institution": "University"
+    }
+  ],
+  "skills": [
+    "Programming",
+    "Coding"
+  ],
+  "certifications": [],
+  "metadata": {
+    "pageCount": 1,
+    "wordCount": 62,
+    "hasPhoto": true,
+    "fileFormat": "json"
+  }
+}

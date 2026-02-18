@@ -1,0 +1,107 @@
+{
+  "fileName": "outstanding_03_senior_ds.json",
+  "contact": {
+    "name": "Dr. Sarah Mitchell",
+    "email": "sarah.mitchell@email.com",
+    "phone": "(408) 555-0156",
+    "location": "Sunnyvale, CA",
+    "linkedin": "linkedin.com/in/sarahmitchell",
+    "website": "github.com/sarahmitchell"
+  },
+  "experience": [
+    {
+      "title": "Senior Data Scientist",
+      "company": "DataTech Solutions",
+      "location": "Sunnyvale, CA",
+      "dates": "2020 - Present",
+      "description": "Spearheaded development of predictive modeling framework using Python, TensorFlow, and PyTorch, improving forecast accuracy by 85%. Pioneered machine learning infrastructure reducing model training time from 48 hours to 3 hours, saving $200K annually. Led team of 6 data scientists building recommendation engine that increased user engagement by 65%. Architected end-to-end ML pipeline processing 100TB+ data daily using Apache Spark and AWS EMR. Established best practices for A/B testing and experimentation, running 50+ experiments with 95% statistical confidence. Transformed business intelligence dashboards using advanced analytics, enabling data-driven decisions that improved revenue by 40%."
+    },
+    {
+      "title": "Data Scientist",
+      "company": "Analytics Corp",
+      "location": "San Jose, CA",
+      "dates": "2017 - 2020",
+      "description": "Developed customer churn prediction model using XGBoost and Random Forest, reducing churn by 30% and saving $5M annually. Built automated feature engineering pipeline processing 50+ data sources, improving model accuracy by 25%. Designed A/B testing framework for 30+ experiments, optimizing conversion rates by 20%. Collaborated with product teams to implement real-time personalization algorithms serving 10M+ users. Created executive dashboards using Tableau and SQL, enabling strategic decision-making."
+    },
+    {
+      "title": "Junior Data Analyst",
+      "company": "Business Intelligence Inc",
+      "location": "San Francisco, CA",
+      "dates": "2015 - 2017",
+      "description": "Analyzed customer behavior patterns using SQL and Python, uncovering insights that increased retention by 15%. Developed automated reporting system using pandas and matplotlib, reducing manual work by 80%. Built predictive models for sales forecasting with 90% accuracy. Collaborated with cross-functional teams to deliver 10+ analytics projects on schedule."
+    }
+  ],
+  "education": [
+    {
+      "degree": "Ph.D. in Statistics",
+      "institution": "Stanford University",
+      "location": "Stanford, CA",
+      "graduationDate": "2015",
+      "dissertation": "Advanced Machine Learning Methods for Time Series Forecasting"
+    },
+    {
+      "degree": "Master of Science in Applied Mathematics",
+      "institution": "UC Berkeley",
+      "location": "Berkeley, CA",
+      "graduationDate": "2011",
+      "gpa": "4.0/4.0"
+    },
+    {
+      "degree": "Bachelor of Science in Mathematics",
+      "institution": "Caltech",
+      "location": "Pasadena, CA",
+      "graduationDate": "2009",
+      "gpa": "3.95/4.0",
+      "honors": "Summa Cum Laude"
+    }
+  ],
+  "skills": [
+    "Python",
+    "R",
+    "SQL",
+    "Machine Learning",
+    "Deep Learning",
+    "TensorFlow",
+    "PyTorch",
+    "scikit-learn",
+    "Apache Spark",
+    "Hadoop",
+    "AWS",
+    "Azure ML",
+    "Predictive Modeling",
+    "Feature Engineering",
+    "A/B Testing",
+    "Statistical Analysis",
+    "Data Visualization",
+    "Tableau",
+    "pandas",
+    "NumPy",
+    "Natural Language Processing",
+    "Computer Vision",
+    "XGBoost",
+    "Random Forest",
+    "Neural Networks",
+    "Model Deployment",
+    "MLOps",
+    "Big Data",
+    "Team Leadership"
+  ],
+  "certifications": [
+    {
+      "name": "TensorFlow Developer Certificate",
+      "issuer": "Google",
+      "date": "2022"
+    },
+    {
+      "name": "AWS Certified Machine Learning - Specialty",
+      "issuer": "Amazon Web Services",
+      "date": "2021"
+    }
+  ],
+  "metadata": {
+    "pageCount": 2,
+    "wordCount": 465,
+    "hasPhoto": false,
+    "fileFormat": "json"
+  }
+}

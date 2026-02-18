@@ -1,0 +1,100 @@
+{
+  "fileName": "outstanding_01_senior_swe.json",
+  "contact": {
+    "name": "Alexandra Chen",
+    "email": "alexandra.chen@email.com",
+    "phone": "(415) 555-0123",
+    "location": "San Francisco, CA",
+    "linkedin": "linkedin.com/in/alexandrachen",
+    "website": "github.com/alexandrachen"
+  },
+  "experience": [
+    {
+      "title": "Senior Software Engineer",
+      "company": "TechCorp Inc.",
+      "location": "San Francisco, CA",
+      "dates": "2020 - Present",
+      "description": "Spearheaded migration of monolithic architecture to microservices, reducing deployment time by 75% and improving system scalability to handle 10M+ daily users. Pioneered implementation of comprehensive CI/CD pipeline using Docker, Kubernetes, and Jenkins, decreasing production incidents by 60%. Mentored team of 8 engineers on best practices for cloud architecture and agile methodologies. Architected real-time data processing system using Python, Apache Kafka, and AWS Lambda, processing 50TB+ data daily. Drove adoption of automated testing framework, increasing code coverage from 45% to 95%."
+    },
+    {
+      "title": "Software Engineer",
+      "company": "StartupXYZ",
+      "location": "Palo Alto, CA",
+      "dates": "2017 - 2020",
+      "description": "Designed and implemented RESTful APIs serving 2M+ requests daily using Python, Django, and PostgreSQL. Optimized database queries resulting in 40% reduction in response time. Led code reviews for team of 5 developers, improving code quality metrics by 35%. Automated deployment processes reducing release cycle from 2 weeks to 3 days. Built scalable microservices architecture handling peak loads of 100K concurrent users."
+    },
+    {
+      "title": "Junior Software Developer",
+      "company": "Software Solutions Ltd",
+      "location": "San Jose, CA",
+      "dates": "2015 - 2017",
+      "description": "Developed full-stack web applications using React, Node.js, and MongoDB. Implemented automated testing suite with Jest and Selenium, catching 90% of bugs pre-production. Collaborated with cross-functional teams to deliver 12 features on schedule. Refactored legacy codebase improving maintainability score by 50%."
+    }
+  ],
+  "education": [
+    {
+      "degree": "Master of Science in Computer Science",
+      "institution": "Stanford University",
+      "location": "Stanford, CA",
+      "graduationDate": "2015",
+      "gpa": "3.9/4.0",
+      "honors": "Dean's List"
+    },
+    {
+      "degree": "Bachelor of Science in Software Engineering",
+      "institution": "University of California, Berkeley",
+      "location": "Berkeley, CA",
+      "graduationDate": "2013",
+      "gpa": "3.8/4.0"
+    }
+  ],
+  "skills": [
+    "Python",
+    "JavaScript",
+    "TypeScript",
+    "Java",
+    "React",
+    "Node.js",
+    "Django",
+    "Flask",
+    "Docker",
+    "Kubernetes",
+    "AWS",
+    "Azure",
+    "PostgreSQL",
+    "MongoDB",
+    "Redis",
+    "Apache Kafka",
+    "CI/CD",
+    "Jenkins",
+    "Git",
+    "Agile",
+    "Scrum",
+    "Microservices",
+    "RESTful API",
+    "System Design",
+    "Architecture",
+    "Performance Optimization",
+    "Scalability",
+    "Mentoring",
+    "Technical Leadership"
+  ],
+  "certifications": [
+    {
+      "name": "AWS Certified Solutions Architect - Professional",
+      "issuer": "Amazon Web Services",
+      "date": "2022"
+    },
+    {
+      "name": "Certified Kubernetes Administrator",
+      "issuer": "CNCF",
+      "date": "2021"
+    }
+  ],
+  "metadata": {
+    "pageCount": 2,
+    "wordCount": 485,
+    "hasPhoto": false,
+    "fileFormat": "json"
+  }
+}

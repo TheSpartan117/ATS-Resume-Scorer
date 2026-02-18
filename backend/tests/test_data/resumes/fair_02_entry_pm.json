@@ -1,0 +1,48 @@
+{
+  "fileName": "fair_02_entry_pm.json",
+  "contact": {
+    "name": "Sarah Williams",
+    "email": "swilliams@email.com",
+    "phone": "(555) 123-4567",
+    "location": null,
+    "linkedin": null,
+    "website": null
+  },
+  "experience": [
+    {
+      "title": "Product Coordinator",
+      "company": "Tech Startup",
+      "location": "Bay Area",
+      "dates": "2021 - Present",
+      "description": "Support product team with various tasks. Write requirements documents. Schedule meetings with stakeholders. Track project progress. Help with user research."
+    },
+    {
+      "title": "Project Assistant",
+      "company": "Company XYZ",
+      "location": "California",
+      "dates": "2020 - 2021",
+      "description": "Assisted project managers. Created spreadsheets and reports. Coordinated team activities."
+    }
+  ],
+  "education": [
+    {
+      "degree": "BA Business",
+      "institution": "University",
+      "graduationDate": "2020"
+    }
+  ],
+  "skills": [
+    "Product Management",
+    "Project Management",
+    "Excel",
+    "Communication",
+    "Documentation"
+  ],
+  "certifications": [],
+  "metadata": {
+    "pageCount": 1,
+    "wordCount": 110,
+    "hasPhoto": false,
+    "fileFormat": "json"
+  }
+}

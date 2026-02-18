@@ -1,0 +1,72 @@
+{
+  "fileName": "excellent_03_mid_ds.json",
+  "contact": {
+    "name": "Lisa Chen",
+    "email": "lisa.chen@email.com",
+    "phone": "(650) 555-0167",
+    "location": "Redwood City, CA",
+    "linkedin": "linkedin.com/in/lisachen",
+    "website": null
+  },
+  "experience": [
+    {
+      "title": "Data Scientist",
+      "company": "Analytics Solutions",
+      "location": "Redwood City, CA",
+      "dates": "2020 - Present",
+      "description": "Developed predictive models using Python, scikit-learn, and XGBoost improving forecast accuracy by 45%. Built machine learning pipeline processing 10TB data using Apache Spark. Led A/B testing initiatives running 20+ experiments with statistical rigor. Designed recommendation engine increasing user engagement by 35%. Created dashboards using Tableau enabling data-driven business decisions."
+    },
+    {
+      "title": "Data Analyst",
+      "company": "Business Analytics Corp",
+      "location": "San Jose, CA",
+      "dates": "2018 - 2020",
+      "description": "Analyzed customer behavior using SQL and Python uncovering insights that improved retention by 20%. Developed automated reporting reducing manual work by 60%. Built predictive models for sales forecasting with 85% accuracy. Collaborated with product teams on 8 analytics projects."
+    }
+  ],
+  "education": [
+    {
+      "degree": "Master of Science in Data Science",
+      "institution": "University of San Francisco",
+      "location": "San Francisco, CA",
+      "graduationDate": "2018",
+      "gpa": "3.8/4.0"
+    },
+    {
+      "degree": "Bachelor of Science in Statistics",
+      "institution": "UC Davis",
+      "location": "Davis, CA",
+      "graduationDate": "2016"
+    }
+  ],
+  "skills": [
+    "Python",
+    "R",
+    "SQL",
+    "Machine Learning",
+    "scikit-learn",
+    "XGBoost",
+    "TensorFlow",
+    "Apache Spark",
+    "AWS",
+    "Predictive Modeling",
+    "A/B Testing",
+    "Statistical Analysis",
+    "Tableau",
+    "pandas",
+    "Data Visualization"
+  ],
+  "certifications": [
+    {
+      "name": "AWS Certified Machine Learning",
+      "issuer": "Amazon Web Services",
+      "date": "2022"
+    }
+  ],
+  "metadata": {
+    "pageCount": 1,
+    "wordCount": 228,
+    "hasPhoto": false,
+    "fileFormat": "json"
+  }
+}

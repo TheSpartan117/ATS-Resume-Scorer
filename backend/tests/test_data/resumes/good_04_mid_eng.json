@@ -1,0 +1,53 @@
+{
+  "fileName": "good_04_mid_eng.json",
+  "contact": {
+    "name": "Kevin Brown",
+    "email": "kevin.brown@email.com",
+    "phone": "(408) 555-0188",
+    "location": "San Jose, CA",
+    "linkedin": null,
+    "website": null
+  },
+  "experience": [
+    {
+      "title": "Software Engineer",
+      "company": "Software Solutions Inc",
+      "location": "San Jose, CA",
+      "dates": "2019 - Present",
+      "description": "Developed backend services using Java and Spring. Built APIs for mobile applications. Worked on database design and optimization. Participated in code reviews and testing. Used Git and Jenkins for deployments."
+    },
+    {
+      "title": "Junior Developer",
+      "company": "Web Development Co",
+      "location": "Sunnyvale, CA",
+      "dates": "2017 - 2019",
+      "description": "Created web applications using JavaScript frameworks. Fixed bugs in production systems. Collaborated with designers on UI implementation. Learned software development best practices."
+    }
+  ],
+  "education": [
+    {
+      "degree": "Bachelor of Science in Computer Science",
+      "institution": "San Jose State University",
+      "location": "San Jose, CA",
+      "graduationDate": "2017"
+    }
+  ],
+  "skills": [
+    "Java",
+    "Spring",
+    "JavaScript",
+    "SQL",
+    "REST API",
+    "Git",
+    "Jenkins",
+    "Agile",
+    "Testing"
+  ],
+  "certifications": [],
+  "metadata": {
+    "pageCount": 1,
+    "wordCount": 162,
+    "hasPhoto": false,
+    "fileFormat": "json"
+  }
+}
