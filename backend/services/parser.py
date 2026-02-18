@@ -556,7 +556,14 @@ def parse_pdf(file_content: bytes, filename: str) -> ResumeData:
 
         # If extraction seems successful, continue with PyMuPDF
         if word_count >= 50:  # Minimum threshold for valid extraction
+            # Debug: log first 1000 chars of extracted text
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"PyMuPDF extracted {word_count} words from PDF")
+            logger.info(f"First 1000 chars: {full_text[:1000]}")
+
             sections = extract_resume_sections(full_text)
+            logger.info(f"Sections extracted - Experience: {len(sections.get('experience', []))}, Education: {len(sections.get('education', []))}, Skills: {len(sections.get('skills', []))}")
 
             header_text = full_text[:500]
             name = extract_name_from_header(full_text)
