@@ -1,5 +1,5 @@
 """Tests for role taxonomy"""
-from services.role_taxonomy import (
+from backend.services.role_taxonomy import (
     get_role_scoring_data,
     get_all_roles,
     ExperienceLevel,

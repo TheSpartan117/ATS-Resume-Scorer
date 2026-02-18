@@ -3,8 +3,8 @@ Resume scoring engine that evaluates resumes based on ATS best practices.
 """
 import re
 from typing import Dict, List, Tuple, Optional
-from services.parser import ResumeData
-from services.role_taxonomy import get_role_scoring_data, ExperienceLevel
+from backend.services.parser import ResumeData
+from backend.services.role_taxonomy import get_role_scoring_data, ExperienceLevel
 
 
 def score_contact_info(resume: ResumeData) -> Dict:

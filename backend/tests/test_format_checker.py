@@ -1,6 +1,6 @@
 """Tests for ATS format checker"""
-from services.format_checker import ATSFormatChecker
-from services.parser import ResumeData
+from backend.services.format_checker import ATSFormatChecker
+from backend.services.parser import ResumeData
 
 
 def test_format_checker_passes_good_resume():
