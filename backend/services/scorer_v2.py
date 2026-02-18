@@ -10,9 +10,9 @@ The mode is auto-detected based on job description presence.
 
 import re
 from typing import Dict, List, Optional
-from services.keyword_extractor import extract_keywords_from_jd, match_with_synonyms
-from services.role_taxonomy import ExperienceLevel, get_role_scoring_data
-from services.parser import ResumeData
+from backend.services.keyword_extractor import extract_keywords_from_jd, match_with_synonyms
+from backend.services.role_taxonomy import ExperienceLevel, get_role_scoring_data
+from backend.services.parser import ResumeData
 
 
 class AdaptiveScorer:
