@@ -40,9 +40,9 @@ const categories: CategoryDisplay[] = [
     description: 'Word count, white space'
   },
   {
-    key: 'industrySpecific',
-    label: 'Industry-Specific',
-    description: 'Role-specific requirements'
+    key: 'roleSpecific',
+    label: 'Role-Specific',
+    description: 'Role and experience level requirements'
   }
 ]
 

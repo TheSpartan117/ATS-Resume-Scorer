@@ -1,20 +1,36 @@
 /**
  * Upload page component
  */
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import FileDropZone from './FileDropZone'
 import UserMenu from './UserMenu'
-import { uploadResume } from '../api/client'
+import { uploadResume, getRoles, type RolesResponse } from '../api/client'
 import type { UploadResponse } from '../types/resume'
 
 export default function UploadPage() {
   const navigate = useNavigate()
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [jobDescription, setJobDescription] = useState('')
-  const [industry, setIndustry] = useState('')
+  const [selectedRole, setSelectedRole] = useState('')
+  const [selectedLevel, setSelectedLevel] = useState('')
+  const [rolesData, setRolesData] = useState<RolesResponse | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Fetch roles on component mount
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const data = await getRoles()
+        setRolesData(data)
+      } catch (err) {
+        console.error('Failed to fetch roles:', err)
+      }
+    }
+
+    fetchRoles()
+  }, [])
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file)
@@ -36,7 +52,9 @@ export default function UploadPage() {
       const result: UploadResponse = await uploadResume(
         selectedFile,
         jobDescription || undefined,
-        industry || undefined
+        selectedRole || undefined,
+        selectedLevel || undefined,
+        undefined  // industry parameter kept for backward compatibility
       )
 
       // Navigate to results page with data
@@ -112,29 +130,70 @@ export default function UploadPage() {
             />
           </div>
 
-          {/* Industry (Optional) */}
+          {/* Role Selection (Optional) */}
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <label htmlFor="industry" className="block text-lg font-semibold text-gray-900 mb-2">
-              Industry <span className="text-sm font-normal text-gray-500">(Optional)</span>
+            <label htmlFor="role" className="block text-lg font-semibold text-gray-900 mb-2">
+              Role <span className="text-sm font-normal text-gray-500">(Optional)</span>
             </label>
             <p className="text-sm text-gray-600 mb-3">
-              Select your target industry for tailored scoring
+              Select your target role for tailored scoring and feedback
             </p>
             <select
-              id="industry"
-              value={industry}
-              onChange={(e) => setIndustry(e.target.value)}
+              id="role"
+              value={selectedRole}
+              onChange={(e) => {
+                setSelectedRole(e.target.value)
+                setSelectedLevel('')  // Reset level when role changes
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="">Select industry...</option>
-              <option value="tech">Technology / Software</option>
-              <option value="sales">Sales / Marketing</option>
-              <option value="finance">Finance / Accounting</option>
-              <option value="healthcare">Healthcare</option>
-              <option value="education">Education</option>
-              <option value="other">Other</option>
+              <option value="">Select role...</option>
+              {rolesData && Object.entries(rolesData.categories).map(([category, roles]) => (
+                <optgroup key={category} label={category.toUpperCase()}>
+                  {roles.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
             </select>
           </div>
+
+          {/* Experience Level (Conditional) */}
+          {selectedRole && (
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <label className="block text-lg font-semibold text-gray-900 mb-2">
+                Experience Level
+              </label>
+              <p className="text-sm text-gray-600 mb-3">
+                Select your experience level for more accurate scoring
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {rolesData?.levels.map((level) => (
+                  <button
+                    key={level.id}
+                    type="button"
+                    onClick={() => setSelectedLevel(level.id)}
+                    className={`
+                      px-4 py-3 rounded-md text-sm font-medium transition-all duration-150
+                      border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                      ${selectedLevel === level.id
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                      }
+                    `}
+                    title={level.description}
+                  >
+                    {level.name}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-3">
+                {rolesData?.levels.map(l => `${l.name}: ${l.description}`).join(' • ')}
+              </p>
+            </div>
+          )}
 
           {/* Error Message */}
           {error && (

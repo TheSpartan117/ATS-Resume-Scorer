@@ -30,7 +30,7 @@ export interface ScoreBreakdown {
   keywords: CategoryBreakdown
   content: CategoryBreakdown
   lengthDensity: CategoryBreakdown
-  industrySpecific: CategoryBreakdown
+  roleSpecific: CategoryBreakdown
 }
 
 export interface ScoreResult {
@@ -45,6 +45,15 @@ export interface ScoreResult {
   strengths: string[]
 }
 
+export interface FormatCheckResult {
+  passed: boolean
+  score: number
+  checks: {
+    [key: string]: any
+  }
+  issues: string[]
+}
+
 export interface UploadResponse {
   resumeId?: string
   fileName: string
@@ -55,9 +64,12 @@ export interface UploadResponse {
   certifications?: any[]
   metadata: ResumeMetadata
   score: ScoreResult
+  formatCheck: FormatCheckResult
   uploadedAt: string
   jobDescription?: string
-  industry?: string
+  role?: string
+  level?: string
+  industry?: string  // Kept for backward compatibility
 }
 
 export interface ApiError {
@@ -73,5 +85,7 @@ export interface ResumeContent {
   contact: ContactInfo
   metadata: ResumeMetadata
   jobDescription?: string
-  industry?: string
+  role?: string
+  level?: string
+  industry?: string  // Kept for backward compatibility
 }

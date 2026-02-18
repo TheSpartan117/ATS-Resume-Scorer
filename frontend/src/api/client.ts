@@ -20,13 +20,23 @@ const apiClient = axios.create({
 export async function uploadResume(
   file: File,
   jobDescription?: string,
-  industry?: string
+  role?: string,
+  level?: string,
+  industry?: string  // Kept for backward compatibility
 ): Promise<UploadResponse> {
   const formData = new FormData()
   formData.append('file', file)
 
   if (jobDescription) {
     formData.append('jobDescription', jobDescription)
+  }
+
+  if (role) {
+    formData.append('role', role)
+  }
+
+  if (level) {
+    formData.append('level', level)
   }
 
   if (industry) {
@@ -76,7 +86,9 @@ export interface ScoreRequest {
     fileFormat: string
   }
   jobDescription?: string
-  industry?: string
+  role?: string
+  level?: string
+  industry?: string  // Kept for backward compatibility
 }
 
 /**
@@ -283,6 +295,65 @@ export async function trackAdView(): Promise<void> {
     await apiClient.post('/api/ad-view')
   } catch (error) {
     console.error('Failed to track ad view:', error)
+  }
+}
+
+// Roles API interfaces
+export interface RoleLevel {
+  id: string
+  name: string
+  description: string
+}
+
+export interface Role {
+  id: string
+  name: string
+}
+
+export interface RolesResponse {
+  categories: {
+    [category: string]: Role[]
+  }
+  levels: RoleLevel[]
+}
+
+export interface RoleDetails {
+  id: string
+  name: string
+  category: string
+  required_skills: string[]
+  preferred_sections: string[]
+  sample_data: {
+    [level: string]: {
+      keywords: string[]
+      action_verbs: string[]
+    }
+  }
+}
+
+/**
+ * Get all available roles grouped by category
+ */
+export async function getRoles(): Promise<RolesResponse> {
+  try {
+    const response = await apiClient.get<RolesResponse>('/api/roles')
+    return response.data
+  } catch (error) {
+    const axiosError = error as AxiosError<ApiError>
+    throw new Error(axiosError.response?.data?.detail || 'Failed to fetch roles')
+  }
+}
+
+/**
+ * Get details for a specific role
+ */
+export async function getRoleDetails(roleId: string): Promise<RoleDetails> {
+  try {
+    const response = await apiClient.get<RoleDetails>(`/api/roles/${roleId}`)
+    return response.data
+  } catch (error) {
+    const axiosError = error as AxiosError<ApiError>
+    throw new Error(axiosError.response?.data?.detail || 'Failed to fetch role details')
   }
 }
 
