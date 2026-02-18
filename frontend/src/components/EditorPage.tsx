@@ -305,7 +305,7 @@ export default function EditorPage() {
       {/* Ad Display Overlay */}
       {showAd && <AdDisplay onAdViewed={handleAdViewed} />}
 
-      <div className="w-full">
+      <div className="w-screen px-4">
         {/* Header */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
