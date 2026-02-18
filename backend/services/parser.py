@@ -771,7 +771,10 @@ def parse_pdf(file_content: bytes, filename: str) -> ResumeData:
             )
 
             quality = assess_parse_quality(result, full_text)
-            if quality >= 0.7:  # Good quality, use it
+            # If skills or education sections are missing, try pdfplumber (better for tables)
+            if not sections.get('skills') or not sections.get('education'):
+                logger.info(f"PyMuPDF missing skills/education sections, will try pdfplumber for table extraction")
+            elif quality >= 0.7:  # Good quality, use it
                 return result
     except Exception as e:
         pass  # Fall through to next strategy

@@ -1,15 +1,15 @@
 /**
- * Editor page component with real-time re-scoring
+ * Editor page component with real-time re-scoring and MS Word-style editing
  */
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import RichTextEditor from './RichTextEditor'
-import ScoreCard from './ScoreCard'
-import CategoryBreakdown from './CategoryBreakdown'
+import { WYSIWYGEditor } from './WYSIWYGEditor'
 import IssuesList from './IssuesList'
 import LoadingSpinner from './LoadingSpinner'
 import UserMenu from './UserMenu'
 import AdDisplay from './AdDisplay'
+import { ModeIndicator } from './ModeIndicator'
+import { DownloadMenu } from './DownloadMenu'
 import { useDebounce } from '../hooks/useDebounce'
 import { useAuth } from '../hooks/useAuth'
 import { rescoreResume, shouldShowAd, saveResume, updateResume, type ScoreRequest } from '../api/client'
@@ -149,10 +149,11 @@ export default function EditorPage() {
   const [isSaving, setIsSaving] = useState(false)
   const isInitialMount = useRef(true)
 
-  // Initialize editor with parsed resume text
+  // Initialize editor with editable HTML from backend
   useEffect(() => {
     if (result) {
-      const html = convertResumeToHTML(result)
+      // Use rich HTML from backend if available, otherwise fallback to converted text
+      const html = result.editableHtml || convertResumeToHTML(result)
       setEditorContent(html)
       setCurrentScore(result.score)
       setWordCount(result.metadata.wordCount)
@@ -161,6 +162,67 @@ export default function EditorPage() {
 
   // Debounce editor content changes (500ms delay)
   const debouncedContent = useDebounce(editorContent, 500)
+
+  // Manual re-score function
+  const performRescore = useCallback(async (content: string = editorContent) => {
+    if (!result || !isMountedRef.current) return
+
+    // Check if ad should be shown before re-scoring
+    setAdCheckPending(true)
+    try {
+      const adResult = await shouldShowAd()
+      if (adResult.showAd) {
+        setShowAd(true)
+        setAdCheckPending(false)
+        return // Exit early to prevent re-scoring
+      }
+    } catch (err) {
+      console.error('Ad check failed:', err)
+    } finally {
+      setAdCheckPending(false)
+    }
+
+    setIsRescoring(true)
+    setRescoreError(null)
+
+    try {
+      // Count words in HTML content by stripping tags
+      const textContent = content.replace(/<[^>]*>/g, ' ')
+      const words = textContent.trim().split(/\s+/).filter(Boolean).length
+      setWordCount(words)
+
+      // Include actual parsed data for accurate re-scoring
+      const scoreRequest: ScoreRequest = {
+        fileName: result.fileName,
+        contact: result.contact,
+        experience: result.experience || [],
+        education: result.education || [],
+        skills: result.skills || [],
+        certifications: result.certifications || [],
+        metadata: {
+          ...result.metadata,
+          wordCount: words
+        },
+        jobDescription: result.jobDescription,
+        industry: result.industry
+      }
+
+      const newScore = await rescoreResume(scoreRequest)
+
+      if (isMountedRef.current) {
+        setCurrentScore(newScore)
+        setRescoreError('✓ Resume re-scored successfully')
+      }
+    } catch (err) {
+      if (isMountedRef.current) {
+        setRescoreError(err instanceof Error ? err.message : 'Failed to re-score')
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setIsRescoring(false)
+      }
+    }
+  }, [result, editorContent])
 
   // Re-score when debounced content changes
   useEffect(() => {
@@ -172,67 +234,8 @@ export default function EditorPage() {
       return
     }
 
-    const performRescore = async () => {
-      if (!isMountedRef.current) return
-
-      // Check if ad should be shown before re-scoring
-      setAdCheckPending(true)
-      try {
-        const adResult = await shouldShowAd()
-        if (adResult.showAd) {
-          setShowAd(true)
-          setAdCheckPending(false)
-          return // Exit early to prevent re-scoring
-        }
-      } catch (err) {
-        console.error('Ad check failed:', err)
-      } finally {
-        setAdCheckPending(false)
-      }
-
-      setIsRescoring(true)
-      setRescoreError(null)
-
-      try {
-        // Count words in HTML content by stripping tags
-        const textContent = debouncedContent.replace(/<[^>]*>/g, ' ')
-        const words = textContent.trim().split(/\s+/).filter(Boolean).length
-        setWordCount(words)
-
-        // Include actual parsed data for accurate re-scoring
-        const scoreRequest: ScoreRequest = {
-          fileName: result.fileName,
-          contact: result.contact,
-          experience: result.experience || [],
-          education: result.education || [],
-          skills: result.skills || [],
-          certifications: result.certifications || [],
-          metadata: {
-            ...result.metadata,
-            wordCount: words
-          },
-          jobDescription: result.jobDescription,
-          industry: result.industry
-        }
-
-        const newScore = await rescoreResume(scoreRequest)
-
-        if (isMountedRef.current) {
-          setCurrentScore(newScore)
-        }
-      } catch (err) {
-        if (isMountedRef.current) {
-          setRescoreError(err instanceof Error ? err.message : 'Failed to re-score')
-        }
-      } finally {
-        if (isMountedRef.current) {
-          setIsRescoring(false)
-        }
-      }
-    }
-
-    performRescore()
-  }, [debouncedContent, result])
+    performRescore(debouncedContent)
+  }, [debouncedContent, result, performRescore])
 
   // Handle ad viewed callback
   const handleAdViewed = useCallback(() => {
@@ -313,6 +316,31 @@ export default function EditorPage() {
               ← Back to Results
             </button>
             <div className="flex items-center space-x-4">
+              <DownloadMenu
+                resumeContent={editorContent}
+                resumeName={result.contact?.name || 'Resume'}
+                resumeData={{
+                  fileName: result.fileName,
+                  contact: result.contact,
+                  experience: result.experience || [],
+                  education: result.education || [],
+                  skills: result.skills || [],
+                  certifications: result.certifications || [],
+                  metadata: result.metadata,
+                  jobDescription: result.jobDescription,
+                  industry: result.industry
+                }}
+                scoreData={{
+                  overallScore: currentScore.overallScore,
+                  breakdown: currentScore.breakdown,
+                  issues: currentScore.issues,
+                  strengths: currentScore.strengths,
+                  mode: currentScore.mode || result.scoringMode || 'quality_coach'
+                }}
+                mode={currentScore.mode || result.scoringMode || 'quality_coach'}
+                role={result.role || 'Software Engineer'}
+                level={result.level || 'Mid-Level'}
+              />
               {isAuthenticated && (
                 <button
                   onClick={handleSave}
@@ -376,47 +404,54 @@ export default function EditorPage() {
           </div>
         )}
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Left Column: Editor */}
-          <div className="lg:col-span-2">
+        {/* Main Content - Wider Editor */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          {/* Left Column: Editor (3/4 width) */}
+          <div className="lg:col-span-3">
             <div className="bg-white rounded-lg shadow-sm p-4">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-base font-semibold text-gray-900">
-                  Resume Content
+                <h2 className="text-lg font-semibold text-gray-900">
+                  📝 Resume Content
                 </h2>
-                <span className="text-sm text-gray-600">
-                  {wordCount} words
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600">
+                    {wordCount} words
+                  </span>
+                  <button
+                    onClick={() => performRescore()}
+                    disabled={isRescoring}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isRescoring ? 'Re-scoring...' : '🔄 Re-score'}
+                  </button>
+                </div>
               </div>
-              <RichTextEditor
-                content={editorContent}
+              <WYSIWYGEditor
+                value={editorContent}
                 onChange={handleEditorChange}
-                placeholder="Edit your resume content..."
               />
             </div>
           </div>
 
-          {/* Right Column: Live Score */}
+          {/* Right Column: Live Score (1/4 width) */}
           <div className="lg:col-span-1">
             <div className="sticky top-4 space-y-3">
-              {/* Score Card */}
-              <div className="bg-white rounded-lg shadow-sm p-4">
-                <h2 className="text-base font-semibold text-gray-900 mb-3">
-                  Live Score
-                </h2>
-                <ScoreCard score={currentScore.overallScore} />
-                {isRescoring && (
-                  <div className="mt-3 flex justify-center">
-                    <LoadingSpinner size="sm" />
-                  </div>
-                )}
-              </div>
-
-              {/* Category Breakdown */}
-              <div className="bg-white rounded-lg shadow-sm p-4">
-                <CategoryBreakdown breakdown={currentScore.breakdown} />
-              </div>
+              {/* Mode Indicator with Score */}
+              <ModeIndicator
+                mode={(currentScore.mode || result.scoringMode || 'quality_coach') as 'ats_simulation' | 'quality_coach'}
+                score={currentScore.overallScore}
+                keywordDetails={currentScore.keywordDetails}
+                breakdown={Object.entries(currentScore.breakdown).reduce((acc, [key, value]) => {
+                  acc[key] = value.score
+                  return acc
+                }, {} as Record<string, number>)}
+                autoReject={currentScore.autoReject}
+              />
+              {isRescoring && (
+                <div className="flex justify-center">
+                  <LoadingSpinner size="sm" />
+                </div>
+              )}
 
               {/* Issues Summary */}
               <div className="bg-white rounded-lg shadow-sm p-4">

@@ -24,17 +24,20 @@ class MetadataResponse(BaseModel):
 
 class CategoryBreakdown(BaseModel):
     """Score breakdown for a single category"""
-    score: int
-    maxScore: int
+    score: float
+    maxScore: float
     issues: List[str]
 
 
 class ScoreResponse(BaseModel):
     """Complete scoring response"""
-    overallScore: int
+    overallScore: float
     breakdown: Dict[str, CategoryBreakdown]
     issues: Dict[str, List[str]]  # critical, warnings, suggestions, info
     strengths: List[str]
+    mode: str  # "ats_simulation" or "quality_coach"
+    keywordDetails: Optional[Dict] = None  # Keyword matching details for ATS mode
+    autoReject: Optional[bool] = None  # Auto-reject flag for ATS mode
 
 
 class FormatCheckResponse(BaseModel):
@@ -49,6 +52,10 @@ class UploadResponse(BaseModel):
     """Response for upload endpoint"""
     resumeId: Optional[str] = None  # Only if user is authenticated
     fileName: str
+    fileId: Optional[str] = None  # ID to retrieve original file
+    originalFileUrl: Optional[str] = None  # URL to access original file
+    previewPdfUrl: Optional[str] = None  # URL to preview PDF (for DOCX files)
+    editableHtml: Optional[str] = None  # Rich HTML for WYSIWYG editing
     contact: ContactInfoResponse
     experience: List[Dict] = []
     education: List[Dict] = []
@@ -57,6 +64,9 @@ class UploadResponse(BaseModel):
     metadata: MetadataResponse
     score: ScoreResponse
     formatCheck: FormatCheckResponse
-    uploadedAt: datetime
+    scoringMode: str  # "ats_simulation" or "quality_coach"
+    role: str
+    level: str
     jobDescription: Optional[str] = None
+    uploadedAt: datetime
     industry: Optional[str] = None

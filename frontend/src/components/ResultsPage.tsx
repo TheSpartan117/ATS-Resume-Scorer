@@ -4,8 +4,8 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import type { UploadResponse } from '../types/resume'
-import ScoreCard from './ScoreCard'
-import CategoryBreakdown from './CategoryBreakdown'
+import { ModeIndicator } from './ModeIndicator'
+import { DownloadMenu } from './DownloadMenu'
 import IssuesList from './IssuesList'
 import UserMenu from './UserMenu'
 
@@ -20,6 +20,79 @@ export default function ResultsPage() {
       navigate('/')
     }
   }, [result, navigate])
+
+  // Build resume content text from parsed data
+  const buildResumeContent = (): string => {
+    if (!result) return ''
+
+    const parts: string[] = []
+
+    // Contact Information
+    if (result.contact) {
+      parts.push('Contact Information')
+      if (result.contact.name) parts.push(`Name: ${result.contact.name}`)
+      if (result.contact.email) parts.push(`Email: ${result.contact.email}`)
+      if (result.contact.phone) parts.push(`Phone: ${result.contact.phone}`)
+      if (result.contact.location) parts.push(`Location: ${result.contact.location}`)
+      if (result.contact.linkedin) parts.push(`LinkedIn: ${result.contact.linkedin}`)
+      parts.push('')
+    }
+
+    // Experience
+    if (result.experience && result.experience.length > 0) {
+      parts.push('Experience')
+      parts.push('')
+      result.experience.forEach((exp: any) => {
+        if (exp.title) parts.push(exp.title)
+        if (exp.company) parts.push(exp.company)
+        if (exp.startDate || exp.endDate) {
+          parts.push(`${exp.startDate || ''} - ${exp.endDate || 'Present'}`)
+        }
+        if (exp.location) parts.push(exp.location)
+        if (exp.description) {
+          parts.push('')
+          parts.push(exp.description)
+        }
+        parts.push('')
+      })
+    }
+
+    // Education
+    if (result.education && result.education.length > 0) {
+      parts.push('Education')
+      parts.push('')
+      result.education.forEach((edu: any) => {
+        if (edu.degree) parts.push(edu.degree)
+        if (edu.institution) parts.push(edu.institution)
+        if (edu.graduationDate) parts.push(`Graduated: ${edu.graduationDate}`)
+        if (edu.location) parts.push(edu.location)
+        if (edu.gpa) parts.push(`GPA: ${edu.gpa}`)
+        parts.push('')
+      })
+    }
+
+    // Skills
+    if (result.skills && result.skills.length > 0) {
+      parts.push('Skills')
+      parts.push('')
+      parts.push(result.skills.join(', '))
+      parts.push('')
+    }
+
+    // Certifications
+    if (result.certifications && result.certifications.length > 0) {
+      parts.push('Certifications')
+      parts.push('')
+      result.certifications.forEach((cert: any) => {
+        if (cert.name) parts.push(cert.name)
+        if (cert.issuer) parts.push(`Issued by: ${cert.issuer}`)
+        if (cert.date) parts.push(`Date: ${cert.date}`)
+        parts.push('')
+      })
+    }
+
+    return parts.join('\n')
+  }
 
   if (!result) {
     return null
@@ -48,25 +121,47 @@ export default function ResultsPage() {
                 {result.fileName}
               </p>
             </div>
-            <button
-              onClick={() => navigate('/editor', { state: { result } })}
-              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-semibold"
-            >
-              Edit Resume
-            </button>
+            <div className="flex items-center gap-3">
+              <DownloadMenu
+                resumeContent={buildResumeContent()}
+                resumeName={result.contact?.name || 'Resume'}
+                resumeData={result}
+                scoreData={result.score}
+                mode={result.scoringMode || 'quality_coach'}
+                role={result.role || 'software_engineer'}
+                level={result.level || 'mid'}
+              />
+              <button
+                onClick={() => navigate('/editor', { state: { result } })}
+                className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-semibold"
+              >
+                Edit Resume
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column: Score Card */}
+          {/* Left Column: Mode Indicator */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-8">
-              <ScoreCard score={result.score.overallScore} />
+            <ModeIndicator
+              mode={result.scoringMode || result.score.mode || 'quality_coach'}
+              score={result.score.overallScore}
+              keywordDetails={result.score.keywordDetails}
+              breakdown={Object.fromEntries(
+                Object.entries(result.score.breakdown).map(([key, value]: [string, any]) => [
+                  key,
+                  typeof value === 'object' && 'score' in value ? value.score : value
+                ])
+              )}
+              autoReject={result.score.autoReject}
+            />
 
-              {/* Metadata */}
-              <div className="mt-6 pt-6 border-t border-gray-200 space-y-3">
-                <h3 className="font-semibold text-gray-900 mb-3">Resume Info</h3>
+            {/* Metadata */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-6">
+              <div className="space-y-3">
+                <h3 className="font-semibold text-gray-900 mb-3">📄 Resume Info</h3>
                 <div className="text-sm space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Pages:</span>
@@ -92,7 +187,7 @@ export default function ResultsPage() {
               {/* Contact Info */}
               {result.contact.name && (
                 <div className="mt-6 pt-6 border-t border-gray-200">
-                  <h3 className="font-semibold text-gray-900 mb-3">Contact</h3>
+                  <h3 className="font-semibold text-gray-900 mb-3">👤 Contact</h3>
                   <div className="text-sm space-y-1 text-gray-700">
                     {result.contact.name && <p>{result.contact.name}</p>}
                     {result.contact.email && <p>{result.contact.email}</p>}
@@ -106,11 +201,6 @@ export default function ResultsPage() {
 
           {/* Right Column: Details */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Category Breakdown */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <CategoryBreakdown breakdown={result.score.breakdown} />
-            </div>
-
             {/* Issues List */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <IssuesList issues={result.score.issues} />

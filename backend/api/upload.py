@@ -1,12 +1,19 @@
 """Upload endpoint for resume file upload and initial scoring"""
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi.responses import FileResponse
 from typing import Optional
 from datetime import datetime, timezone
 import io
+import os
+import uuid
 import logging
+from pathlib import Path
 from backend.services.parser import parse_pdf, parse_docx
 from backend.services.scorer import calculate_overall_score
+from backend.services.scorer_v2 import AdaptiveScorer
 from backend.services.format_checker import ATSFormatChecker
+from backend.services.docx_to_pdf import convert_docx_to_pdf
+from backend.services.document_to_html import docx_to_html, pdf_to_html
 from backend.schemas.resume import UploadResponse, ContactInfoResponse, MetadataResponse, ScoreResponse, CategoryBreakdown, FormatCheckResponse
 
 logger = logging.getLogger(__name__)
@@ -16,13 +23,17 @@ router = APIRouter(prefix="/api", tags=["upload"])
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 ALLOWED_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
 
+# Storage directory for uploaded files
+UPLOAD_DIR = Path(__file__).parent.parent / "storage" / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
 
 @router.post("/upload", response_model=UploadResponse)
 async def upload_resume(
     file: UploadFile = File(...),
+    role: str = Form(...),
+    level: str = Form(...),
     jobDescription: Optional[str] = Form(None),
-    role: Optional[str] = Form(None),
-    level: Optional[str] = Form(None),
     industry: Optional[str] = Form(None)  # Kept for backward compatibility
 ):
     """
@@ -58,6 +69,44 @@ async def upload_resume(
 
     # Now read file content
     file_content = await file.read()
+
+    # Save original file for preview
+    file_id = str(uuid.uuid4())
+    file_extension = ".pdf" if file.content_type == "application/pdf" else ".docx"
+    file_path = UPLOAD_DIR / f"{file_id}{file_extension}"
+
+    with open(file_path, "wb") as f:
+        f.write(file_content)
+
+    logger.info(f"Saved original file: {file_path}")
+
+    # For DOCX files, also convert to PDF for preview
+    preview_pdf_url = None
+    if file.content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        try:
+            logger.info("Converting DOCX to PDF for preview...")
+            pdf_bytes = convert_docx_to_pdf(file_content)
+            preview_pdf_path = UPLOAD_DIR / f"{file_id}_preview.pdf"
+            with open(preview_pdf_path, "wb") as f:
+                f.write(pdf_bytes)
+            preview_pdf_url = f"/api/files/{file_id}_preview.pdf"
+            logger.info(f"Saved preview PDF: {preview_pdf_path}")
+        except Exception as e:
+            logger.error(f"Failed to convert DOCX to PDF: {str(e)}")
+            # Continue without preview - not critical
+
+    # Convert to editable HTML with formatting preserved
+    editable_html = None
+    try:
+        logger.info("Converting document to editable HTML...")
+        if file.content_type == "application/pdf":
+            editable_html = pdf_to_html(file_content)
+        else:  # DOCX
+            editable_html = docx_to_html(file_content)
+        logger.info(f"Generated editable HTML ({len(editable_html)} chars)")
+    except Exception as e:
+        logger.error(f"Failed to convert to HTML: {str(e)}")
+        # Continue without editable HTML - not critical
 
     # Parse resume based on file type
     try:
@@ -102,20 +151,26 @@ async def upload_resume(
         logger.error(f"Format check failed: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Format check failed: {str(e)}")
 
-    # Calculate score with role and level (or fall back to industry for backward compatibility)
+    # Determine scoring mode
+    scoring_mode = "ats_simulation" if jobDescription else "quality_coach"
+    logger.info(f"Scoring mode: {scoring_mode}")
+
+    # Use adaptive scorer
+    scorer = AdaptiveScorer()
+
     try:
         logger.info(f"Calculating score with role={role}, level={level}")
-        score_result = calculate_overall_score(
-            resume_data,
-            job_description=jobDescription or "",
-            role_id=role or "",
-            level=level or "",
-            industry=industry or ""
+        score_result = scorer.score(
+            resume_data=resume_data,
+            role_id=role,
+            level=level,
+            job_description=jobDescription,
+            mode=scoring_mode
         )
         logger.info(f"Score calculated: {score_result.get('overallScore', 0)}")
     except Exception as e:
         logger.error(f"Scoring failed: {str(e)}")
-        raise HTTPException(status_code=400, detail=f"Scoring failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to score resume: {str(e)}")
 
     # Format response
     contact_response = ContactInfoResponse(**resume_data.contact)
@@ -141,7 +196,10 @@ async def upload_resume(
         overallScore=score_result["overallScore"],
         breakdown=breakdown_response,
         issues=issues_response,
-        strengths=score_result.get("strengths", [])
+        strengths=score_result.get("strengths", []),
+        mode=score_result.get("mode", scoring_mode),
+        keywordDetails=score_result.get("keyword_details"),
+        autoReject=score_result.get("auto_reject")
     )
 
     # Format check response
@@ -155,6 +213,10 @@ async def upload_resume(
     return UploadResponse(
         resumeId=None,  # Guest user, no saved resume
         fileName=file.filename,
+        fileId=file_id,
+        originalFileUrl=f"/api/files/{file_id}{file_extension}",
+        previewPdfUrl=preview_pdf_url,  # Only set for DOCX files
+        editableHtml=editable_html,  # Rich HTML for WYSIWYG editing
         contact=contact_response,
         experience=resume_data.experience,
         education=resume_data.education,
@@ -163,7 +225,41 @@ async def upload_resume(
         metadata=metadata_response,
         score=score_response,
         formatCheck=format_check_response,
-        uploadedAt=datetime.now(timezone.utc),
+        scoringMode=scoring_mode,
+        role=role,
+        level=level,
         jobDescription=jobDescription,
+        uploadedAt=datetime.now(timezone.utc),
         industry=industry
+    )
+
+
+@router.get("/files/{file_name}")
+async def get_original_file(file_name: str):
+    """
+    Serve original uploaded file for preview.
+
+    Args:
+        file_name: File name with extension (e.g., "uuid.pdf")
+
+    Returns:
+        File response with original uploaded file
+    """
+    file_path = UPLOAD_DIR / file_name
+
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Determine media type
+    if file_name.endswith(".pdf"):
+        media_type = "application/pdf"
+    elif file_name.endswith(".docx"):
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    else:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+
+    return FileResponse(
+        path=file_path,
+        media_type=media_type,
+        filename=file_name
     )
