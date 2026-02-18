@@ -8,6 +8,7 @@ import ScoreCard from './ScoreCard'
 import CategoryBreakdown from './CategoryBreakdown'
 import IssuesList from './IssuesList'
 import LoadingSpinner from './LoadingSpinner'
+import UserMenu from './UserMenu'
 import { useDebounce } from '../hooks/useDebounce'
 import { rescoreResume, type ScoreRequest } from '../api/client'
 import type { UploadResponse, ScoreResult } from '../types/resume'
@@ -173,12 +174,15 @@ export default function EditorPage() {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <button
-            onClick={() => navigate('/results', { state: { result } })}
-            className="text-blue-600 hover:text-blue-800 font-medium mb-4 flex items-center"
-          >
-            ← Back to Results
-          </button>
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => navigate('/results', { state: { result } })}
+              className="text-blue-600 hover:text-blue-800 font-medium flex items-center"
+            >
+              ← Back to Results
+            </button>
+            <UserMenu />
+          </div>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">

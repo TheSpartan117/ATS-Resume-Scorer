@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import FileDropZone from './FileDropZone'
+import UserMenu from './UserMenu'
 import { uploadResume } from '../api/client'
 import type { UploadResponse } from '../types/resume'
 
@@ -51,17 +52,22 @@ export default function UploadPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            ATS Resume Scorer
-          </h1>
-          <p className="text-lg text-gray-600">
-            Upload your resume and get instant ATS compatibility score
-          </p>
-          <p className="text-sm text-gray-500 mt-2">
-            First score is free • No signup required
-          </p>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex-1">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              ATS Resume Scorer
+            </h1>
+            <p className="text-lg text-gray-600">
+              Upload your resume and get instant ATS compatibility score
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              First score is free • No signup required
+            </p>
+          </div>
+          <UserMenu />
         </div>
+
+        <div className="mb-4"></div>
 
         {/* Upload Form */}
         <form onSubmit={handleSubmit} className="space-y-6">

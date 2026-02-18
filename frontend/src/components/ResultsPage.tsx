@@ -7,6 +7,7 @@ import type { UploadResponse } from '../types/resume'
 import ScoreCard from './ScoreCard'
 import CategoryBreakdown from './CategoryBreakdown'
 import IssuesList from './IssuesList'
+import UserMenu from './UserMenu'
 
 export default function ResultsPage() {
   const location = useLocation()
@@ -28,27 +29,32 @@ export default function ResultsPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => navigate('/')}
-              className="text-blue-600 hover:text-blue-800 font-medium mb-4 flex items-center"
+              className="text-blue-600 hover:text-blue-800 font-medium flex items-center"
             >
               ← Back to Upload
             </button>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Resume Analysis Results
-            </h1>
-            <p className="text-gray-600">
-              {result.fileName}
-            </p>
+            <UserMenu />
           </div>
-          <button
-            onClick={() => navigate('/editor', { state: { result } })}
-            className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-semibold"
-          >
-            Edit Resume
-          </button>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Resume Analysis Results
+              </h1>
+              <p className="text-gray-600">
+                {result.fileName}
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/editor', { state: { result } })}
+              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-semibold"
+            >
+              Edit Resume
+            </button>
+          </div>
         </div>
 
         {/* Main Content */}

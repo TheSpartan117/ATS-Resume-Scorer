@@ -92,4 +92,82 @@ export async function rescoreResume(request: ScoreRequest): Promise<ScoreResult>
   }
 }
 
+// Add interfaces
+export interface SignupRequest {
+  email: string
+  password: string
+}
+
+export interface LoginRequest {
+  email: string
+  password: string
+}
+
+export interface AuthResponse {
+  accessToken: string
+  user: {
+    id: string
+    email: string
+    isPremium: boolean
+    createdAt: string
+  }
+}
+
+export interface User {
+  id: string
+  email: string
+  isPremium: boolean
+  createdAt: string
+}
+
+/**
+ * Set authentication token for API requests
+ */
+export function setAuthToken(token: string | null) {
+  if (token) {
+    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`
+  } else {
+    delete apiClient.defaults.headers.common['Authorization']
+  }
+}
+
+/**
+ * Sign up new user
+ */
+export async function signup(data: SignupRequest): Promise<AuthResponse> {
+  try {
+    const response = await apiClient.post<AuthResponse>('/api/signup', data)
+    return response.data
+  } catch (error) {
+    const axiosError = error as AxiosError<ApiError>
+    throw new Error(axiosError.response?.data?.detail || 'Signup failed')
+  }
+}
+
+/**
+ * Login existing user
+ */
+export async function login(data: LoginRequest): Promise<AuthResponse> {
+  try {
+    const response = await apiClient.post<AuthResponse>('/api/login', data)
+    return response.data
+  } catch (error) {
+    const axiosError = error as AxiosError<ApiError>
+    throw new Error(axiosError.response?.data?.detail || 'Login failed')
+  }
+}
+
+/**
+ * Get current user info
+ */
+export async function getCurrentUser(): Promise<User> {
+  try {
+    const response = await apiClient.get<User>('/api/me')
+    return response.data
+  } catch (error) {
+    const axiosError = error as AxiosError<ApiError>
+    throw new Error(axiosError.response?.data?.detail || 'Failed to get user info')
+  }
+}
+
 export default apiClient
