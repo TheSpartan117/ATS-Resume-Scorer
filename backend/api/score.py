@@ -21,7 +21,9 @@ class ScoreRequest(BaseModel):
     certifications: List[Dict] = Field(default_factory=list)
     metadata: Dict
     jobDescription: Optional[str] = ""
-    industry: Optional[str] = ""
+    role: Optional[str] = ""
+    level: Optional[str] = ""
+    industry: Optional[str] = ""  # Deprecated, kept for backward compatibility
 
 
 @router.post("/score", response_model=ScoreResponse)
@@ -33,7 +35,9 @@ async def score_resume(request: ScoreRequest):
 
     - **request**: Complete resume data structure
     - **jobDescription**: (Optional) Job description for keyword matching
-    - **industry**: (Optional) Industry for tailored scoring
+    - **role**: (Optional) Role identifier (e.g., "software_engineer", "product_manager")
+    - **level**: (Optional) Experience level ("entry", "mid", "senior", "lead", "executive")
+    - **industry**: (Optional, deprecated) Use role+level instead
 
     Returns updated ATS score (0-100).
     """
@@ -49,10 +53,12 @@ async def score_resume(request: ScoreRequest):
         metadata=request.metadata
     )
 
-    # Calculate score
+    # Calculate score with role and level (or fall back to industry)
     score_result = calculate_overall_score(
         resume_data,
         job_description=request.jobDescription or "",
+        role_id=request.role or "",
+        level=request.level or "",
         industry=request.industry or ""
     )
 

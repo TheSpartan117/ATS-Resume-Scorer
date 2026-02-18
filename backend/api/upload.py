@@ -17,14 +17,18 @@ ALLOWED_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocume
 async def upload_resume(
     file: UploadFile = File(...),
     jobDescription: Optional[str] = Form(None),
-    industry: Optional[str] = Form(None)
+    role: Optional[str] = Form(None),
+    level: Optional[str] = Form(None),
+    industry: Optional[str] = Form(None)  # Kept for backward compatibility
 ):
     """
     Upload a resume file (PDF or DOCX), parse it, and get an initial ATS score.
 
     - **file**: PDF or DOCX resume file (max 10MB)
     - **jobDescription**: (Optional) Job description for keyword matching
-    - **industry**: (Optional) Industry for tailored scoring (e.g., "tech", "sales")
+    - **role**: (Optional) Role identifier for tailored scoring (e.g., "software_engineer", "product_manager")
+    - **level**: (Optional) Experience level ("entry", "mid", "senior", "lead", "executive")
+    - **industry**: (Optional, deprecated) Use role+level instead
 
     Returns parsed resume data with comprehensive ATS score (0-100).
     """
@@ -70,10 +74,12 @@ async def upload_resume(
             detail="Resume appears empty or unreadable"
         )
 
-    # Calculate score
+    # Calculate score with role and level (or fall back to industry for backward compatibility)
     score_result = calculate_overall_score(
         resume_data,
         job_description=jobDescription or "",
+        role_id=role or "",
+        level=level or "",
         industry=industry or ""
     )
 
