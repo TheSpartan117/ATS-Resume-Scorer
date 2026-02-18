@@ -217,17 +217,18 @@ def score_content(resume: ResumeData, role_id: str = "", level: str = "") -> Dic
 
         action_verb_percentage = (bullets_with_action_verbs / total_bullets) * 100
 
-        if action_verb_percentage >= 80:
+        # Recalibrated to industry standards (40%+ is good, not 80%+)
+        if action_verb_percentage >= 60:
             score += 6
-        elif action_verb_percentage >= 60:
-            score += 4
-            issues.append(("suggestion", f"{bullets_with_action_verbs}/{total_bullets} bullets start with action verbs - aim for 80%+"))
         elif action_verb_percentage >= 40:
-            score += 2
-            issues.append(("warning", f"Only {bullets_with_action_verbs}/{total_bullets} bullets start with action verbs - start each with: Led, Developed, Achieved, etc."))
+            score += 5
+            issues.append(("suggestion", f"Strong action verbs found in {bullets_with_action_verbs}/{total_bullets} bullets - consider adding more for impact"))
+        elif action_verb_percentage >= 20:
+            score += 3
+            issues.append(("suggestion", f"{bullets_with_action_verbs}/{total_bullets} bullets start with action verbs - start each with: Led, Developed, Achieved, etc."))
         else:
             score += 1
-            issues.append(("critical", f"Only {bullets_with_action_verbs}/{total_bullets} bullets start with strong action verbs - each bullet should start with an action verb"))
+            issues.append(("warning", f"Only {bullets_with_action_verbs}/{total_bullets} bullets start with strong action verbs - each bullet should start with an action verb"))
     else:
         # Check for action verbs in general text if no bullets detected
         action_verb_count = sum(1 for verb in strong_action_verbs if verb in all_text.lower())
@@ -246,17 +247,18 @@ def score_content(resume: ResumeData, role_id: str = "", level: str = "") -> Dic
 
     if total_bullets > 0:
         quantified_percentage = (bullets_with_numbers / total_bullets) * 100
-        if quantified_percentage >= 60:
+        # Recalibrated: 40%+ quantified is good (industry standard)
+        if quantified_percentage >= 50:
             score += 6
-        elif quantified_percentage >= 40:
-            score += 4
-            issues.append(("suggestion", f"{bullets_with_numbers}/{total_bullets} bullets include numbers - aim to quantify 60%+ of achievements"))
-        elif quantified_percentage >= 20:
-            score += 2
-            issues.append(("warning", f"Only {bullets_with_numbers}/{total_bullets} bullets include numbers - add metrics (%, $, numbers, timeframes)"))
+        elif quantified_percentage >= 30:
+            score += 5
+            issues.append(("suggestion", f"Good quantification: {bullets_with_numbers}/{total_bullets} bullets include metrics"))
+        elif quantified_percentage >= 15:
+            score += 3
+            issues.append(("suggestion", f"{bullets_with_numbers}/{total_bullets} bullets include numbers - add more metrics (%, $, timeframes)"))
         else:
             score += 1
-            issues.append(("critical", f"Only {bullets_with_numbers}/{total_bullets} bullets quantified - add measurable results: revenue, percentages, team size, timeframes"))
+            issues.append(("warning", f"Only {bullets_with_numbers}/{total_bullets} bullets quantified - add measurable results"))
     else:
         if numbers_found >= 5:
             score += 4
@@ -315,18 +317,25 @@ def score_content(resume: ResumeData, role_id: str = "", level: str = "") -> Dic
     # 5. PROFESSIONAL LANGUAGE (3 points)
     professional_score = 3
 
-    # Check for first-person pronouns
-    first_person_count = sum(1 for pronoun in first_person_pronouns if pronoun in all_text.lower())
-    if first_person_count > 0:
-        professional_score -= 2
-        issues.append(("critical", f"Remove first-person pronouns (I, my, we, our) - use third-person: 'Led team' not 'I led team'"))
+    # Check for first-person pronouns (only check if clearly present, avoid false positives)
+    first_person_count = 0
+    for pronoun in first_person_pronouns:
+        # More strict matching to avoid false positives in words like "interview", "review", etc.
+        if f' {pronoun.strip()} ' in f' {all_text.lower()} ':
+            first_person_count += 1
 
-    # Check for informal language
-    informal_words = ['stuff', 'things', 'got', 'bunch', 'lots', 'tons', 'really', 'very', 'pretty much']
-    informal_count = sum(1 for word in informal_words if word in all_text.lower())
-    if informal_count > 0:
+    if first_person_count > 3:  # Only penalize if clearly excessive
+        professional_score -= 2
+        issues.append(("warning", f"Consider removing first-person pronouns (I, my, we) - use third-person format"))
+    elif first_person_count > 0:
         professional_score -= 1
-        issues.append(("warning", f"Avoid informal language - use professional terminology"))
+
+    # Check for informal language (only obvious cases)
+    informal_words = ['stuff', 'things', 'bunch', 'lots of', 'tons of', 'pretty much']
+    informal_count = sum(1 for word in informal_words if f' {word} ' in f' {all_text.lower()} ')
+    if informal_count > 2:  # Only if clearly informal
+        professional_score -= 1
+        issues.append(("suggestion", f"Maintain professional tone throughout"))
 
     score += max(0, professional_score)
 
@@ -410,17 +419,24 @@ def score_keywords(resume: ResumeData, job_description: str = "", role_id: str =
                     matches = sum(1 for keyword in typical_keywords if keyword.lower() in resume_text)
                     match_percentage = (matches / len(typical_keywords)) * 100 if typical_keywords else 0
 
-                    score = int((match_percentage / 100) * 15)
-
-                    if match_percentage < 40:
-                        issues.append(("warning", f"Low role keyword match: {match_percentage:.0f}% - add typical {level} {role_data['name']} keywords"))
-                    elif match_percentage < 60:
-                        issues.append(("suggestion", f"Moderate keyword match: {match_percentage:.0f}% - consider adding more role-relevant terms"))
+                    # Recalibrated scoring: 30%=8pts, 40%=10pts, 50%=12pts, 60%=15pts
+                    if match_percentage >= 60:
+                        score = 15
+                    elif match_percentage >= 50:
+                        score = 12
+                    elif match_percentage >= 40:
+                        score = 10
+                    elif match_percentage >= 30:
+                        score = 8
+                        issues.append(("suggestion", f"Keyword match: {match_percentage:.0f}% - add more typical {role_data['name']} keywords"))
+                    else:
+                        score = int((match_percentage / 100) * 15)
+                        issues.append(("warning", f"Low keyword match: {match_percentage:.0f}% - add typical {level} {role_data['name']} keywords"))
 
                     # Identify missing keywords
                     missing = [kw for kw in typical_keywords[:5] if kw.lower() not in resume_text]
-                    if missing:
-                        issues.append(("suggestion", f"Missing key terms for {role_data['name']}: {', '.join(missing)}"))
+                    if missing and match_percentage < 50:
+                        issues.append(("suggestion", f"Consider adding: {', '.join(missing)}"))
                 else:
                     # Role data found but no keywords
                     score = 10
@@ -728,19 +744,22 @@ def score_role_specific(resume: ResumeData, role_id: str = "", level: str = "") 
         found_keywords = sum(1 for keyword in level_keywords if keyword.lower() in all_text)
         keyword_percentage = (found_keywords / len(level_keywords)) * 100 if level_keywords else 0
 
-        if keyword_percentage >= 60:
+        # Recalibrated: 30%+ is good (industry standard)
+        if keyword_percentage >= 50:
             score += 10
         elif keyword_percentage >= 40:
-            score += 6
-            issues.append(("suggestion", f"Add more {level} level keywords for {role_data['name']}"))
+            score += 9
+        elif keyword_percentage >= 30:
+            score += 7
+            issues.append(("suggestion", f"Good keyword match: {keyword_percentage:.0f}% - add a few more {level} level keywords"))
         elif keyword_percentage >= 20:
-            score += 3
-            issues.append(("warning", f"Few {level} level keywords found - showcase relevant experience"))
+            score += 5
+            issues.append(("suggestion", f"Add more {level} level keywords for {role_data['name']}"))
         else:
-            score += 1
-            issues.append(("warning", f"Very few {level} level keywords - highlight relevant skills and experience"))
+            score += 3
+            issues.append(("suggestion", f"Showcase more {level} level experience and skills"))
     else:
-        score += 5  # Default if no keywords defined
+        score += 7  # More generous default
 
     # Preferred sections (5 points)
     preferred_sections = role_data.get('preferred_sections', [])
