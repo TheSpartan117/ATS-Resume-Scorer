@@ -71,6 +71,7 @@ export interface UploadResponse {
   fileId?: string
   originalFileUrl?: string
   previewPdfUrl?: string
+  editableHtml?: string
   contact: ContactInfo
   experience?: any[]
   education?: any[]

@@ -1,16 +1,15 @@
 /**
- * Editor page component with real-time re-scoring
+ * Editor page component with real-time re-scoring and MS Word-style editing
  */
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import RichTextEditor from './RichTextEditor'
+import { Editor as TinyMCEEditor } from '@tinymce/tinymce-react'
 import IssuesList from './IssuesList'
 import LoadingSpinner from './LoadingSpinner'
 import UserMenu from './UserMenu'
 import AdDisplay from './AdDisplay'
 import { ModeIndicator } from './ModeIndicator'
 import { DownloadMenu } from './DownloadMenu'
-import { PDFViewer } from './PDFViewer'
 import { useDebounce } from '../hooks/useDebounce'
 import { useAuth } from '../hooks/useAuth'
 import { rescoreResume, shouldShowAd, saveResume, updateResume, type ScoreRequest } from '../api/client'
@@ -150,10 +149,11 @@ export default function EditorPage() {
   const [isSaving, setIsSaving] = useState(false)
   const isInitialMount = useRef(true)
 
-  // Initialize editor with parsed resume text
+  // Initialize editor with editable HTML from backend
   useEffect(() => {
     if (result) {
-      const html = convertResumeToHTML(result)
+      // Use rich HTML from backend if available, otherwise fallback to converted text
+      const html = result.editableHtml || convertResumeToHTML(result)
       setEditorContent(html)
       setCurrentScore(result.score)
       setWordCount(result.metadata.wordCount)
@@ -402,39 +402,45 @@ export default function EditorPage() {
           </div>
         )}
 
-        {/* Main Content - Split View */}
-        <div className="flex gap-4 h-[calc(100vh-200px)]">
-          {/* Left Panel: PDF Preview - Show for both PDF and DOCX */}
-          {(result.originalFileUrl || result.previewPdfUrl) && (
-            <div className="w-1/2 border border-gray-300 rounded-lg overflow-hidden">
-              <PDFViewer
-                fileUrl={`http://localhost:8000${result.previewPdfUrl || result.originalFileUrl}`}
-                fileName={result.fileName}
-              />
-            </div>
-          )}
-
-          {/* Right Panel: Editor & Score */}
-          <div className={`${(result.originalFileUrl || result.previewPdfUrl) ? 'w-1/2' : 'w-full'} flex flex-col gap-4`}>
-            {/* Editor */}
-            <div className="flex-1 bg-white rounded-lg shadow-sm p-4 overflow-auto">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-base font-semibold text-gray-900">
-                  Resume Content
+        {/* Main Content - Full Width MS Word-Style Editor */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Left Column: Editor (2/3 width) */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  📝 Resume Content
                 </h2>
                 <span className="text-sm text-gray-600">
                   {wordCount} words
                 </span>
               </div>
-              <RichTextEditor
-                content={editorContent}
-                onChange={handleEditorChange}
-                placeholder="Edit your resume content..."
+              <TinyMCEEditor
+                apiKey="no-api-key"
+                value={editorContent}
+                onEditorChange={handleEditorChange}
+                init={{
+                  height: 600,
+                  menubar: true,
+                  plugins: [
+                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                  ],
+                  toolbar: 'undo redo | blocks | ' +
+                    'bold italic forecolor | alignleft aligncenter ' +
+                    'alignright alignjustify | bullist numlist outdent indent | ' +
+                    'removeformat | help',
+                  content_style: 'body { font-family:Arial,sans-serif; font-size:14px; max-width: 800px; margin: 0 auto; }',
+                  branding: false,
+                }}
               />
             </div>
+          </div>
 
-            {/* Score Display */}
-            <div className="space-y-3">
+          {/* Right Column: Live Score (1/3 width) */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-4 space-y-4">
               {/* Mode Indicator with Score */}
               <ModeIndicator
                 mode={(currentScore.mode || result.scoringMode || 'quality_coach') as 'ats_simulation' | 'quality_coach'}

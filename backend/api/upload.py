@@ -13,6 +13,7 @@ from backend.services.scorer import calculate_overall_score
 from backend.services.scorer_v2 import AdaptiveScorer
 from backend.services.format_checker import ATSFormatChecker
 from backend.services.docx_to_pdf import convert_docx_to_pdf
+from backend.services.document_to_html import docx_to_html, pdf_to_html
 from backend.schemas.resume import UploadResponse, ContactInfoResponse, MetadataResponse, ScoreResponse, CategoryBreakdown, FormatCheckResponse
 
 logger = logging.getLogger(__name__)
@@ -93,6 +94,19 @@ async def upload_resume(
         except Exception as e:
             logger.error(f"Failed to convert DOCX to PDF: {str(e)}")
             # Continue without preview - not critical
+
+    # Convert to editable HTML with formatting preserved
+    editable_html = None
+    try:
+        logger.info("Converting document to editable HTML...")
+        if file.content_type == "application/pdf":
+            editable_html = pdf_to_html(file_content)
+        else:  # DOCX
+            editable_html = docx_to_html(file_content)
+        logger.info(f"Generated editable HTML ({len(editable_html)} chars)")
+    except Exception as e:
+        logger.error(f"Failed to convert to HTML: {str(e)}")
+        # Continue without editable HTML - not critical
 
     # Parse resume based on file type
     try:
@@ -202,6 +216,7 @@ async def upload_resume(
         fileId=file_id,
         originalFileUrl=f"/api/files/{file_id}{file_extension}",
         previewPdfUrl=preview_pdf_url,  # Only set for DOCX files
+        editableHtml=editable_html,  # Rich HTML for WYSIWYG editing
         contact=contact_response,
         experience=resume_data.experience,
         education=resume_data.education,
