@@ -142,14 +142,60 @@ def parse_experience_entry(text: str) -> Dict:
     if not lines:
         return entry
 
-    # First line is usually the job title
-    if lines:
-        entry['title'] = lines[0]
+    # Smart detection: check if first line looks like a company or job title
+    # Company indicators: ALL CAPS, multiple capitals, common company words
+    # Job title indicators: contains role keywords like Manager, Engineer, Developer, etc.
 
-    # Second line often has company - location format or company - location - dates
-    if len(lines) > 1:
-        second_line = lines[1]
-        # Try to parse "Company - Location" or "Company, Location"
+    title_keywords = ['manager', 'engineer', 'developer', 'analyst', 'designer', 'director',
+                      'coordinator', 'specialist', 'consultant', 'lead', 'senior', 'junior',
+                      'associate', 'intern', 'executive', 'officer', 'head', 'chief', 'architect']
+
+    first_line = lines[0]
+    second_line = lines[1] if len(lines) > 1 else ""
+
+    # Check if first line looks like a company (mostly uppercase or has location info)
+    first_is_company = (
+        first_line.isupper() or  # All caps like "AIR INDIA"
+        sum(1 for c in first_line if c.isupper()) > len(first_line) * 0.5 or  # More than 50% caps
+        ',' in first_line  # Has location separator
+    )
+
+    # Check if second line looks like a job title
+    second_is_title = any(keyword in second_line.lower() for keyword in title_keywords)
+
+    # Determine format
+    if first_is_company or second_is_title:
+        # Format: Company + Location on line 1, Job Title on line 2
+        # Parse company and location from first line
+        if ',' in first_line:
+            parts = first_line.split(',', 1)
+            entry['company'] = parts[0].strip()
+            entry['location'] = parts[1].strip() if len(parts) > 1 else ''
+        else:
+            entry['company'] = first_line
+
+        # Job title on second line
+        entry['title'] = second_line
+
+        # Look for dates in third line
+        if len(lines) > 2:
+            third_line = lines[2]
+            date_pattern = r'(\w+\s+\d{4}|\d{4})\s*[-–]\s*(\w+\s+\d{4}|\d{4}|Present|Current)'
+            date_match = re.search(date_pattern, third_line, re.IGNORECASE)
+            if date_match:
+                entry['startDate'] = date_match.group(1)
+                entry['endDate'] = date_match.group(2)
+
+        # Description starts from line 3 or 4
+        if len(lines) > 3:
+            entry['description'] = '\n'.join(lines[3:])
+        elif len(lines) > 2:
+            entry['description'] = '\n'.join(lines[2:])
+    else:
+        # Format: Job Title on line 1, Company on line 2
+        entry['title'] = first_line
+
+        # Parse company and location from second line
         if ' - ' in second_line:
             parts = second_line.split(' - ')
             entry['company'] = parts[0].strip()
@@ -163,21 +209,20 @@ def parse_experience_entry(text: str) -> Dict:
         else:
             entry['company'] = second_line
 
-    # Look for date patterns in third line
-    if len(lines) > 2:
-        third_line = lines[2]
-        # Match patterns like "January 2020 - Present" or "2020-2022"
-        date_pattern = r'(\w+\s+\d{4}|\d{4})\s*[-–]\s*(\w+\s+\d{4}|\d{4}|Present|Current)'
-        date_match = re.search(date_pattern, third_line, re.IGNORECASE)
-        if date_match:
-            entry['startDate'] = date_match.group(1)
-            entry['endDate'] = date_match.group(2)
+        # Look for dates in third line
+        if len(lines) > 2:
+            third_line = lines[2]
+            date_pattern = r'(\w+\s+\d{4}|\d{4})\s*[-–]\s*(\w+\s+\d{4}|\d{4}|Present|Current)'
+            date_match = re.search(date_pattern, third_line, re.IGNORECASE)
+            if date_match:
+                entry['startDate'] = date_match.group(1)
+                entry['endDate'] = date_match.group(2)
 
-    # Remaining lines are description/achievements
-    if len(lines) > 3:
-        entry['description'] = '\n'.join(lines[3:])
-    elif len(lines) > 2:
-        entry['description'] = '\n'.join(lines[2:])
+        # Description starts from line 3
+        if len(lines) > 3:
+            entry['description'] = '\n'.join(lines[3:])
+        elif len(lines) > 2:
+            entry['description'] = '\n'.join(lines[2:])
 
     return entry
 
