@@ -145,11 +145,11 @@ ROLE_DEFINITIONS: Dict[str, Dict] = {
         "name": "Product Manager",
         "category": RoleCategory.PRODUCT,
         "typical_keywords": {
-            ExperienceLevel.ENTRY: ["roadmap", "user stories", "agile", "wireframes", "stakeholders", "analytics"],
-            ExperienceLevel.MID: ["product strategy", "kpis", "market research", "go-to-market", "prioritization"],
-            ExperienceLevel.SENIOR: ["product vision", "cross-functional leadership", "revenue growth", "strategic partnerships"],
-            ExperienceLevel.LEAD: ["product portfolio", "organizational strategy", "executive stakeholders"],
-            ExperienceLevel.EXECUTIVE: ["cpo", "vp product", "product organization", "company strategy"]
+            ExperienceLevel.ENTRY: ["roadmap", "user stories", "agile", "wireframes", "stakeholders", "analytics", "features", "requirements", "user research"],
+            ExperienceLevel.MID: ["product strategy", "kpis", "market research", "go-to-market", "prioritization", "automation", "dashboards", "optimization", "cost savings", "efficiency", "operations", "process improvement", "rpa", "workflows"],
+            ExperienceLevel.SENIOR: ["product vision", "cross-functional leadership", "revenue growth", "strategic partnerships", "digital transformation", "innovation", "business impact"],
+            ExperienceLevel.LEAD: ["product portfolio", "organizational strategy", "executive stakeholders", "strategic initiatives"],
+            ExperienceLevel.EXECUTIVE: ["cpo", "vp product", "product organization", "company strategy", "business transformation"]
         },
         "action_verbs": {
             ExperienceLevel.ENTRY: ["developed", "created", "implemented", "managed", "supported", "executed", "analyzed", "collaborated", "coordinated", "assisted", "built", "tested"],
