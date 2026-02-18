@@ -85,14 +85,15 @@ def test_content_with_action_verbs_and_numbers():
     resume = ResumeData(
         fileName="test.pdf",
         contact={"name": "John"},
-        experience=[{"text": "Led team of 10 engineers, increased productivity by 40%, managed $2M budget, developed 5 products"}],
+        experience=[{"description": "- Led team of 10 engineers\n- Increased productivity by 40%\n- Managed $2M budget\n- Developed 5 products"}],
         education=[],
         skills=[],
         metadata={"pageCount": 1, "wordCount": 500, "hasPhoto": False, "fileFormat": "pdf"}
     )
 
     result = score_content(resume)
-    assert result["score"] > 15  # Should score well with verbs and numbers
+    # Should score well: all bullets start with verbs (6pts), all quantified (6pts), structure (5pts), no passive (3pts), professional (3pts), no buzzwords (2pts) = 25pts
+    assert result["score"] >= 20  # Should score very well with strong verbs and metrics
 
 def test_length_density_optimal():
     resume = ResumeData(

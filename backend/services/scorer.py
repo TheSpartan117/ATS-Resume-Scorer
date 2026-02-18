@@ -3,7 +3,7 @@ Resume scoring engine that evaluates resumes based on ATS best practices.
 """
 import re
 from typing import Dict, List, Tuple
-from backend.services.parser import ResumeData
+from services.parser import ResumeData
 
 
 def score_contact_info(resume: ResumeData) -> Dict:
@@ -141,88 +141,203 @@ def score_formatting(resume: ResumeData) -> Dict:
 
 def score_content(resume: ResumeData) -> Dict:
     """
-    Score resume content quality (25 points max).
+    Score resume content quality based on CV writing standards (25 points max).
 
-    Scoring:
-    - Action verbs usage: 5 points
-    - Quantified achievements: 8 points
-    - Low buzzword count: 5 points
-    - No excessive repetition: 4 points
-    - Optimal bullet length: 3 points
+    Scoring breakdown:
+    - Action verbs at bullet start: 6 points
+    - Quantified achievements: 6 points
+    - Proper sentence structure: 5 points
+    - No passive voice: 3 points
+    - Professional language: 3 points
+    - Low buzzword count: 2 points
     """
     score = 0
     issues: List[Tuple[str, str]] = []
 
-    # Get all text
-    experience_text = " ".join([str(exp) for exp in resume.experience])
-    all_text = experience_text + " " + " ".join([str(edu) for edu in resume.education])
+    # Comprehensive action verb list (past tense for completed work)
+    strong_action_verbs = [
+        # Leadership & Management
+        'led', 'managed', 'directed', 'supervised', 'coordinated', 'orchestrated', 'spearheaded',
+        'oversaw', 'mentored', 'trained', 'guided', 'delegated', 'executed',
+        # Creation & Development
+        'developed', 'created', 'designed', 'built', 'established', 'launched', 'implemented',
+        'engineered', 'architected', 'crafted', 'authored', 'pioneered', 'initiated',
+        # Improvement & Optimization
+        'improved', 'optimized', 'enhanced', 'streamlined', 'refined', 'transformed',
+        'modernized', 'revitalized', 'upgraded', 'accelerated', 'strengthened',
+        # Achievement & Results
+        'achieved', 'delivered', 'exceeded', 'increased', 'decreased', 'reduced', 'generated',
+        'drove', 'boosted', 'maximized', 'minimized', 'secured', 'attained',
+        # Analysis & Strategy
+        'analyzed', 'evaluated', 'assessed', 'researched', 'identified', 'diagnosed',
+        'forecasted', 'strategized', 'planned', 'formulated',
+        # Communication & Collaboration
+        'collaborated', 'partnered', 'presented', 'communicated', 'negotiated', 'facilitated',
+        'advocated', 'consulted', 'advised', 'liaised'
+    ]
 
-    # Check for action verbs (5 points)
-    action_verbs = ['led', 'managed', 'developed', 'created', 'implemented', 'designed',
-                    'built', 'launched', 'improved', 'increased', 'decreased', 'achieved',
-                    'established', 'optimized', 'streamlined', 'spearheaded']
+    # Weak/passive constructions to avoid
+    passive_indicators = [
+        'was responsible for', 'responsible for', 'duties included', 'worked on',
+        'helped with', 'assisted with', 'involved in', 'tasked with', 'participated in'
+    ]
 
-    action_verb_count = sum(1 for verb in action_verbs if verb in all_text.lower())
-    if action_verb_count >= 5:
-        score += 5
-    elif action_verb_count >= 3:
-        score += 3
-        issues.append(("suggestion", f"Use more action verbs (found {action_verb_count}, aim for 5+)"))
+    # First-person pronouns (should not appear in CV)
+    first_person_pronouns = ['i ', ' i ', 'my ', ' my ', 'me ', ' me ', 'we ', ' we ', 'our ', ' our ']
+
+    # Get experience text for detailed analysis
+    experience_bullets = []
+    for exp in resume.experience:
+        if isinstance(exp, dict) and 'description' in exp:
+            # Split description into bullet points
+            desc = exp.get('description', '')
+            bullets = [line.strip() for line in desc.split('\n') if line.strip() and line.strip().startswith('-')]
+            experience_bullets.extend(bullets)
+
+    all_experience_text = " ".join([str(exp) for exp in resume.experience])
+    all_text = all_experience_text + " " + " ".join([str(edu) for edu in resume.education])
+
+    # 1. ACTION VERBS AT BULLET START (6 points)
+    bullets_with_action_verbs = 0
+    total_bullets = len(experience_bullets)
+
+    if total_bullets > 0:
+        for bullet in experience_bullets:
+            # Remove leading dash/bullet marker
+            bullet_text = bullet.lstrip('-•*▪ ').strip()
+            first_word = bullet_text.split()[0].lower() if bullet_text else ''
+
+            if first_word in strong_action_verbs:
+                bullets_with_action_verbs += 1
+
+        action_verb_percentage = (bullets_with_action_verbs / total_bullets) * 100
+
+        if action_verb_percentage >= 80:
+            score += 6
+        elif action_verb_percentage >= 60:
+            score += 4
+            issues.append(("suggestion", f"{bullets_with_action_verbs}/{total_bullets} bullets start with action verbs - aim for 80%+"))
+        elif action_verb_percentage >= 40:
+            score += 2
+            issues.append(("warning", f"Only {bullets_with_action_verbs}/{total_bullets} bullets start with action verbs - start each with: Led, Developed, Achieved, etc."))
+        else:
+            score += 1
+            issues.append(("critical", f"Only {bullets_with_action_verbs}/{total_bullets} bullets start with strong action verbs - each bullet should start with an action verb"))
     else:
-        score += 1
-        issues.append(("warning", f"Few action verbs found ({action_verb_count}) - start bullets with strong action verbs"))
+        # Check for action verbs in general text if no bullets detected
+        action_verb_count = sum(1 for verb in strong_action_verbs if verb in all_text.lower())
+        if action_verb_count >= 8:
+            score += 4
+        elif action_verb_count >= 5:
+            score += 3
+            issues.append(("suggestion", f"Use more action verbs (found {action_verb_count}, aim for 8+)"))
+        else:
+            score += 1
+            issues.append(("warning", f"Few action verbs found ({action_verb_count}) - use bullet points starting with action verbs"))
 
-    # Check for quantified achievements (8 points)
+    # 2. QUANTIFIED ACHIEVEMENTS (6 points)
     numbers_found = len(re.findall(r'\d+[%$,\d]*', all_text))
-    if numbers_found >= 5:
-        score += 8
-    elif numbers_found >= 3:
-        score += 5
-        issues.append(("suggestion", f"Add more quantified achievements (found {numbers_found}, aim for 5+)"))
-    elif numbers_found >= 1:
-        score += 3
-        issues.append(("warning", f"Few quantified achievements ({numbers_found}) - add numbers, percentages, dollar amounts"))
-    else:
-        issues.append(("critical", "No quantified achievements - add measurable results"))
+    bullets_with_numbers = sum(1 for bullet in experience_bullets if re.search(r'\d+', bullet))
 
-    # Check buzzwords (5 points) - FEWER is better
+    if total_bullets > 0:
+        quantified_percentage = (bullets_with_numbers / total_bullets) * 100
+        if quantified_percentage >= 60:
+            score += 6
+        elif quantified_percentage >= 40:
+            score += 4
+            issues.append(("suggestion", f"{bullets_with_numbers}/{total_bullets} bullets include numbers - aim to quantify 60%+ of achievements"))
+        elif quantified_percentage >= 20:
+            score += 2
+            issues.append(("warning", f"Only {bullets_with_numbers}/{total_bullets} bullets include numbers - add metrics (%, $, numbers, timeframes)"))
+        else:
+            score += 1
+            issues.append(("critical", f"Only {bullets_with_numbers}/{total_bullets} bullets quantified - add measurable results: revenue, percentages, team size, timeframes"))
+    else:
+        if numbers_found >= 5:
+            score += 4
+        elif numbers_found >= 3:
+            score += 3
+            issues.append(("suggestion", f"Add more metrics (found {numbers_found}, aim for 5+)"))
+        elif numbers_found >= 1:
+            score += 1
+            issues.append(("warning", f"Few metrics ({numbers_found}) - add percentages, dollar amounts, quantities"))
+        else:
+            issues.append(("critical", "No quantified achievements - add measurable results"))
+
+    # 3. PROPER SENTENCE STRUCTURE (5 points)
+    structure_score = 5
+    structure_issues = 0
+
+    # Check bullet length (should be 50-150 characters for readability)
+    long_bullets = [b for b in experience_bullets if len(b) > 150]
+    short_bullets = [b for b in experience_bullets if len(b) < 30]
+
+    if len(long_bullets) > total_bullets * 0.3:
+        structure_score -= 2
+        structure_issues += 1
+        issues.append(("warning", f"{len(long_bullets)} bullets too long (>150 chars) - keep bullets concise and scannable"))
+
+    if len(short_bullets) > total_bullets * 0.3:
+        structure_score -= 1
+        structure_issues += 1
+        issues.append(("info", f"{len(short_bullets)} bullets very short (<30 chars) - add more detail to showcase impact"))
+
+    # Check for run-on sentences (multiple clauses)
+    bullets_with_multiple_clauses = [b for b in experience_bullets if b.count(',') > 2 or b.count(' and ') > 1]
+    if len(bullets_with_multiple_clauses) > total_bullets * 0.4:
+        structure_score -= 1
+        structure_issues += 1
+        issues.append(("suggestion", f"{len(bullets_with_multiple_clauses)} bullets have multiple clauses - split complex bullets into separate points"))
+
+    # Check for proper formatting (bullets should start with dash/bullet)
+    if total_bullets == 0 and len(resume.experience) > 0:
+        structure_score -= 2
+        issues.append(("warning", "Use bullet points (•, -, *) to list achievements - avoid paragraph format"))
+
+    score += max(0, structure_score)
+
+    # 4. NO PASSIVE VOICE (3 points)
+    passive_count = sum(1 for phrase in passive_indicators if phrase in all_text.lower())
+
+    if passive_count == 0:
+        score += 3
+    elif passive_count <= 2:
+        score += 1
+        issues.append(("suggestion", f"Avoid passive phrases like 'was responsible for', 'worked on' - use active voice: 'Led', 'Developed'"))
+    else:
+        issues.append(("warning", f"Found {passive_count} passive constructions - replace with active voice (Led team vs. Was responsible for leading team)"))
+
+    # 5. PROFESSIONAL LANGUAGE (3 points)
+    professional_score = 3
+
+    # Check for first-person pronouns
+    first_person_count = sum(1 for pronoun in first_person_pronouns if pronoun in all_text.lower())
+    if first_person_count > 0:
+        professional_score -= 2
+        issues.append(("critical", f"Remove first-person pronouns (I, my, we, our) - use third-person: 'Led team' not 'I led team'"))
+
+    # Check for informal language
+    informal_words = ['stuff', 'things', 'got', 'bunch', 'lots', 'tons', 'really', 'very', 'pretty much']
+    informal_count = sum(1 for word in informal_words if word in all_text.lower())
+    if informal_count > 0:
+        professional_score -= 1
+        issues.append(("warning", f"Avoid informal language - use professional terminology"))
+
+    score += max(0, professional_score)
+
+    # 6. LOW BUZZWORD COUNT (2 points)
     buzzwords = ['synergy', 'rockstar', 'ninja', 'guru', 'passionate', 'team player',
-                 'think outside', 'go-getter', 'self-starter', 'results-driven']
+                 'think outside', 'go-getter', 'self-starter', 'results-driven', 'hard worker',
+                 'detail-oriented', 'people person', 'thought leader']
 
     buzzword_count = sum(1 for word in buzzwords if word in all_text.lower())
     if buzzword_count == 0:
-        score += 5
+        score += 2
     elif buzzword_count <= 2:
-        score += 3
+        score += 1
         issues.append(("info", f"Minimize buzzwords (found {buzzword_count}) - use specific achievements instead"))
     else:
-        score += 1
-        issues.append(("warning", f"Too many buzzwords ({buzzword_count}) - replace with concrete achievements"))
-
-    # Check repetition (4 points)
-    words = all_text.lower().split()
-    word_freq = {}
-    for word in words:
-        if len(word) > 4:  # Only check meaningful words
-            word_freq[word] = word_freq.get(word, 0) + 1
-
-    repeated_words = [word for word, count in word_freq.items() if count > 5]
-    if len(repeated_words) == 0:
-        score += 4
-    elif len(repeated_words) <= 2:
-        score += 2
-        issues.append(("info", f"Some word repetition detected - vary your language"))
-    else:
-        score += 1
-        issues.append(("warning", f"Excessive repetition of words: {', '.join(repeated_words[:3])}"))
-
-    # Check bullet length (3 points) - check experience bullets if available
-    if resume.experience:
-        # Placeholder: assume bullets are in experience dicts
-        score += 2  # Partial credit for having experience section
-        issues.append(("info", "Bullet length analysis requires detailed parsing"))
-    else:
-        issues.append(("suggestion", "Add experience section with concise bullet points (50-150 characters each)"))
+        issues.append(("warning", f"Too many buzzwords ({buzzword_count}) - replace with concrete, measurable achievements"))
 
     return {"score": score, "issues": issues}
 

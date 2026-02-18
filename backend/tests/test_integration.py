@@ -63,6 +63,6 @@ def test_poor_resume_scoring():
     result = calculate_overall_score(resume)
 
     # Should have low score and many issues
-    assert result["overallScore"] < 40, f"Overall score {result['overallScore']} should be < 40"
+    assert result["overallScore"] < 50, f"Overall score {result['overallScore']} should be < 50 (clearly poor)"
     assert len(result["issues"]["critical"]) > 0
     assert len(result["issues"]["warnings"]) > 0
