@@ -62,6 +62,14 @@ async def upload_resume(
             resume_data = parse_pdf(file_content, file.filename)
         else:  # DOCX
             resume_data = parse_docx(file_content, file.filename)
+
+        # Debug logging
+        logger.info(f"Parsed resume - Word count: {resume_data.metadata.get('wordCount', 0)}")
+        logger.info(f"Experience entries: {len(resume_data.experience)}")
+        logger.info(f"Education entries: {len(resume_data.education)}")
+        logger.info(f"Skills count: {len(resume_data.skills)}")
+        if resume_data.experience:
+            logger.info(f"First experience entry: {str(resume_data.experience[0])[:200]}")
     except Exception as e:
         raise HTTPException(
             status_code=400,
