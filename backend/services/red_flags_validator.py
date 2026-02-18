@@ -63,8 +63,9 @@ class RedFlagsValidator:
         all_issues.extend(self.validate_section_completeness(resume))
         all_issues.extend(self.validate_professional_standards(resume))
         all_issues.extend(self.validate_grammar(resume))
-        all_issues.extend(self.validate_metadata(resume))
+        all_issues.extend(self.validate_formatting(resume))
         all_issues.extend(self.validate_content_analysis(resume))
+        all_issues.extend(self.validate_metadata(resume))
 
         # Categorize by severity
         return {

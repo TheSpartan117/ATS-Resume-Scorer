@@ -2308,3 +2308,583 @@ def test_metadata_comprehensive():
     # Check for different categories
     categories = set(i['category'] for i in issues)
     assert 'page_count' in categories or 'word_count' in categories or 'file_format' in categories
+
+
+# ===== Formatting Validation Tests (P22-P25) =====
+
+def test_bullet_consistency_all_same():
+    """Test that consistent bullet markers pass validation (P22)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[
+            {
+                "title": "Software Engineer",
+                "company": "Company A",
+                "startDate": "Jan 2020",
+                "endDate": "Dec 2021",
+                "description": "• Developed scalable applications\n• Built REST APIs\n• Implemented CI/CD"
+            },
+            {
+                "title": "Senior Engineer",
+                "company": "Company B",
+                "startDate": "Jan 2022",
+                "endDate": "Present",
+                "description": "• Led development team\n• Designed architecture\n• Mentored junior developers"
+            }
+        ],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_formatting(resume)
+
+    # Should have no bullet consistency issues
+    bullet_issues = [i for i in issues if i['category'] == 'bullet_consistency']
+    assert len(bullet_issues) == 0
+
+
+def test_bullet_consistency_mixed_markers():
+    """Test that mixed bullet markers trigger warning (P22)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[
+            {
+                "title": "Software Engineer",
+                "company": "Company A",
+                "startDate": "Jan 2020",
+                "endDate": "Dec 2021",
+                "description": "• Developed scalable applications\n- Built REST APIs\n* Implemented CI/CD"
+            },
+            {
+                "title": "Senior Engineer",
+                "company": "Company B",
+                "startDate": "Jan 2022",
+                "endDate": "Present",
+                "description": "1. Led development team\n2. Designed architecture"
+            }
+        ],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_formatting(resume)
+
+    bullet_issues = [i for i in issues if i['category'] == 'bullet_consistency']
+    assert len(bullet_issues) >= 1
+    assert bullet_issues[0]['severity'] == 'warning'
+    assert '•' in bullet_issues[0]['message'] or '-' in bullet_issues[0]['message']
+
+
+def test_bullet_consistency_dash_vs_bullet():
+    """Test detection of dash vs bullet point markers (P22)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[
+            {
+                "title": "Software Engineer",
+                "company": "Company A",
+                "startDate": "Jan 2020",
+                "endDate": "Dec 2021",
+                "description": "- Developed applications\n- Built APIs"
+            },
+            {
+                "title": "Senior Engineer",
+                "company": "Company B",
+                "startDate": "Jan 2022",
+                "endDate": "Present",
+                "description": "• Led team\n• Designed systems"
+            }
+        ],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_formatting(resume)
+
+    bullet_issues = [i for i in issues if i['category'] == 'bullet_consistency']
+    assert len(bullet_issues) >= 1
+    assert bullet_issues[0]['severity'] == 'warning'
+
+
+def test_font_readability_standard_fonts():
+    """Test that standard fonts pass validation (P23)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={
+            "pageCount": 1,
+            "wordCount": 400,
+            "fileFormat": "pdf",
+            "fonts": ["Arial", "Calibri"]
+        }
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_formatting(resume)
+
+    # Should have no font readability issues
+    font_issues = [i for i in issues if i['category'] == 'font_readability']
+    assert len(font_issues) == 0
+
+
+def test_font_readability_decorative_fonts():
+    """Test that decorative fonts trigger critical error (P23)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={
+            "pageCount": 1,
+            "wordCount": 400,
+            "fileFormat": "pdf",
+            "fonts": ["Comic Sans MS", "Arial"]
+        }
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_formatting(resume)
+
+    font_issues = [i for i in issues if i['category'] == 'font_readability']
+    assert len(font_issues) >= 1
+    assert font_issues[0]['severity'] == 'critical'
+    assert 'comic sans' in font_issues[0]['message'].lower()
+
+
+def test_font_readability_multiple_decorative_fonts():
+    """Test detection of various decorative fonts (P23)"""
+    decorative_fonts = ['Papyrus', 'Curlz MT', 'Brush Script', 'Zapfino']
+
+    for font in decorative_fonts:
+        resume = ResumeData(
+            fileName="test.pdf",
+            contact={"name": "John Doe"},
+            experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+            education=[{"degree": "BS Computer Science", "institution": "University"}],
+            skills=["Python"],
+            certifications=[],
+            metadata={
+                "pageCount": 1,
+                "wordCount": 400,
+                "fileFormat": "pdf",
+                "fonts": [font]
+            }
+        )
+
+        validator = RedFlagsValidator()
+        issues = validator.validate_formatting(resume)
+
+        font_issues = [i for i in issues if i['category'] == 'font_readability']
+        assert len(font_issues) >= 1, f"Failed to detect decorative font: {font}"
+        assert font_issues[0]['severity'] == 'critical'
+
+
+def test_font_readability_too_many_fonts():
+    """Test that too many fonts trigger warning (P23)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={
+            "pageCount": 1,
+            "wordCount": 400,
+            "fileFormat": "pdf",
+            "fonts": ["Arial", "Calibri", "Times New Roman", "Georgia"]  # 4 fonts
+        }
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_formatting(resume)
+
+    font_issues = [i for i in issues if i['category'] == 'font_readability']
+    assert len(font_issues) >= 1
+    assert font_issues[0]['severity'] == 'warning'
+    assert '4 different fonts' in font_issues[0]['message']
+
+
+def test_section_header_consistency_all_caps():
+    """Test that consistent ALL CAPS headers pass validation (P24)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={
+            "pageCount": 1,
+            "wordCount": 400,
+            "fileFormat": "pdf",
+            "rawText": "EXPERIENCE\nSoftware Engineer\n\nEDUCATION\nBS Computer Science\n\nSKILLS\nPython, Java"
+        }
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_formatting(resume)
+
+    # Should have no header consistency issues
+    header_issues = [i for i in issues if i['category'] == 'header_consistency']
+    assert len(header_issues) == 0
+
+
+def test_section_header_consistency_title_case():
+    """Test that consistent Title Case headers pass validation (P24)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={
+            "pageCount": 1,
+            "wordCount": 400,
+            "fileFormat": "pdf",
+            "rawText": "Professional Experience\nSoftware Engineer\n\nEducation\nBS Computer Science\n\nTechnical Skills\nPython, Java"
+        }
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_formatting(resume)
+
+    # Should have no header consistency issues
+    header_issues = [i for i in issues if i['category'] == 'header_consistency']
+    assert len(header_issues) == 0
+
+
+def test_section_header_consistency_mixed():
+    """Test that mixed header capitalization triggers warning (P24)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={
+            "pageCount": 1,
+            "wordCount": 400,
+            "fileFormat": "pdf",
+            "rawText": "EXPERIENCE\nSoftware Engineer\n\nEducation\nBS Computer Science\n\nskills\nPython, Java"
+        }
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_formatting(resume)
+
+    header_issues = [i for i in issues if i['category'] == 'header_consistency']
+    assert len(header_issues) >= 1
+    assert header_issues[0]['severity'] == 'warning'
+    assert 'capitalization' in header_issues[0]['message'].lower()
+
+
+def test_section_header_consistency_all_caps_vs_title():
+    """Test detection of ALL CAPS vs Title Case mixing (P24)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={
+            "pageCount": 1,
+            "wordCount": 400,
+            "fileFormat": "pdf",
+            "rawText": "PROFESSIONAL EXPERIENCE\nSoftware Engineer at Company\n\nEducation Background\nBS Computer Science\n\nSKILLS\nPython"
+        }
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_formatting(resume)
+
+    header_issues = [i for i in issues if i['category'] == 'header_consistency']
+    assert len(header_issues) >= 1
+    assert header_issues[0]['severity'] == 'warning'
+
+
+def test_header_footer_content_no_contact_info():
+    """Test that headers/footers without contact info pass (P25)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={
+            "pageCount": 2,
+            "wordCount": 400,
+            "fileFormat": "pdf",
+            "headerContent": "John Doe - Resume",
+            "footerContent": "Page 1 of 2"
+        }
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_formatting(resume)
+
+    # Should have no header/footer issues
+    hf_issues = [i for i in issues if i['category'] == 'header_footer_content']
+    assert len(hf_issues) == 0
+
+
+def test_header_footer_content_email_in_header():
+    """Test that email in header triggers critical error (P25)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={
+            "pageCount": 2,
+            "wordCount": 400,
+            "fileFormat": "pdf",
+            "headerContent": "John Doe | john.doe@email.com | 555-123-4567",
+            "footerContent": ""
+        }
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_formatting(resume)
+
+    hf_issues = [i for i in issues if i['category'] == 'header_footer_content']
+    assert len(hf_issues) >= 1
+    email_issues = [i for i in hf_issues if 'email' in i['message'].lower()]
+    assert len(email_issues) >= 1
+    assert email_issues[0]['severity'] == 'critical'
+
+
+def test_header_footer_content_phone_in_footer():
+    """Test that phone number in footer triggers critical error (P25)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={
+            "pageCount": 2,
+            "wordCount": 400,
+            "fileFormat": "pdf",
+            "headerContent": "",
+            "footerContent": "Contact: (555) 123-4567"
+        }
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_formatting(resume)
+
+    hf_issues = [i for i in issues if i['category'] == 'header_footer_content']
+    assert len(hf_issues) >= 1
+    phone_issues = [i for i in hf_issues if 'phone' in i['message'].lower()]
+    assert len(phone_issues) >= 1
+    assert phone_issues[0]['severity'] == 'critical'
+
+
+def test_header_footer_content_linkedin_in_header():
+    """Test that LinkedIn URL in header triggers critical error (P25)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={
+            "pageCount": 2,
+            "wordCount": 400,
+            "fileFormat": "pdf",
+            "headerContent": "John Doe | linkedin.com/in/johndoe",
+            "footerContent": ""
+        }
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_formatting(resume)
+
+    hf_issues = [i for i in issues if i['category'] == 'header_footer_content']
+    assert len(hf_issues) >= 1
+    linkedin_issues = [i for i in hf_issues if 'linkedin' in i['message'].lower()]
+    assert len(linkedin_issues) >= 1
+    assert linkedin_issues[0]['severity'] == 'critical'
+
+
+def test_header_footer_content_multiple_contact_info():
+    """Test detection of multiple contact info in header/footer (P25)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={
+            "pageCount": 2,
+            "wordCount": 400,
+            "fileFormat": "pdf",
+            "headerContent": "john@email.com | (555) 123-4567 | linkedin.com/in/john",
+            "footerContent": "Page 1"
+        }
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_formatting(resume)
+
+    hf_issues = [i for i in issues if i['category'] == 'header_footer_content']
+    assert len(hf_issues) >= 2  # Should detect multiple types of contact info
+
+
+def test_formatting_validation_no_experience():
+    """Test formatting validation with no experience section"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 200, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_formatting(resume)
+
+    # Should not crash with empty experience
+    assert isinstance(issues, list)
+
+
+def test_formatting_validation_no_metadata():
+    """Test formatting validation with minimal metadata"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Engineer",
+            "company": "Company",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "• Developed applications"
+        }],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 200, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_formatting(resume)
+
+    # Should not crash with minimal metadata
+    assert isinstance(issues, list)
+
+
+def test_validate_resume_includes_formatting():
+    """Test that validate_resume calls validate_formatting"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[
+            {
+                "title": "Software Engineer",
+                "company": "Company A",
+                "startDate": "Jan 2020",
+                "endDate": "Dec 2021",
+                "description": "• Developed applications\n- Built APIs"  # Inconsistent bullets
+            }
+        ],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={
+            "pageCount": 1,
+            "wordCount": 400,
+            "fileFormat": "pdf",
+            "fonts": ["Comic Sans MS"],  # Decorative font
+            "rawText": "EXPERIENCE\nSoftware Engineer\n\neducation\nBS CS",  # Mixed headers
+            "headerContent": "john@email.com"  # Email in header
+        }
+    )
+
+    validator = RedFlagsValidator()
+    result = validator.validate_resume(resume, "software_engineer", "mid")
+
+    # Should have formatting issues
+    all_issues = result['critical'] + result['warnings'] + result['suggestions']
+    formatting_issues = [i for i in all_issues if i['category'] in [
+        'bullet_consistency', 'font_readability', 'header_consistency', 'header_footer_content'
+    ]]
+    assert len(formatting_issues) >= 3  # Should catch multiple issues
+
+
+def test_formatting_comprehensive():
+    """Test comprehensive formatting validation with multiple issues"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[
+            {
+                "title": "Software Engineer",
+                "company": "Company A",
+                "startDate": "Jan 2020",
+                "endDate": "Dec 2021",
+                "description": "• Developed scalable applications\n* Built REST APIs\n1. Implemented CI/CD"
+            },
+            {
+                "title": "Senior Engineer",
+                "company": "Company B",
+                "startDate": "Jan 2022",
+                "endDate": "Present",
+                "description": "- Led development team\n- Designed architecture"
+            }
+        ],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={
+            "pageCount": 2,
+            "wordCount": 600,
+            "fileFormat": "pdf",
+            "fonts": ["Comic Sans MS", "Papyrus", "Arial", "Calibri"],
+            "rawText": "PROFESSIONAL EXPERIENCE\nSoftware Engineer\n\nEducation\nBS CS\n\nskills\nPython",
+            "headerContent": "john.doe@email.com | (555) 123-4567",
+            "footerContent": "linkedin.com/in/johndoe"
+        }
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_formatting(resume)
+
+    # Should have multiple types of formatting issues
+    assert len(issues) >= 4
+
+    # Check for different categories
+    categories = set(i['category'] for i in issues)
+    assert 'bullet_consistency' in categories
+    assert 'font_readability' in categories
+    assert 'header_consistency' in categories
+    assert 'header_footer_content' in categories
