@@ -1451,3 +1451,300 @@ def test_validate_resume_includes_professional_standards():
     all_issues = result['warnings'] + result['suggestions']
     professional_issues = [i for i in all_issues if 'email' in i['message'].lower() or 'linkedin' in i['message'].lower()]
     assert len(professional_issues) >= 1
+
+
+# ===== Grammar Checker Validation Tests (P18-P21) =====
+
+def test_typo_detection():
+    """Test detection of typos in experience descriptions (P18)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Software Engineer",
+            "company": "Company A",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "• Develped scalable applications\n• Implemented continous integration"
+        }],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_grammar(resume)
+
+    typo_issues = [i for i in issues if i['category'] == 'typo']
+    assert len(typo_issues) >= 1
+    assert typo_issues[0]['severity'] == 'warning'
+
+
+def test_grammar_error_detection():
+    """Test detection of grammar errors (P19)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Software Engineer",
+            "company": "Company A",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "• She work on multiple projects daily\n• The team have completed the task"
+        }],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_grammar(resume)
+
+    grammar_issues = [i for i in issues if i['category'] == 'grammar']
+    assert len(grammar_issues) >= 1
+    assert grammar_issues[0]['severity'] == 'warning'
+
+
+def test_capitalization_error_detection():
+    """Test detection of capitalization errors (P21)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Software Engineer",
+            "company": "Company A",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "• worked at microsoft corporation\n• developed apis for the project"
+        }],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_grammar(resume)
+
+    casing_issues = [i for i in issues if i['category'] == 'capitalization']
+    assert len(casing_issues) >= 1
+    assert casing_issues[0]['severity'] == 'suggestion'
+
+
+def test_grammar_validation_with_clean_text():
+    """Test that clean text produces no grammar issues"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Software Engineer",
+            "company": "Company A",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "• Developed scalable applications using Python and FastAPI\n• Implemented continuous integration pipelines"
+        }],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_grammar(resume)
+
+    # Should have minimal or no grammar issues with clean text
+    assert isinstance(issues, list)
+
+
+def test_grammar_validation_checks_education():
+    """Test that grammar validation checks education section"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Software Engineer",
+            "company": "Company A",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "• Developed scalable applications"
+        }],
+        education=[{
+            "degree": "Bachelor of Scince in Computer Science",  # Typo: Scince
+            "institution": "University",
+            "graduationDate": "2020"
+        }],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_grammar(resume)
+
+    # Should detect typo in education
+    typo_issues = [i for i in issues if i['category'] == 'typo' and 'education' in i['message'].lower()]
+    assert len(typo_issues) >= 1
+
+
+def test_grammar_validation_checks_summary():
+    """Test that grammar validation checks summary section"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={
+            "name": "John Doe",
+            "summary": "Experianced software engineer with 5 years of experiance"  # Typos
+        },
+        experience=[{
+            "title": "Software Engineer",
+            "company": "Company A",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "• Developed applications"
+        }],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_grammar(resume)
+
+    # Should detect typos in summary
+    typo_issues = [i for i in issues if i['category'] == 'typo' and 'summary' in i['message'].lower()]
+    assert len(typo_issues) >= 1
+
+
+def test_grammar_validation_limits_issues():
+    """Test that grammar validation limits number of issues per category"""
+    # Create text with many repeated typos
+    many_typos = "\n".join([f"• Develped application number {i}" for i in range(20)])
+
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Software Engineer",
+            "company": "Company A",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": many_typos
+        }],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_grammar(resume)
+
+    # Should limit to max 10 per category
+    typo_issues = [i for i in issues if i['category'] == 'typo']
+    assert len(typo_issues) <= 10
+
+
+def test_grammar_validation_handles_missing_languagetool():
+    """Test graceful handling when LanguageTool is unavailable"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Software Engineer",
+            "company": "Company A",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "• Developed applications"
+        }],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    # Force LanguageTool to be None
+    validator._language_tool = None
+    validator._lt_init_failed = True
+
+    # Should not crash, return empty list
+    issues = validator.validate_grammar(resume)
+    assert issues == []
+
+
+def test_grammar_validation_caching():
+    """Test that grammar validation caches results"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Software Engineer",
+            "company": "Company A",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "• Develped scalable applications"  # Typo
+        }],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+
+    # First call - should check grammar
+    issues1 = validator.validate_grammar(resume)
+
+    # Second call with same text - should use cache
+    issues2 = validator.validate_grammar(resume)
+
+    # Results should be identical
+    assert len(issues1) == len(issues2)
+    assert issues1 == issues2
+
+
+def test_validate_resume_includes_grammar():
+    """Test that validate_resume calls validate_grammar"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Software Engineer",
+            "company": "Company A",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "• Develped scalable applications\n• She work on multiple projects"
+        }],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    result = validator.validate_resume(resume, "software_engineer", "mid")
+
+    # Should have grammar issues in warnings
+    grammar_issues = [i for i in result['warnings'] if i['category'] in ['typo', 'grammar', 'capitalization']]
+    assert len(grammar_issues) >= 1
+
+
+def test_grammar_validation_empty_sections():
+    """Test grammar validation with empty sections"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={},
+        experience=[],
+        education=[],
+        skills=[],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_grammar(resume)
+
+    # Should not crash with empty sections
+    assert isinstance(issues, list)

@@ -4,9 +4,16 @@ Checks all 44 parameters and returns issues by severity.
 """
 
 import re
+import hashlib
 from datetime import datetime
 from typing import Dict, List, Optional
 from backend.services.parser import ResumeData
+
+try:
+    import language_tool_python
+    LANGUAGE_TOOL_AVAILABLE = True
+except ImportError:
+    LANGUAGE_TOOL_AVAILABLE = False
 
 
 class RedFlagsValidator:
@@ -14,6 +21,27 @@ class RedFlagsValidator:
     Validates resume against 44 parameters.
     Returns issues categorized by severity: critical, warning, suggestion.
     """
+
+    def __init__(self):
+        """Initialize validator with grammar checker support"""
+        self._language_tool = None
+        self._lt_init_failed = False
+        self._grammar_cache = {}  # Cache grammar results by text hash
+
+    def _get_language_tool(self):
+        """Get or initialize LanguageTool instance"""
+        if self._lt_init_failed:
+            return None
+
+        if self._language_tool is None and LANGUAGE_TOOL_AVAILABLE:
+            try:
+                self._language_tool = language_tool_python.LanguageTool('en-US')
+            except Exception:
+                # If initialization fails, mark it and don't try again
+                self._lt_init_failed = True
+                return None
+
+        return self._language_tool
 
     def validate_resume(self, resume: ResumeData, role: str, level: str) -> Dict:
         """
@@ -34,6 +62,8 @@ class RedFlagsValidator:
         all_issues.extend(self.validate_content_depth(resume))
         all_issues.extend(self.validate_section_completeness(resume))
         all_issues.extend(self.validate_professional_standards(resume))
+        all_issues.extend(self.validate_grammar(resume))
+        all_issues.extend(self.validate_content_analysis(resume))
 
         # Categorize by severity
         return {
@@ -692,3 +722,145 @@ class RedFlagsValidator:
                 formats.append('other')
 
         return formats
+
+    def validate_grammar(self, resume: ResumeData) -> List[Dict]:
+        """
+        Validate grammar, spelling, and capitalization in resume text.
+        Parameters 18-21 from design doc:
+        - P18: Typo Detection (using LanguageTool)
+        - P19: Grammar Errors (sentence structure, agreement)
+        - P20: Verb Tense Consistency (checked via grammar)
+        - P21: Capitalization (proper nouns, job titles)
+        """
+        issues = []
+
+        # Check if LanguageTool is available
+        lt = self._get_language_tool()
+        if lt is None:
+            return []  # Return empty list if LanguageTool unavailable
+
+        # Collect all text sections to check
+        text_sections = []
+
+        # Check summary/objective
+        if resume.contact:
+            summary_fields = ['summary', 'objective', 'profile', 'about']
+            for field in summary_fields:
+                if field in resume.contact and resume.contact[field]:
+                    text = str(resume.contact[field]).strip()
+                    if text:
+                        text_sections.append({
+                            'text': text,
+                            'section': 'summary',
+                            'context': 'Professional summary'
+                        })
+
+        # Check experience descriptions
+        if resume.experience:
+            for exp in resume.experience:
+                description = exp.get('description', '')
+                if description:
+                    # Parse bullets to check each one
+                    bullets = self._parse_bullets(description)
+                    for bullet in bullets:
+                        bullet_text = bullet.strip()
+                        if bullet_text and len(bullet_text) > 10:  # Only check substantial bullets
+                            text_sections.append({
+                                'text': bullet_text,
+                                'section': 'experience',
+                                'context': f"{exp.get('title', 'Position')} at {exp.get('company', 'company')}"
+                            })
+
+        # Check education descriptions/degrees
+        if resume.education:
+            for edu in resume.education:
+                degree = edu.get('degree', '')
+                if degree and len(degree) > 5:
+                    text_sections.append({
+                        'text': degree,
+                        'section': 'education',
+                        'context': f"Education: {edu.get('institution', 'institution')}"
+                    })
+
+                # Check education description if present
+                description = edu.get('description', '')
+                if description:
+                    text_sections.append({
+                        'text': description,
+                        'section': 'education',
+                        'context': f"Education: {edu.get('institution', 'institution')}"
+                    })
+
+        # Check each text section for grammar issues
+        issue_counts = {'typo': 0, 'grammar': 0, 'capitalization': 0}
+        max_per_category = 10  # Limit issues to avoid spam
+
+        for section in text_sections:
+            text = section['text']
+            section_name = section['section']
+            context = section['context']
+
+            # Check cache first
+            text_hash = hashlib.md5(text.encode()).hexdigest()
+            if text_hash in self._grammar_cache:
+                matches = self._grammar_cache[text_hash]
+            else:
+                # Check grammar with LanguageTool
+                try:
+                    matches = lt.check(text)
+                    self._grammar_cache[text_hash] = matches
+                except Exception:
+                    continue  # Skip this text if check fails
+
+            # Process matches and categorize
+            for match in matches:
+                # Map LanguageTool rule types to our categories
+                rule_id = match.ruleId
+                rule_category = match.category.upper() if hasattr(match, 'category') else ''
+
+                # Determine category and severity
+                category = None
+                severity = None
+
+                # P18: Typo detection (MISSPELLING)
+                if 'TYPO' in rule_category or 'SPELL' in rule_category or rule_id.startswith('MORFOLOGIK'):
+                    category = 'typo'
+                    severity = 'warning'
+                # P21: Capitalization (CASING)
+                elif 'CASING' in rule_category or 'UPPERCASE' in rule_id or 'LOWERCASE' in rule_id:
+                    category = 'capitalization'
+                    severity = 'suggestion'
+                # P19: Grammar errors (GRAMMAR, agreement, etc.)
+                elif 'GRAMMAR' in rule_category or 'AGREEMENT' in rule_id or 'VERB' in rule_category:
+                    category = 'grammar'
+                    severity = 'warning'
+                # Default to grammar for other issues
+                else:
+                    category = 'grammar'
+                    severity = 'warning'
+
+                # Check if we've hit the limit for this category
+                if issue_counts[category] >= max_per_category:
+                    continue
+
+                # Extract error context
+                error_text = text[match.offset:match.offset + match.errorLength]
+                suggestion = match.replacements[0] if match.replacements else None
+
+                # Build message
+                message = f"{context}: {match.message}"
+                if error_text:
+                    message += f" ('{error_text}')"
+                if suggestion:
+                    message += f" - Suggestion: '{suggestion}'"
+
+                issues.append({
+                    'severity': severity,
+                    'category': category,
+                    'message': message,
+                    'section': section_name
+                })
+
+                issue_counts[category] += 1
+
+        return issues
