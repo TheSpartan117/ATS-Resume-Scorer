@@ -165,13 +165,21 @@ export default function EditorPage() {
 
   // Manual re-score function
   const performRescore = useCallback(async (content: string = editorContent) => {
-    if (!result || !isMountedRef.current) return
+    console.log('performRescore called')
+
+    if (!result || !isMountedRef.current) {
+      console.log('Early return: result or isMountedRef check failed', { result: !!result, isMounted: isMountedRef.current })
+      return
+    }
 
     // Check if ad should be shown before re-scoring
+    console.log('Checking if ad should be shown...')
     setAdCheckPending(true)
     try {
       const adResult = await shouldShowAd()
+      console.log('Ad check result:', adResult)
       if (adResult.showAd) {
+        console.log('Showing ad, blocking re-score')
         setShowAd(true)
         setAdCheckPending(false)
         return // Exit early to prevent re-scoring
@@ -182,6 +190,7 @@ export default function EditorPage() {
       setAdCheckPending(false)
     }
 
+    console.log('Starting re-score...')
     setIsRescoring(true)
     setRescoreError(null)
 
