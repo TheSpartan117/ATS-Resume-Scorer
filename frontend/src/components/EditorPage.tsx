@@ -163,6 +163,67 @@ export default function EditorPage() {
   // Debounce editor content changes (500ms delay)
   const debouncedContent = useDebounce(editorContent, 500)
 
+  // Manual re-score function
+  const performRescore = useCallback(async (content: string = editorContent) => {
+    if (!result || !isMountedRef.current) return
+
+    // Check if ad should be shown before re-scoring
+    setAdCheckPending(true)
+    try {
+      const adResult = await shouldShowAd()
+      if (adResult.showAd) {
+        setShowAd(true)
+        setAdCheckPending(false)
+        return // Exit early to prevent re-scoring
+      }
+    } catch (err) {
+      console.error('Ad check failed:', err)
+    } finally {
+      setAdCheckPending(false)
+    }
+
+    setIsRescoring(true)
+    setRescoreError(null)
+
+    try {
+      // Count words in HTML content by stripping tags
+      const textContent = content.replace(/<[^>]*>/g, ' ')
+      const words = textContent.trim().split(/\s+/).filter(Boolean).length
+      setWordCount(words)
+
+      // Include actual parsed data for accurate re-scoring
+      const scoreRequest: ScoreRequest = {
+        fileName: result.fileName,
+        contact: result.contact,
+        experience: result.experience || [],
+        education: result.education || [],
+        skills: result.skills || [],
+        certifications: result.certifications || [],
+        metadata: {
+          ...result.metadata,
+          wordCount: words
+        },
+        jobDescription: result.jobDescription,
+        industry: result.industry
+      }
+
+      const newScore = await rescoreResume(scoreRequest)
+
+      if (isMountedRef.current) {
+        setCurrentScore(newScore)
+        setRescoreError('✓ Resume re-scored successfully')
+      }
+    } catch (err) {
+      if (isMountedRef.current) {
+        setRescoreError(err instanceof Error ? err.message : 'Failed to re-score')
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setIsRescoring(false)
+      }
+    }
+  }, [result, editorContent])
+
   // Re-score when debounced content changes
   useEffect(() => {
     if (!result || !debouncedContent) return
@@ -173,67 +234,8 @@ export default function EditorPage() {
       return
     }
 
-    const performRescore = async () => {
-      if (!isMountedRef.current) return
-
-      // Check if ad should be shown before re-scoring
-      setAdCheckPending(true)
-      try {
-        const adResult = await shouldShowAd()
-        if (adResult.showAd) {
-          setShowAd(true)
-          setAdCheckPending(false)
-          return // Exit early to prevent re-scoring
-        }
-      } catch (err) {
-        console.error('Ad check failed:', err)
-      } finally {
-        setAdCheckPending(false)
-      }
-
-      setIsRescoring(true)
-      setRescoreError(null)
-
-      try {
-        // Count words in HTML content by stripping tags
-        const textContent = debouncedContent.replace(/<[^>]*>/g, ' ')
-        const words = textContent.trim().split(/\s+/).filter(Boolean).length
-        setWordCount(words)
-
-        // Include actual parsed data for accurate re-scoring
-        const scoreRequest: ScoreRequest = {
-          fileName: result.fileName,
-          contact: result.contact,
-          experience: result.experience || [],
-          education: result.education || [],
-          skills: result.skills || [],
-          certifications: result.certifications || [],
-          metadata: {
-            ...result.metadata,
-            wordCount: words
-          },
-          jobDescription: result.jobDescription,
-          industry: result.industry
-        }
-
-        const newScore = await rescoreResume(scoreRequest)
-
-        if (isMountedRef.current) {
-          setCurrentScore(newScore)
-        }
-      } catch (err) {
-        if (isMountedRef.current) {
-          setRescoreError(err instanceof Error ? err.message : 'Failed to re-score')
-        }
-      } finally {
-        if (isMountedRef.current) {
-          setIsRescoring(false)
-        }
-      }
-    }
-
-    performRescore()
-  }, [debouncedContent, result])
+    performRescore(debouncedContent)
+  }, [debouncedContent, result, performRescore])
 
   // Handle ad viewed callback
   const handleAdViewed = useCallback(() => {
@@ -402,18 +404,27 @@ export default function EditorPage() {
           </div>
         )}
 
-        {/* Main Content - Full Width MS Word-Style Editor */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Left Column: Editor (2/3 width) */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4">
+        {/* Main Content - Wider Editor */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          {/* Left Column: Editor (3/4 width) */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-lg shadow-sm p-4">
+              <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold text-gray-900">
                   📝 Resume Content
                 </h2>
-                <span className="text-sm text-gray-600">
-                  {wordCount} words
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600">
+                    {wordCount} words
+                  </span>
+                  <button
+                    onClick={() => performRescore()}
+                    disabled={isRescoring}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isRescoring ? 'Re-scoring...' : '🔄 Re-score'}
+                  </button>
+                </div>
               </div>
               <WYSIWYGEditor
                 value={editorContent}
@@ -422,9 +433,9 @@ export default function EditorPage() {
             </div>
           </div>
 
-          {/* Right Column: Live Score (1/3 width) */}
+          {/* Right Column: Live Score (1/4 width) */}
           <div className="lg:col-span-1">
-            <div className="sticky top-4 space-y-4">
+            <div className="sticky top-4 space-y-3">
               {/* Mode Indicator with Score */}
               <ModeIndicator
                 mode={(currentScore.mode || result.scoringMode || 'quality_coach') as 'ats_simulation' | 'quality_coach'}

@@ -198,11 +198,12 @@ export const WYSIWYGEditor: React.FC<WYSIWYGEditorProps> = ({ value, onChange })
         ref={editorRef}
         contentEditable
         onInput={handleInput}
-        className="editor-content bg-white border border-gray-300 border-t-0 rounded-b-lg p-4 min-h-[600px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="editor-content bg-white border border-gray-300 border-t-0 rounded-b-lg p-6 min-h-[600px] focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-auto"
         style={{
           fontFamily: 'Arial, sans-serif',
           fontSize: '14px',
           lineHeight: '1.6',
+          maxWidth: '100%',
         }}
       />
     </div>
