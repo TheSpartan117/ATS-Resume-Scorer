@@ -6,226 +6,27 @@ better keyword matching in ATS resume scoring. It supports both direct
 lookup (main keyword -> synonyms) and reverse lookup (synonym -> main keyword).
 """
 
-from typing import List, Set
+import json
+from pathlib import Path
+from typing import Dict, List, Set
 
 
-# Synonym database organized by category
-SYNONYM_DATABASE = {
-    # Programming Languages
-    "python": ["py", "python3", "python2", "cpython"],
-    "javascript": ["js", "es6", "es2015", "ecmascript", "node.js", "nodejs"],
-    "java": ["jdk", "jvm", "java se", "java ee"],
-    "c++": ["cpp", "c plus plus"],
-    "c#": ["csharp", "c sharp", ".net"],
-    "golang": ["go", "go lang"],
-    "typescript": ["ts"],
-    "ruby": ["rb", "ruby on rails", "rails"],
-    "php": ["php5", "php7", "php8"],
-    "swift": ["swift ui", "swiftui"],
-    "kotlin": ["kt"],
-    "rust": ["rs"],
-    "scala": ["sc"],
-    "r": ["r language", "r programming"],
-    "perl": ["pl"],
-    "shell": ["bash", "sh", "zsh", "shell script", "shell scripting"],
+def _load_synonym_database() -> Dict[str, List[str]]:
+    """Load synonym database from JSON file."""
+    json_path = Path(__file__).parent.parent / "data" / "synonyms" / "skill_synonyms.json"
 
-    # Cloud Platforms
-    "aws": ["amazon web services", "amazon aws"],
-    "azure": ["microsoft azure", "azure cloud"],
-    "gcp": ["google cloud platform", "google cloud", "gcloud"],
-    "ibm cloud": ["ibm bluemix", "bluemix"],
-    "oracle cloud": ["oci", "oracle cloud infrastructure"],
+    if not json_path.exists():
+        raise FileNotFoundError(
+            f"Synonym database not found at {json_path}. "
+            "Run backend/scripts/build_synonym_database.py to generate it."
+        )
 
-    # AWS Services
-    "ec2": ["elastic compute cloud", "amazon ec2"],
-    "s3": ["simple storage service", "amazon s3"],
-    "lambda": ["aws lambda", "serverless lambda"],
-    "rds": ["relational database service", "amazon rds"],
-    "dynamodb": ["dynamo db", "amazon dynamodb"],
-    "cloudformation": ["cloud formation", "cfn"],
-    "eks": ["elastic kubernetes service"],
-    "ecs": ["elastic container service"],
+    with open(json_path, 'r', encoding='utf-8') as f:
+        return json.load(f)
 
-    # DevOps & CI/CD Tools
-    "kubernetes": ["k8s", "kube"],
-    "docker": ["containerization", "containers"],
-    "terraform": ["tf", "infrastructure as code", "iac"],
-    "jenkins": ["jenkins ci", "jenkins cd"],
-    "gitlab": ["gitlab ci", "gitlab ci/cd"],
-    "github actions": ["github action", "gh actions"],
-    "circleci": ["circle ci"],
-    "travis ci": ["travis"],
-    "ansible": ["ansible playbook", "ansible automation"],
-    "puppet": ["puppet labs"],
-    "chef": ["chef automation"],
-    "vagrant": ["vagrant box"],
 
-    # Version Control
-    "git": ["version control", "source control", "github", "gitlab", "bitbucket"],
-    "svn": ["subversion", "apache subversion"],
-    "mercurial": ["hg"],
-
-    # Databases - SQL
-    "postgresql": ["postgres", "psql", "pg"],
-    "mysql": ["my sql", "mysql server"],
-    "sql server": ["mssql", "microsoft sql server", "ms sql"],
-    "oracle": ["oracle database", "oracle db"],
-    "sqlite": ["sqlite3"],
-    "mariadb": ["maria db"],
-
-    # Databases - NoSQL
-    "mongodb": ["mongo", "mongo db"],
-    "redis": ["redis cache"],
-    "cassandra": ["apache cassandra"],
-    "couchdb": ["couch db", "apache couchdb"],
-    "elasticsearch": ["elastic search", "es"],
-    "neo4j": ["neo4j graph database"],
-
-    # Web Frameworks
-    "react": ["reactjs", "react.js", "react js"],
-    "angular": ["angularjs", "angular.js"],
-    "vue": ["vuejs", "vue.js"],
-    "django": ["django rest framework", "drf"],
-    "flask": ["flask api"],
-    "express": ["expressjs", "express.js"],
-    "spring": ["spring boot", "spring framework"],
-    "laravel": ["laravel framework"],
-
-    # Mobile Development
-    "android": ["android development", "android sdk"],
-    "ios": ["ios development", "iphone development"],
-    "react native": ["react-native"],
-    "flutter": ["flutter sdk"],
-
-    # Testing & Quality Assurance
-    "selenium": ["selenium webdriver"],
-    "junit": ["j unit"],
-    "pytest": ["py test"],
-    "jest": ["jest testing"],
-    "mocha": ["mocha testing"],
-    "cypress": ["cypress.io"],
-    "test driven development": ["tdd"],
-    "behavior driven development": ["bdd"],
-
-    # Data Science & Machine Learning
-    "machine learning": ["ml", "ml engineering"],
-    "deep learning": ["dl", "neural networks"],
-    "natural language processing": ["nlp"],
-    "computer vision": ["cv", "image processing"],
-    "artificial intelligence": ["ai"],
-    "data science": ["ds"],
-    "tensorflow": ["tf", "tensor flow"],
-    "pytorch": ["torch"],
-    "scikit-learn": ["sklearn", "scikit learn"],
-    "pandas": ["pd"],
-    "numpy": ["np"],
-    "matplotlib": ["mpl"],
-    "jupyter": ["jupyter notebook", "jupyter lab"],
-
-    # Methodologies & Practices
-    "agile": ["agile methodology", "agile development", "scrum"],
-    "scrum": ["scrum master", "scrum methodology"],
-    "kanban": ["kanban board"],
-    "ci/cd": ["continuous integration", "continuous deployment", "continuous delivery"],
-    "microservices": ["micro services", "microservice architecture"],
-    "rest api": ["restful api", "rest", "restful"],
-    "graphql": ["graph ql"],
-    "soap": ["soap api"],
-    "api": ["application programming interface"],
-    "sdk": ["software development kit"],
-
-    # Project Management & Collaboration
-    "jira": ["jira software", "atlassian jira"],
-    "confluence": ["atlassian confluence"],
-    "slack": ["slack communication"],
-    "trello": ["trello board"],
-    "asana": ["asana project management"],
-
-    # Action Verbs - Leadership
-    "managed": ["led", "directed", "oversaw", "supervised", "coordinated"],
-    "developed": ["built", "created", "designed", "engineered", "implemented"],
-    "improved": ["enhanced", "optimized", "streamlined", "upgraded", "refined"],
-    "reduced": ["decreased", "minimized", "lowered", "cut", "diminished"],
-    "increased": ["boosted", "raised", "grew", "expanded", "amplified"],
-    "launched": ["released", "deployed", "shipped", "initiated", "introduced"],
-    "achieved": ["accomplished", "attained", "delivered", "completed", "executed"],
-    "collaborated": ["partnered", "cooperated", "worked with", "teamed up"],
-    "analyzed": ["examined", "evaluated", "assessed", "investigated", "studied"],
-    "established": ["founded", "instituted", "created", "set up", "formed"],
-
-    # Action Verbs - Technical
-    "architected": ["designed architecture", "designed system"],
-    "debugged": ["troubleshot", "diagnosed", "fixed bugs"],
-    "refactored": ["restructured", "reorganized code"],
-    "automated": ["scripted", "streamlined automation"],
-    "integrated": ["connected", "interfaced", "linked"],
-    "migrated": ["transferred", "moved", "ported"],
-    "scaled": ["expanded capacity", "increased scalability"],
-    "monitored": ["tracked", "observed", "watched"],
-    "documented": ["recorded", "catalogued", "wrote documentation"],
-
-    # Soft Skills
-    "leadership": ["team leadership", "leading teams"],
-    "communication": ["verbal communication", "written communication"],
-    "problem solving": ["problem-solving", "analytical thinking"],
-    "teamwork": ["team collaboration", "team player"],
-    "time management": ["organization", "prioritization"],
-    "adaptability": ["flexibility", "versatile"],
-    "critical thinking": ["analytical skills"],
-    "mentoring": ["coaching", "training", "mentorship"],
-
-    # Roles & Titles
-    "software engineer": ["software developer", "developer", "programmer"],
-    "senior software engineer": ["senior developer", "senior programmer"],
-    "data scientist": ["ml engineer", "data analyst"],
-    "product manager": ["pm", "product owner"],
-    "project manager": ["program manager"],
-    "devops engineer": ["sre", "site reliability engineer", "platform engineer"],
-    "full stack developer": ["fullstack developer", "full-stack developer"],
-    "frontend developer": ["front-end developer", "front end developer", "ui developer"],
-    "backend developer": ["back-end developer", "back end developer"],
-    "qa engineer": ["quality assurance engineer", "test engineer", "sdet"],
-    "data engineer": ["etl developer", "data pipeline engineer"],
-
-    # Security
-    "security": ["cybersecurity", "information security", "infosec"],
-    "authentication": ["auth", "authorization"],
-    "oauth": ["oauth2", "oauth 2.0"],
-    "jwt": ["json web token", "json web tokens"],
-    "ssl": ["tls", "ssl/tls", "https"],
-    "encryption": ["cryptography", "crypto"],
-
-    # Networking
-    "http": ["https", "http protocol"],
-    "tcp/ip": ["tcp", "ip", "networking"],
-    "dns": ["domain name system"],
-    "load balancing": ["load balancer", "lb"],
-    "cdn": ["content delivery network"],
-
-    # Monitoring & Logging
-    "prometheus": ["prometheus monitoring"],
-    "grafana": ["grafana dashboard"],
-    "datadog": ["data dog"],
-    "new relic": ["newrelic"],
-    "splunk": ["splunk enterprise"],
-    "elk": ["elasticsearch logstash kibana", "elk stack"],
-
-    # Big Data
-    "hadoop": ["apache hadoop"],
-    "spark": ["apache spark", "pyspark"],
-    "kafka": ["apache kafka"],
-    "airflow": ["apache airflow"],
-    "flink": ["apache flink"],
-
-    # Business & Analytics
-    "kpi": ["key performance indicator", "metrics"],
-    "roi": ["return on investment"],
-    "b2b": ["business to business"],
-    "b2c": ["business to consumer"],
-    "saas": ["software as a service"],
-    "paas": ["platform as a service"],
-    "iaas": ["infrastructure as a service"],
-}
+# Load synonym database from JSON file
+SYNONYM_DATABASE = _load_synonym_database()
 
 
 def get_all_synonyms(keyword: str) -> List[str]:

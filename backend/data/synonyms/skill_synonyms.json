@@ -1,5 +1,5 @@
 {
-  "Python": [
+  "python": [
     "python",
     "python3",
     "py",
@@ -7,7 +7,7 @@
     "python2",
     "python 3"
   ],
-  "JavaScript": [
+  "javascript": [
     "javascript",
     "js",
     "ecmascript",
@@ -16,7 +16,7 @@
     "es2020",
     "vanilla js"
   ],
-  "Java": [
+  "java": [
     "java",
     "java8",
     "java11",
@@ -24,412 +24,412 @@
     "jdk",
     "java se"
   ],
-  "TypeScript": [
+  "typescript": [
     "typescript",
     "ts",
     "type script"
   ],
-  "C++": [
+  "c++": [
     "c++",
     "cpp",
     "c plus plus",
     "cplusplus"
   ],
-  "C#": [
+  "c#": [
     "c#",
     "csharp",
     "c sharp",
     ".net",
     "dotnet"
   ],
-  "Ruby": [
+  "ruby": [
     "ruby",
     "rb",
     "ruby on rails",
     "ror"
   ],
-  "Go": [
+  "go": [
     "go",
     "golang",
     "go lang"
   ],
-  "Rust": [
+  "rust": [
     "rust",
     "rust lang"
   ],
-  "PHP": [
+  "php": [
     "php",
     "php7",
     "php8",
     "hypertext preprocessor"
   ],
-  "Swift": [
+  "swift": [
     "swift",
     "swift 5",
     "swiftui"
   ],
-  "Kotlin": [
+  "kotlin": [
     "kotlin",
     "kt"
   ],
-  "R": [
+  "r": [
     "r",
     "r programming",
     "r language"
   ],
-  "Scala": [
+  "scala": [
     "scala",
     "scala lang"
   ],
-  "Perl": [
+  "perl": [
     "perl",
     "perl5"
   ],
-  "Shell": [
+  "shell": [
     "shell",
     "bash",
     "sh",
     "shell script",
     "shell scripting"
   ],
-  "SQL": [
+  "sql": [
     "sql",
     "structured query language",
     "t-sql",
     "pl/sql"
   ],
-  "React": [
+  "react": [
     "react",
     "reactjs",
     "react.js",
     "react js",
     "react native"
   ],
-  "Angular": [
+  "angular": [
     "angular",
     "angularjs",
     "angular.js",
     "angular 2+",
     "ng"
   ],
-  "Vue": [
+  "vue": [
     "vue",
     "vuejs",
     "vue.js",
     "vue js"
   ],
-  "Next.js": [
+  "next.js": [
     "next.js",
     "nextjs",
     "next",
     "next js"
   ],
-  "Svelte": [
+  "svelte": [
     "svelte",
     "sveltejs",
     "svelte.js"
   ],
-  "jQuery": [
+  "jquery": [
     "jquery",
     "jquery ui"
   ],
-  "Node.js": [
+  "node.js": [
     "node.js",
     "nodejs",
     "node",
     "node js"
   ],
-  "Express": [
+  "express": [
     "express",
     "expressjs",
     "express.js",
     "express js"
   ],
-  "Django": [
+  "django": [
     "django",
     "django rest framework",
     "drf"
   ],
-  "Flask": [
+  "flask": [
     "flask",
     "flask rest",
     "flask-restful"
   ],
-  "FastAPI": [
+  "fastapi": [
     "fastapi",
     "fast api"
   ],
-  "Spring": [
+  "spring": [
     "spring",
     "spring boot",
     "spring framework",
     "springframework"
   ],
-  "Ruby on Rails": [
+  "ruby on rails": [
     "ruby on rails",
     "rails",
     "ror",
     "ruby-on-rails"
   ],
-  "Laravel": [
+  "laravel": [
     "laravel",
     "laravel framework"
   ],
-  "ASP.NET": [
+  "asp.net": [
     "asp.net",
     "aspnet",
     "asp .net",
     "asp net"
   ],
-  "AWS": [
+  "aws": [
     "aws",
     "amazon web services",
     "amazon aws"
   ],
-  "Azure": [
+  "azure": [
     "azure",
     "microsoft azure",
     "azure cloud"
   ],
-  "GCP": [
+  "gcp": [
     "gcp",
     "google cloud",
     "google cloud platform",
     "gcloud"
   ],
-  "Heroku": [
+  "heroku": [
     "heroku",
     "heroku cloud"
   ],
-  "DigitalOcean": [
+  "digitalocean": [
     "digitalocean",
     "digital ocean",
     "do"
   ],
-  "EC2": [
+  "ec2": [
     "ec2",
     "elastic compute cloud",
     "aws ec2"
   ],
-  "S3": [
+  "s3": [
     "s3",
     "simple storage service",
     "aws s3"
   ],
-  "Lambda": [
+  "lambda": [
     "lambda",
     "aws lambda",
     "lambda functions"
   ],
-  "RDS": [
+  "rds": [
     "rds",
     "relational database service",
     "aws rds"
   ],
-  "DynamoDB": [
+  "dynamodb": [
     "dynamodb",
     "dynamo db",
     "aws dynamodb"
   ],
-  "CloudFormation": [
+  "cloudformation": [
     "cloudformation",
     "cloud formation",
     "cfn"
   ],
-  "ECS": [
+  "ecs": [
     "ecs",
     "elastic container service",
     "aws ecs"
   ],
-  "EKS": [
+  "eks": [
     "eks",
     "elastic kubernetes service",
     "aws eks"
   ],
-  "Docker": [
+  "docker": [
     "docker",
     "docker container",
     "docker compose",
     "dockerfile"
   ],
-  "Kubernetes": [
+  "kubernetes": [
     "kubernetes",
     "k8s",
     "k-8-s",
     "kube"
   ],
-  "Jenkins": [
+  "jenkins": [
     "jenkins",
     "jenkins ci",
     "jenkins ci/cd"
   ],
-  "GitLab CI": [
+  "gitlab ci": [
     "gitlab ci",
     "gitlab-ci",
     "gitlab ci/cd",
     "gitlab pipeline"
   ],
-  "GitHub Actions": [
+  "github actions": [
     "github actions",
     "github action",
     "gh actions"
   ],
-  "CircleCI": [
+  "circleci": [
     "circleci",
     "circle ci"
   ],
-  "Terraform": [
+  "terraform": [
     "terraform",
     "tf",
     "terraform iac"
   ],
-  "Ansible": [
+  "ansible": [
     "ansible",
     "ansible automation"
   ],
-  "Chef": [
+  "chef": [
     "chef",
     "chef automation"
   ],
-  "Puppet": [
+  "puppet": [
     "puppet",
     "puppet automation"
   ],
-  "PostgreSQL": [
+  "postgresql": [
     "postgresql",
     "postgres",
     "psql",
     "pg"
   ],
-  "MySQL": [
+  "mysql": [
     "mysql",
     "my sql"
   ],
-  "MongoDB": [
+  "mongodb": [
     "mongodb",
     "mongo",
     "mongo db"
   ],
-  "Redis": [
+  "redis": [
     "redis",
     "redis cache"
   ],
-  "Elasticsearch": [
+  "elasticsearch": [
     "elasticsearch",
     "elastic search",
     "es",
     "elk"
   ],
-  "Cassandra": [
+  "cassandra": [
     "cassandra",
     "apache cassandra"
   ],
-  "Oracle": [
+  "oracle": [
     "oracle",
     "oracle db",
     "oracle database"
   ],
-  "SQLite": [
+  "sqlite": [
     "sqlite",
     "sqlite3"
   ],
-  "MariaDB": [
+  "mariadb": [
     "mariadb",
     "maria db"
   ],
-  "Jest": [
+  "jest": [
     "jest",
     "jestjs",
     "jest testing"
   ],
-  "Pytest": [
+  "pytest": [
     "pytest",
     "py.test",
     "pytest framework"
   ],
-  "JUnit": [
+  "junit": [
     "junit",
     "junit5",
     "junit 5"
   ],
-  "Selenium": [
+  "selenium": [
     "selenium",
     "selenium webdriver"
   ],
-  "Cypress": [
+  "cypress": [
     "cypress",
     "cypress.io",
     "cypress testing"
   ],
-  "Mocha": [
+  "mocha": [
     "mocha",
     "mochajs",
     "mocha.js"
   ],
-  "TestNG": [
+  "testng": [
     "testng",
     "test ng"
   ],
-  "Git": [
+  "git": [
     "git",
     "git version control",
     "git scm"
   ],
-  "GitHub": [
+  "github": [
     "github",
     "git hub"
   ],
-  "GitLab": [
+  "gitlab": [
     "gitlab",
     "git lab"
   ],
-  "Bitbucket": [
+  "bitbucket": [
     "bitbucket",
     "bit bucket"
   ],
-  "Agile": [
+  "agile": [
     "agile",
     "agile methodology",
     "agile development"
   ],
-  "Scrum": [
+  "scrum": [
     "scrum",
     "scrum methodology"
   ],
-  "Kanban": [
+  "kanban": [
     "kanban",
     "kanban board"
   ],
-  "CI/CD": [
+  "ci/cd": [
     "ci/cd",
     "ci cd",
     "continuous integration",
     "continuous deployment"
   ],
-  "TDD": [
+  "tdd": [
     "tdd",
     "test driven development",
     "test-driven development"
   ],
-  "Microservices": [
+  "microservices": [
     "microservices",
     "micro services",
     "microservice architecture"
   ],
-  "TensorFlow": [
+  "tensorflow": [
     "tensorflow",
     "tensor flow",
     "tf"
   ],
-  "PyTorch": [
+  "pytorch": [
     "pytorch",
     "torch"
   ],
-  "Pandas": [
+  "pandas": [
     "pandas",
     "pandas library"
   ],
-  "NumPy": [
+  "numpy": [
     "numpy",
     "numerical python"
   ],

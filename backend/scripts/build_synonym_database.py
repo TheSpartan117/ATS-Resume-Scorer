@@ -129,11 +129,14 @@ def build_synonym_database():
 
 
 def save_synonym_database(synonyms, output_path):
-    """Save synonym database to JSON file."""
+    """Save synonym database to JSON file with lowercase keys."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # Convert all primary keys to lowercase for consistent lookups
+    lowercase_synonyms = {key.lower(): value for key, value in synonyms.items()}
+
     with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump(synonyms, f, indent=2, ensure_ascii=False)
+        json.dump(lowercase_synonyms, f, indent=2, ensure_ascii=False)
 
     return output_path
 
