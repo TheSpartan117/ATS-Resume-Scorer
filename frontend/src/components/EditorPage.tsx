@@ -3,7 +3,8 @@
  */
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Editor as TinyMCEEditor } from '@tinymce/tinymce-react'
+import ReactQuill from 'react-quill'
+import 'react-quill/dist/quill.snow.css'
 import IssuesList from './IssuesList'
 import LoadingSpinner from './LoadingSpinner'
 import UserMenu from './UserMenu'
@@ -415,25 +416,30 @@ export default function EditorPage() {
                   {wordCount} words
                 </span>
               </div>
-              <TinyMCEEditor
-                apiKey="no-api-key"
+              <ReactQuill
                 value={editorContent}
-                onEditorChange={handleEditorChange}
-                init={{
-                  height: 600,
-                  menubar: true,
-                  plugins: [
-                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                onChange={handleEditorChange}
+                modules={{
+                  toolbar: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    [{ 'align': [] }],
+                    ['link'],
+                    ['clean']
                   ],
-                  toolbar: 'undo redo | blocks | ' +
-                    'bold italic forecolor | alignleft aligncenter ' +
-                    'alignright alignjustify | bullist numlist outdent indent | ' +
-                    'removeformat | help',
-                  content_style: 'body { font-family:Arial,sans-serif; font-size:14px; max-width: 800px; margin: 0 auto; }',
-                  branding: false,
                 }}
+                formats={[
+                  'header',
+                  'bold', 'italic', 'underline', 'strike',
+                  'list', 'bullet',
+                  'indent',
+                  'align',
+                  'link'
+                ]}
+                style={{ height: '550px', marginBottom: '50px' }}
+                theme="snow"
               />
             </div>
           </div>

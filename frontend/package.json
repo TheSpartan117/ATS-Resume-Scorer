@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.19",
-    "@tinymce/tinymce-react": "^6.3.0",
     "@tiptap/extension-placeholder": "^3.19.0",
     "@tiptap/react": "^3.19.0",
     "@tiptap/starter-kit": "^3.19.0",
@@ -19,6 +18,7 @@
     "mammoth": "^1.11.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-quill": "^2.0.0",
     "react-router-dom": "^7.13.0"
   },
   "devDependencies": {
