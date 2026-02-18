@@ -5,7 +5,8 @@ from datetime import datetime, timezone
 import io
 from backend.services.parser import parse_pdf, parse_docx
 from backend.services.scorer import calculate_overall_score
-from backend.schemas.resume import UploadResponse, ContactInfoResponse, MetadataResponse, ScoreResponse, CategoryBreakdown
+from backend.services.format_checker import ATSFormatChecker
+from backend.schemas.resume import UploadResponse, ContactInfoResponse, MetadataResponse, ScoreResponse, CategoryBreakdown, FormatCheckResponse
 
 router = APIRouter(prefix="/api", tags=["upload"])
 
@@ -74,6 +75,16 @@ async def upload_resume(
             detail="Resume appears empty or unreadable"
         )
 
+    # Run format compatibility check
+    format_checker = ATSFormatChecker()
+    # Get raw text for format check (reconstruct from parsed data)
+    raw_text = " ".join([
+        " ".join([str(exp) for exp in resume_data.experience]),
+        " ".join([str(edu) for edu in resume_data.education]),
+        " ".join(resume_data.skills)
+    ])
+    format_check_result = format_checker.check_format(resume_data, raw_text)
+
     # Calculate score with role and level (or fall back to industry for backward compatibility)
     score_result = calculate_overall_score(
         resume_data,
@@ -110,11 +121,20 @@ async def upload_resume(
         strengths=score_result.get("strengths", [])
     )
 
+    # Format check response
+    format_check_response = FormatCheckResponse(
+        passed=format_check_result["passed"],
+        score=format_check_result["score"],
+        checks=format_check_result["checks"],
+        issues=format_check_result["issues"]
+    )
+
     return UploadResponse(
         resumeId=None,  # Guest user, no saved resume
         fileName=file.filename,
         contact=contact_response,
         metadata=metadata_response,
         score=score_response,
+        formatCheck=format_check_response,
         uploadedAt=datetime.now(timezone.utc)
     )

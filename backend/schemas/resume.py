@@ -37,6 +37,14 @@ class ScoreResponse(BaseModel):
     strengths: List[str]
 
 
+class FormatCheckResponse(BaseModel):
+    """Format compatibility check result"""
+    passed: bool
+    score: float  # 0.0-1.0
+    checks: Dict[str, Dict]  # Each check has passed, score, and additional fields
+    issues: List[str]
+
+
 class UploadResponse(BaseModel):
     """Response for upload endpoint"""
     resumeId: Optional[str] = None  # Only if user is authenticated
@@ -44,4 +52,5 @@ class UploadResponse(BaseModel):
     contact: ContactInfoResponse
     metadata: MetadataResponse
     score: ScoreResponse
+    formatCheck: FormatCheckResponse
     uploadedAt: datetime
