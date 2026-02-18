@@ -305,7 +305,7 @@ export default function EditorPage() {
       {/* Ad Display Overlay */}
       {showAd && <AdDisplay onAdViewed={handleAdViewed} />}
 
-      <div className="container mx-auto px-4 py-4 max-w-7xl">
+      <div className="w-full px-2 py-4">
         {/* Header */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
@@ -405,10 +405,10 @@ export default function EditorPage() {
         )}
 
         {/* Main Content - Wider Editor */}
-        <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
-          {/* Left Column: Editor (5/6 width) */}
-          <div className="lg:col-span-5">
-            <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-2">
+          {/* Left Column: Editor (9/10 width = 90%) */}
+          <div className="lg:col-span-9">
+            <div className="bg-white rounded-lg shadow-sm p-2">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold text-gray-900">
                   📝 Resume Content
@@ -433,7 +433,7 @@ export default function EditorPage() {
             </div>
           </div>
 
-          {/* Right Column: Live Score (1/6 width) */}
+          {/* Right Column: Live Score (1/10 width = 10%) */}
           <div className="lg:col-span-1">
             <div className="sticky top-4 space-y-3">
               {/* Mode Indicator with Score */}
