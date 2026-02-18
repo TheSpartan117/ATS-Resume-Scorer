@@ -802,6 +802,13 @@ def calculate_overall_score(
     else:
         role_result = score_role_specific(resume, "", "")
 
+    # Debug logging
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Score breakdown: Contact={contact_result['score']}/10, Formatting={formatting_result['score']}/20, "
+                f"Content={content_result['score']}/25, Keywords={keywords_result['score']}/15, "
+                f"LengthDensity={length_density_result['score']}/10, RoleSpecific={role_result['score']}/20")
+
     # Calculate total score
     total_score = (
         contact_result["score"] +
