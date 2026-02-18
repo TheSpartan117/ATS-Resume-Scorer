@@ -6,7 +6,7 @@ from typing import Optional
 import uuid
 
 from backend.database import get_db
-from auth.jwt import verify_token
+from backend.auth.jwt import verify_token
 from backend.models.user import User
 
 
