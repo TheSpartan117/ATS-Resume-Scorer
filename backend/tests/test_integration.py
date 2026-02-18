@@ -3,8 +3,11 @@ Integration tests for the complete ATS Resume Scorer pipeline.
 Tests the full scoring workflow from ResumeData through all scoring categories.
 """
 import pytest
-from services.parser import ResumeData
-from services.scorer import calculate_overall_score
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from backend.services.parser import ResumeData
+from backend.services.scorer import calculate_overall_score
 
 
 def test_complete_scoring_integration():

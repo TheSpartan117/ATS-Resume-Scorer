@@ -1,64 +1,9 @@
 """Tests for authentication endpoints"""
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from main import app
-from backend.database import Base, get_db
-# Import all models to ensure they are registered with Base
-from backend.models.user import User
-from backend.models.resume import Resume
-from backend.models.ad_view import AdView
-from auth.password import hash_password
+from backend.auth.password import hash_password
 
 
-# Create test database (SQLite in-memory)
-# Note: Use file-based SQLite for test persistence during test run
-import tempfile
-import os
-
-test_db_fd, test_db_path = tempfile.mkstemp()
-TEST_DATABASE_URL = f"sqlite:///{test_db_path}"
-test_engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
-TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
-
-# Create tables immediately
-Base.metadata.create_all(bind=test_engine)
-
-
-# Override the get_db dependency
-def override_get_db():
-    db = TestSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-app.dependency_overrides[get_db] = override_get_db
-client = TestClient(app)
-
-
-# Test database setup
-@pytest.fixture(scope="function", autouse=True)
-def setup_database():
-    """Clear database tables before each test"""
-    # Clear all tables
-    with test_engine.connect() as conn:
-        for table in reversed(Base.metadata.sorted_tables):
-            conn.execute(table.delete())
-            conn.commit()
-    yield
-
-@pytest.fixture(scope="session", autouse=True)
-def cleanup_test_db():
-    """Remove test database file after all tests"""
-    yield
-    os.close(test_db_fd)
-    os.unlink(test_db_path)
-
-
-def test_signup_creates_user():
+def test_signup_creates_user(client):
     """Test user signup creates new account"""
     response = client.post(
         "/api/signup",
@@ -79,7 +24,7 @@ def test_signup_creates_user():
     assert "password" not in data["user"]  # Should not return password in user object
 
 
-def test_signup_duplicate_email_fails():
+def test_signup_duplicate_email_fails(client):
     """Test signup with existing email returns 400"""
     # Create first user
     client.post(
@@ -97,7 +42,7 @@ def test_signup_duplicate_email_fails():
     assert "already exists" in response.json()["detail"]
 
 
-def test_signup_invalid_email_fails():
+def test_signup_invalid_email_fails(client):
     """Test signup with invalid email returns 422"""
     response = client.post(
         "/api/signup",
@@ -107,7 +52,7 @@ def test_signup_invalid_email_fails():
     assert response.status_code == 422
 
 
-def test_login_with_correct_credentials():
+def test_login_with_correct_credentials(client):
     """Test login with correct email/password"""
     # Create user first
     client.post(
@@ -129,7 +74,7 @@ def test_login_with_correct_credentials():
     assert data["user"]["email"] == "user@example.com"
 
 
-def test_login_with_wrong_password_fails():
+def test_login_with_wrong_password_fails(client):
     """Test login with wrong password returns 401"""
     # Create user
     client.post(
@@ -147,7 +92,7 @@ def test_login_with_wrong_password_fails():
     assert "Invalid credentials" in response.json()["detail"]
 
 
-def test_login_nonexistent_user_fails():
+def test_login_nonexistent_user_fails(client):
     """Test login with non-existent user returns 401"""
     response = client.post(
         "/api/login",
@@ -157,7 +102,7 @@ def test_login_nonexistent_user_fails():
     assert response.status_code == 401
 
 
-def test_get_me_with_valid_token():
+def test_get_me_with_valid_token(client):
     """Test /me endpoint returns current user"""
     # Signup to get token
     signup_response = client.post(
@@ -179,14 +124,14 @@ def test_get_me_with_valid_token():
     assert "password" not in data
 
 
-def test_get_me_without_token_fails():
+def test_get_me_without_token_fails(client):
     """Test /me endpoint without token returns 401"""
     response = client.get("/api/me")
 
     assert response.status_code == 401
 
 
-def test_get_me_with_invalid_token_fails():
+def test_get_me_with_invalid_token_fails(client):
     """Test /me endpoint with invalid token returns 401"""
     response = client.get(
         "/api/me",

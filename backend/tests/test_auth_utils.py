@@ -1,7 +1,10 @@
 """Tests for authentication utilities"""
 import pytest
-from auth.password import hash_password, verify_password
-from auth.jwt import create_access_token, verify_token
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from backend.auth.password import hash_password, verify_password
+from backend.auth.jwt import create_access_token, verify_token
 
 
 def test_hash_password():

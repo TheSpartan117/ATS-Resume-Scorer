@@ -1,16 +1,8 @@
 """Tests for score endpoint"""
 import pytest
-from fastapi.testclient import TestClient
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from main import app
 
 
-client = TestClient(app)
-
-
-def test_score_with_updated_resume_data():
+def test_score_with_updated_resume_data(client):
     """Test re-scoring with updated resume data"""
     resume_data = {
         "fileName": "updated_resume.pdf",
@@ -48,7 +40,7 @@ def test_score_with_updated_resume_data():
     assert data["overallScore"] <= 100
 
 
-def test_score_requires_resume_data():
+def test_score_requires_resume_data(client):
     """Test score endpoint requires resume data"""
     response = client.post("/api/score", json={})
 

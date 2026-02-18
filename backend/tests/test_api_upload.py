@@ -1,15 +1,7 @@
 """Tests for upload endpoint"""
 import pytest
-from fastapi.testclient import TestClient
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from main import app
 import io
 import fitz  # PyMuPDF
-
-
-client = TestClient(app)
 
 
 def create_test_pdf():
@@ -52,7 +44,7 @@ def create_test_pdf():
     return pdf_bytes
 
 
-def test_upload_pdf_returns_score():
+def test_upload_pdf_returns_score(client):
     """Test uploading a PDF resume returns a score"""
     pdf_content = create_test_pdf()
     files = {"file": ("test_resume.pdf", io.BytesIO(pdf_content), "application/pdf")}
@@ -75,7 +67,7 @@ def test_upload_pdf_returns_score():
     assert "issues" in data["score"]
 
 
-def test_upload_invalid_file_type_returns_400():
+def test_upload_invalid_file_type_returns_400(client):
     """Test uploading non-PDF/DOCX file returns 400"""
     txt_content = b"This is a text file"
     files = {"file": ("test.txt", io.BytesIO(txt_content), "text/plain")}
@@ -86,7 +78,7 @@ def test_upload_invalid_file_type_returns_400():
     assert "PDF or DOCX only" in response.json()["detail"]
 
 
-def test_upload_file_too_large_returns_400():
+def test_upload_file_too_large_returns_400(client):
     """Test uploading file >10MB returns 400"""
     # Create 11MB file
     large_content = b"x" * (11 * 1024 * 1024)
@@ -98,7 +90,7 @@ def test_upload_file_too_large_returns_400():
     assert "too large" in response.json()["detail"].lower()
 
 
-def test_upload_with_job_description():
+def test_upload_with_job_description(client):
     """Test upload with optional job description for keyword matching"""
     pdf_content = create_test_pdf()
     files = {"file": ("test.pdf", io.BytesIO(pdf_content), "application/pdf")}

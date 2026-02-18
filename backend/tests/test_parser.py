@@ -1,5 +1,8 @@
 import pytest
-from services.parser import parse_pdf, parse_docx, ResumeData
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from backend.services.parser import parse_pdf, parse_docx, ResumeData
 
 def test_parse_pdf_extracts_basic_info():
     """Test that PDF parser extracts contact information"""

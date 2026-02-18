@@ -1,6 +1,9 @@
 import pytest
-from services.scorer import score_contact_info, score_keywords, score_content, score_length_density, score_industry_specific
-from services.parser import ResumeData
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from backend.services.scorer import score_contact_info, score_keywords, score_content, score_length_density, score_industry_specific
+from backend.services.parser import ResumeData
 
 def test_complete_contact_info_gets_full_score():
     """Test that complete contact info receives 10/10 points"""

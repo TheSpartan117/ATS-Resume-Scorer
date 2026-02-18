@@ -1,64 +1,9 @@
 """Tests for protected resume endpoints"""
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from main import app
-from backend.database import Base, get_db
-# Import all models to ensure they are registered with Base
-from backend.models.user import User
-from backend.models.resume import Resume
-from backend.models.ad_view import AdView
-
-
-# Create test database (SQLite in-memory)
-# Note: Use file-based SQLite for test persistence during test run
-import tempfile
-import os
-
-test_db_fd, test_db_path = tempfile.mkstemp()
-TEST_DATABASE_URL = f"sqlite:///{test_db_path}"
-test_engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
-TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
-
-# Create tables immediately
-Base.metadata.create_all(bind=test_engine)
-
-
-# Override the get_db dependency
-def override_get_db():
-    db = TestSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-app.dependency_overrides[get_db] = override_get_db
-client = TestClient(app)
-
-
-# Test database setup
-@pytest.fixture(scope="function", autouse=True)
-def setup_database():
-    """Clear database tables before each test"""
-    # Clear all tables
-    with test_engine.connect() as conn:
-        for table in reversed(Base.metadata.sorted_tables):
-            conn.execute(table.delete())
-            conn.commit()
-    yield
-
-@pytest.fixture(scope="session", autouse=True)
-def cleanup_test_db():
-    """Remove test database file after all tests"""
-    yield
-    os.close(test_db_fd)
-    os.unlink(test_db_path)
 
 
 @pytest.fixture
-def auth_token():
+def auth_token(client):
     """Create user and return auth token"""
     response = client.post(
         "/api/signup",
@@ -67,7 +12,7 @@ def auth_token():
     return response.json()["accessToken"]
 
 
-def test_create_resume_requires_auth():
+def test_create_resume_requires_auth(client):
     """Test creating resume without auth returns 401"""
     resume_data = {
         "fileName": "test.pdf",
@@ -80,7 +25,7 @@ def test_create_resume_requires_auth():
     assert response.status_code == 401
 
 
-def test_create_resume_saves_to_database(auth_token):
+def test_create_resume_saves_to_database(client, auth_token):
     """Test creating resume saves it to database"""
     resume_data = {
         "fileName": "my_resume.pdf",
@@ -105,7 +50,7 @@ def test_create_resume_saves_to_database(auth_token):
     assert data["contact"]["name"] == "Jane Doe"
 
 
-def test_list_resumes_returns_user_resumes(auth_token):
+def test_list_resumes_returns_user_resumes(client, auth_token):
     """Test listing resumes returns only user's resumes"""
     # Create two resumes
     resume1 = {
@@ -135,7 +80,7 @@ def test_list_resumes_returns_user_resumes(auth_token):
     assert data[0]["fileName"] in ["resume1.pdf", "resume2.pdf"]
 
 
-def test_get_resume_by_id(auth_token):
+def test_get_resume_by_id(client, auth_token):
     """Test getting specific resume by ID"""
     # Create resume
     resume_data = {
@@ -163,7 +108,7 @@ def test_get_resume_by_id(auth_token):
     assert data["fileName"] == "test.pdf"
 
 
-def test_get_nonexistent_resume_returns_404(auth_token):
+def test_get_nonexistent_resume_returns_404(client, auth_token):
     """Test getting non-existent resume returns 404"""
     fake_id = "00000000-0000-0000-0000-000000000000"
 
@@ -175,7 +120,7 @@ def test_get_nonexistent_resume_returns_404(auth_token):
     assert response.status_code == 404
 
 
-def test_update_resume(auth_token):
+def test_update_resume(client, auth_token):
     """Test updating resume"""
     # Create resume
     resume_data = {
@@ -210,7 +155,7 @@ def test_update_resume(auth_token):
     assert data["metadata"]["wordCount"] == 800
 
 
-def test_delete_resume(auth_token):
+def test_delete_resume(client, auth_token):
     """Test deleting resume"""
     # Create resume
     resume_data = {
@@ -241,7 +186,7 @@ def test_delete_resume(auth_token):
     assert get_response.status_code == 404
 
 
-def test_user_cannot_access_other_user_resume():
+def test_user_cannot_access_other_user_resume(client):
     """Test user cannot access another user's resume"""
     # Create user 1 and their resume
     user1_response = client.post(

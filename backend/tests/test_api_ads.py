@@ -1,55 +1,8 @@
 """Tests for ad tracking endpoints"""
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from main import app
-from backend.database import Base, get_db
-# Import all models to ensure they are registered with Base
-from backend.models.user import User
-from backend.models.resume import Resume
-from backend.models.ad_view import AdView
 
 
-# Create test database (SQLite in-memory)
-import tempfile
-import os
-
-test_db_fd, test_db_path = tempfile.mkstemp()
-TEST_DATABASE_URL = f"sqlite:///{test_db_path}"
-test_engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
-TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
-
-# Create tables immediately
-Base.metadata.create_all(bind=test_engine)
-
-
-# Override the get_db dependency
-def override_get_db():
-    """Override get_db for tests"""
-    try:
-        db = TestSessionLocal()
-        yield db
-    finally:
-        db.close()
-
-
-app.dependency_overrides[get_db] = override_get_db
-
-client = TestClient(app)
-
-
-@pytest.fixture(scope="function", autouse=True)
-def setup_database():
-    """Create test database tables"""
-    Base.metadata.create_all(bind=test_engine)
-    yield
-    # Clean up tables after each test
-    Base.metadata.drop_all(bind=test_engine)
-    Base.metadata.create_all(bind=test_engine)
-
-
-def test_log_ad_view_as_guest():
+def test_log_ad_view_as_guest(client):
     """Test logging ad view for guest user"""
     response = client.post(
         "/api/ad-view",
@@ -67,7 +20,7 @@ def test_log_ad_view_as_guest():
     assert data["skipped"] is False
 
 
-def test_log_ad_view_authenticated_user():
+def test_log_ad_view_authenticated_user(client):
     """Test logging ad view for authenticated user"""
     # Create user
     signup_response = client.post(
@@ -90,7 +43,7 @@ def test_log_ad_view_authenticated_user():
     assert data["skipped"] is True
 
 
-def test_should_show_ad_first_action():
+def test_should_show_ad_first_action(client):
     """Test should NOT show ad on first action"""
     response = client.get(
         "/api/should-show-ad",
@@ -104,7 +57,7 @@ def test_should_show_ad_first_action():
     assert data["actionCount"] == 0
 
 
-def test_should_show_ad_after_first_score():
+def test_should_show_ad_after_first_score(client):
     """Test SHOULD show ad after first free score"""
     session_id = "test-session-456"
 
@@ -123,7 +76,7 @@ def test_should_show_ad_after_first_score():
     assert response2.json()["shouldShowAd"] is True
 
 
-def test_premium_user_never_sees_ads():
+def test_premium_user_never_sees_ads(client):
     """Test premium users don't see ads"""
     # Create user (would need to manually set is_premium in real scenario)
     # For now, test the logic with isPremium parameter
