@@ -652,6 +652,13 @@ def parse_pdf(file_content: bytes, filename: str) -> ResumeData:
 
             sections = extract_resume_sections(full_text)
             logger.info(f"Sections extracted - Experience: {len(sections.get('experience', []))}, Education: {len(sections.get('education', []))}, Skills: {len(sections.get('skills', []))}")
+            logger.info(f"Education entries: {sections.get('education', [])}")
+            logger.info(f"Skills entries: {sections.get('skills', [])}")
+
+            # Debug: Check if skills section exists in text
+            text_lower = full_text.lower()
+            skills_found = 'skills' in text_lower or 'technical' in text_lower or 'competencies' in text_lower
+            logger.info(f"Skills keywords in text: {skills_found}")
 
             header_text = full_text[:500]
             name = extract_name_from_header(full_text)
