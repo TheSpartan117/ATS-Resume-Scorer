@@ -4,8 +4,8 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import type { UploadResponse } from '../types/resume'
-import ScoreCard from './ScoreCard'
-import CategoryBreakdown from './CategoryBreakdown'
+import { ModeIndicator } from './ModeIndicator'
+import { DownloadMenu } from './DownloadMenu'
 import IssuesList from './IssuesList'
 import UserMenu from './UserMenu'
 
@@ -48,25 +48,47 @@ export default function ResultsPage() {
                 {result.fileName}
               </p>
             </div>
-            <button
-              onClick={() => navigate('/editor', { state: { result } })}
-              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-semibold"
-            >
-              Edit Resume
-            </button>
+            <div className="flex items-center gap-3">
+              <DownloadMenu
+                resumeContent=""
+                resumeName={result.contact?.name || 'Resume'}
+                resumeData={result}
+                scoreData={result.score}
+                mode={result.scoringMode || 'quality_coach'}
+                role={result.role || 'software_engineer'}
+                level={result.level || 'mid'}
+              />
+              <button
+                onClick={() => navigate('/editor', { state: { result } })}
+                className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-semibold"
+              >
+                Edit Resume
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column: Score Card */}
+          {/* Left Column: Mode Indicator */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-8">
-              <ScoreCard score={result.score.overallScore} />
+            <ModeIndicator
+              mode={result.scoringMode || result.score.mode || 'quality_coach'}
+              score={result.score.overallScore}
+              keywordDetails={result.score.keywordDetails}
+              breakdown={Object.fromEntries(
+                Object.entries(result.score.breakdown).map(([key, value]: [string, any]) => [
+                  key,
+                  typeof value === 'object' && 'score' in value ? value.score : value
+                ])
+              )}
+              autoReject={result.score.autoReject}
+            />
 
-              {/* Metadata */}
-              <div className="mt-6 pt-6 border-t border-gray-200 space-y-3">
-                <h3 className="font-semibold text-gray-900 mb-3">Resume Info</h3>
+            {/* Metadata */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-6">
+              <div className="space-y-3">
+                <h3 className="font-semibold text-gray-900 mb-3">📄 Resume Info</h3>
                 <div className="text-sm space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Pages:</span>
@@ -92,7 +114,7 @@ export default function ResultsPage() {
               {/* Contact Info */}
               {result.contact.name && (
                 <div className="mt-6 pt-6 border-t border-gray-200">
-                  <h3 className="font-semibold text-gray-900 mb-3">Contact</h3>
+                  <h3 className="font-semibold text-gray-900 mb-3">👤 Contact</h3>
                   <div className="text-sm space-y-1 text-gray-700">
                     {result.contact.name && <p>{result.contact.name}</p>}
                     {result.contact.email && <p>{result.contact.email}</p>}
@@ -106,11 +128,6 @@ export default function ResultsPage() {
 
           {/* Right Column: Details */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Category Breakdown */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <CategoryBreakdown breakdown={result.score.breakdown} />
-            </div>
-
             {/* Issues List */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <IssuesList issues={result.score.issues} />
