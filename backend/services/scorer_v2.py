@@ -308,6 +308,9 @@ class AdaptiveScorer:
 
         total_score = required_score + preferred_score
 
+        # Cap at maximum score
+        total_score = min(total_score, 70)
+
         return {
             "score": total_score,
             "required_matched": required_matched,
@@ -363,6 +366,9 @@ class AdaptiveScorer:
             score = 12
         else:
             score = (match_pct / 20) * 12  # Linear up to 20%
+
+        # Cap at maximum score
+        score = min(score, 25)
 
         return {
             "score": score,
@@ -444,6 +450,9 @@ class AdaptiveScorer:
         score += verb_score
         details.append(f"Action verbs: {verb_matches}/{len(action_verbs)}")
 
+        # Cap at maximum score
+        score = min(score, 30)
+
         return {
             "score": score,
             "details": ", ".join(details)
@@ -513,6 +522,9 @@ class AdaptiveScorer:
 
         score += contact_score
 
+        # Cap at maximum score
+        score = min(score, 20)
+
         return {
             "score": score,
             "details": ", ".join(details)
@@ -573,6 +585,9 @@ class AdaptiveScorer:
             details.append("Partial contact info")
         else:
             details.append("No contact info")
+
+        # Cap at maximum score
+        score = min(score, 20)
 
         return {
             "score": score,
@@ -638,6 +653,9 @@ class AdaptiveScorer:
             details.append("Few skills listed")
 
         score += skills_score
+
+        # Cap at maximum score
+        score = min(score, 10)
 
         return {
             "score": score,
