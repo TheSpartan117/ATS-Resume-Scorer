@@ -716,6 +716,117 @@ ROLE_DEFINITIONS: Dict[str, Dict] = {
 
         "required_skills": ["writing", "editing", "content strategy"],
         "preferred_sections": ["portfolio", "published work", "writing samples"]
+    },
+
+    # ADDITIONAL TECH ROLES
+    "qa_engineer": {
+        "name": "QA Engineer",
+        "category": RoleCategory.TECH,
+        "typical_keywords": {
+            ExperienceLevel.ENTRY: ["testing", "test cases", "bug tracking", "selenium", "jira", "qa"],
+            ExperienceLevel.MID: ["test automation", "ci/cd", "test strategy", "api testing", "performance testing"],
+            ExperienceLevel.SENIOR: ["qa strategy", "test architecture", "quality engineering", "team leadership"],
+            ExperienceLevel.LEAD: ["qa organization", "quality culture", "testing frameworks"],
+            ExperienceLevel.EXECUTIVE: ["vp quality", "quality strategy", "engineering excellence"]
+        },
+        "action_verbs": {
+            ExperienceLevel.ENTRY: ["developed", "created", "implemented", "managed", "supported", "executed", "analyzed", "collaborated", "coordinated", "assisted", "built", "tested"],
+            ExperienceLevel.MID: ["led", "designed", "improved", "optimized", "managed", "drove", "developed", "delivered", "collaborated", "achieved", "architected", "scaled"],
+            ExperienceLevel.SENIOR: ["led", "established", "drove", "transformed", "shaped", "directed", "influenced", "built", "scaled", "pioneered", "spearheaded", "championed"],
+            ExperienceLevel.LEAD: ["directed", "established", "transformed", "led", "drove", "shaped", "owned", "built", "defined", "scaled", "orchestrated", "revolutionized"],
+            ExperienceLevel.EXECUTIVE: ["established", "transformed", "directed", "shaped", "led", "built", "scaled", "drove", "defined", "orchestrated", "pioneered", "revolutionized"]
+        },
+        "scoring_weights": {
+            "keywords": 0.40,
+            "action_verbs": 0.20,
+            "metrics": 0.20,
+            "format": 0.10,
+            "content_quality": 0.10
+        },
+        "metrics_expected": {
+            ExperienceLevel.ENTRY: 2,
+            ExperienceLevel.MID: 4,
+            ExperienceLevel.SENIOR: 6,
+            ExperienceLevel.LEAD: 8,
+            ExperienceLevel.EXECUTIVE: 10
+        },
+
+        "required_skills": ["testing", "automation", "quality assurance"],
+        "preferred_sections": ["test frameworks", "automation projects", "quality metrics"]
+    },
+
+    # ADDITIONAL DATA ROLES
+    "data_engineer": {
+        "name": "Data Engineer",
+        "category": RoleCategory.DATA,
+        "typical_keywords": {
+            ExperienceLevel.ENTRY: ["sql", "python", "etl", "data pipelines", "data warehousing"],
+            ExperienceLevel.MID: ["spark", "kafka", "airflow", "data modeling", "big data", "aws", "data architecture"],
+            ExperienceLevel.SENIOR: ["data infrastructure", "scalability", "data platform", "team leadership"],
+            ExperienceLevel.LEAD: ["data engineering org", "data platform strategy", "infrastructure roadmap"],
+            ExperienceLevel.EXECUTIVE: ["vp data engineering", "data infrastructure strategy"]
+        },
+        "action_verbs": {
+            ExperienceLevel.ENTRY: ["developed", "created", "implemented", "managed", "supported", "executed", "analyzed", "collaborated", "coordinated", "assisted", "built", "tested"],
+            ExperienceLevel.MID: ["led", "designed", "improved", "optimized", "managed", "drove", "developed", "delivered", "collaborated", "achieved", "architected", "scaled"],
+            ExperienceLevel.SENIOR: ["led", "established", "drove", "transformed", "shaped", "directed", "influenced", "built", "scaled", "pioneered", "spearheaded", "championed"],
+            ExperienceLevel.LEAD: ["directed", "established", "transformed", "led", "drove", "shaped", "owned", "built", "defined", "scaled", "orchestrated", "revolutionized"],
+            ExperienceLevel.EXECUTIVE: ["established", "transformed", "directed", "shaped", "led", "built", "scaled", "drove", "defined", "orchestrated", "pioneered", "revolutionized"]
+        },
+        "scoring_weights": {
+            "keywords": 0.40,
+            "action_verbs": 0.20,
+            "metrics": 0.20,
+            "format": 0.10,
+            "content_quality": 0.10
+        },
+        "metrics_expected": {
+            ExperienceLevel.ENTRY: 2,
+            ExperienceLevel.MID: 4,
+            ExperienceLevel.SENIOR: 6,
+            ExperienceLevel.LEAD: 8,
+            ExperienceLevel.EXECUTIVE: 10
+        },
+
+        "required_skills": ["sql", "data pipelines", "etl"],
+        "preferred_sections": ["github", "data architecture", "technical projects"]
+    },
+
+    # ADDITIONAL OPERATIONS ROLES
+    "project_manager": {
+        "name": "Project Manager",
+        "category": RoleCategory.OPERATIONS,
+        "typical_keywords": {
+            ExperienceLevel.ENTRY: ["project planning", "scheduling", "stakeholder management", "jira", "agile", "scrum"],
+            ExperienceLevel.MID: ["program management", "budget management", "risk management", "cross-functional", "deliverables"],
+            ExperienceLevel.SENIOR: ["portfolio management", "strategic planning", "team leadership", "pmo"],
+            ExperienceLevel.LEAD: ["pmo leadership", "program strategy", "organizational change"],
+            ExperienceLevel.EXECUTIVE: ["vp program management", "portfolio strategy"]
+        },
+        "action_verbs": {
+            ExperienceLevel.ENTRY: ["developed", "created", "implemented", "managed", "supported", "executed", "analyzed", "collaborated", "coordinated", "assisted", "built", "tested"],
+            ExperienceLevel.MID: ["led", "designed", "improved", "optimized", "managed", "drove", "developed", "delivered", "collaborated", "achieved", "architected", "scaled"],
+            ExperienceLevel.SENIOR: ["led", "established", "drove", "transformed", "shaped", "directed", "influenced", "built", "scaled", "pioneered", "spearheaded", "championed"],
+            ExperienceLevel.LEAD: ["directed", "established", "transformed", "led", "drove", "shaped", "owned", "built", "defined", "scaled", "orchestrated", "revolutionized"],
+            ExperienceLevel.EXECUTIVE: ["established", "transformed", "directed", "shaped", "led", "built", "scaled", "drove", "defined", "orchestrated", "pioneered", "revolutionized"]
+        },
+        "scoring_weights": {
+            "keywords": 0.40,
+            "action_verbs": 0.20,
+            "metrics": 0.20,
+            "format": 0.10,
+            "content_quality": 0.10
+        },
+        "metrics_expected": {
+            ExperienceLevel.ENTRY: 2,
+            ExperienceLevel.MID: 4,
+            ExperienceLevel.SENIOR: 6,
+            ExperienceLevel.LEAD: 8,
+            ExperienceLevel.EXECUTIVE: 10
+        },
+
+        "required_skills": ["project management", "agile", "stakeholder management"],
+        "preferred_sections": ["pmp", "certifications", "project metrics"]
     }
 }
 
