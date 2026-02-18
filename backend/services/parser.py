@@ -431,6 +431,8 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
                     sections[current_section].append(parse_experience_entry(content_text))
                 elif current_section == 'education':
                     sections[current_section].append(parse_education_entry(content_text))
+                elif current_section == 'skills':
+                    sections[current_section].append(content_text)
                 elif current_section == 'certifications':
                     sections[current_section].append({'name': content_text})
             current_section = 'experience'
@@ -442,6 +444,8 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
                     sections[current_section].append(parse_experience_entry(content_text))
                 elif current_section == 'education':
                     sections[current_section].append(parse_education_entry(content_text))
+                elif current_section == 'skills':
+                    sections[current_section].append(content_text)
                 elif current_section == 'certifications':
                     sections[current_section].append({'name': content_text})
             current_section = 'education'
@@ -454,6 +458,8 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
                     sections[current_section].append(parse_experience_entry(content_text))
                 elif current_section == 'education':
                     sections[current_section].append(parse_education_entry(content_text))
+                elif current_section == 'skills':
+                    sections[current_section].append(content_text)
                 elif current_section == 'certifications':
                     sections[current_section].append({'name': content_text})
             current_section = 'skills'
@@ -465,6 +471,9 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
                     sections[current_section].append(parse_experience_entry(content_text))
                 elif current_section == 'education':
                     sections[current_section].append(parse_education_entry(content_text))
+                elif current_section == 'skills':
+                    # Add skills content before switching sections
+                    sections[current_section].append(content_text)
                 elif current_section == 'certifications':
                     sections[current_section].append({'name': content_text})
             current_section = 'certifications'
@@ -807,23 +816,36 @@ def parse_docx(file_content: bytes, filename: str) -> ResumeData:
     doc = Document(BytesIO(file_content))
 
     # Extract text from paragraphs AND tables (CRITICAL FIX)
+    # Must preserve document order to correctly detect sections
     full_text_parts = []
 
-    # Get all paragraphs
-    for para in doc.paragraphs:
-        if para.text.strip():
-            full_text_parts.append(para.text)
+    # Process document elements in order
+    # DOCX structure: doc.element.body contains all elements in document order
+    for element in doc.element.body:
+        # Check if element is a paragraph
+        if element.tag.endswith('p'):
+            # Find corresponding paragraph object
+            for para in doc.paragraphs:
+                if para._element == element:
+                    if para.text.strip():
+                        full_text_parts.append(para.text)
+                    break
 
-    # Get all tables (THIS WAS MISSING - CAUSED EMPTY SECTIONS)
-    for table in doc.tables:
-        for row in table.rows:
-            row_text = []
-            for cell in row.cells:
-                cell_text = cell.text.strip()
-                if cell_text:
-                    row_text.append(cell_text)
-            if row_text:
-                full_text_parts.append(" | ".join(row_text))
+        # Check if element is a table
+        elif element.tag.endswith('tbl'):
+            # Find corresponding table object
+            for table in doc.tables:
+                if table._element == element:
+                    # Extract table rows
+                    for row in table.rows:
+                        row_text = []
+                        for cell in row.cells:
+                            cell_text = cell.text.strip()
+                            if cell_text:
+                                row_text.append(cell_text)
+                        if row_text:
+                            full_text_parts.append(" | ".join(row_text))
+                    break
 
     full_text = "\n".join(full_text_parts)
 
