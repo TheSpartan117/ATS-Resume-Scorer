@@ -131,11 +131,15 @@ export default function EditorPage() {
     if (!result) {
       navigate('/')
     }
+  }, [result, navigate])
 
+  // Track component mount status
+  useEffect(() => {
+    isMountedRef.current = true
     return () => {
       isMountedRef.current = false
     }
-  }, [result, navigate])
+  }, [])
 
   // State
   const [editorContent, setEditorContent] = useState('')
