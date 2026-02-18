@@ -302,10 +302,10 @@ export default function EditorPage() {
       {/* Ad Display Overlay */}
       {showAd && <AdDisplay onAdViewed={handleAdViewed} />}
 
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 py-4 max-w-7xl">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
             <button
               onClick={() => navigate('/results', { state: { result } })}
               className="text-blue-600 hover:text-blue-800 font-medium flex items-center"
@@ -327,10 +327,10 @@ export default function EditorPage() {
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">
                 Edit Your Resume
               </h1>
-              <p className="text-gray-600">
+              <p className="text-sm text-gray-600">
                 {result.fileName}
               </p>
             </div>
@@ -353,7 +353,7 @@ export default function EditorPage() {
 
         {/* Status Message */}
         {rescoreError && (
-          <div className={`mb-6 p-4 rounded-md ${
+          <div className={`mb-3 p-3 rounded-md ${
             rescoreError.includes('successfully')
               ? 'bg-green-50 border border-green-200'
               : 'bg-red-50 border border-red-200'
@@ -377,12 +377,12 @@ export default function EditorPage() {
         )}
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left Column: Editor */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
+            <div className="bg-white rounded-lg shadow-sm p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-semibold text-gray-900">
                   Resume Content
                 </h2>
                 <span className="text-sm text-gray-600">
@@ -399,28 +399,28 @@ export default function EditorPage() {
 
           {/* Right Column: Live Score */}
           <div className="lg:col-span-1">
-            <div className="sticky top-8 space-y-6">
+            <div className="sticky top-4 space-y-3">
               {/* Score Card */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              <div className="bg-white rounded-lg shadow-sm p-4">
+                <h2 className="text-base font-semibold text-gray-900 mb-3">
                   Live Score
                 </h2>
                 <ScoreCard score={currentScore.overallScore} />
                 {isRescoring && (
-                  <div className="mt-4 flex justify-center">
+                  <div className="mt-3 flex justify-center">
                     <LoadingSpinner size="sm" />
                   </div>
                 )}
               </div>
 
               {/* Category Breakdown */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="bg-white rounded-lg shadow-sm p-4">
                 <CategoryBreakdown breakdown={currentScore.breakdown} />
               </div>
 
               {/* Issues Summary */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <div className="bg-white rounded-lg shadow-sm p-4">
+                <h3 className="text-base font-semibold text-gray-900 mb-3">
                   Issues Summary
                 </h3>
                 <div className="space-y-2 text-sm">
@@ -443,7 +443,7 @@ export default function EditorPage() {
         </div>
 
         {/* Full Issues List */}
-        <div className="mt-6 bg-white rounded-lg shadow-sm p-6">
+        <div className="mt-4 bg-white rounded-lg shadow-sm p-4">
           <IssuesList issues={currentScore.issues} />
         </div>
       </div>
