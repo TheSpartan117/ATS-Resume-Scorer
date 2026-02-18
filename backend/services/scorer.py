@@ -392,31 +392,37 @@ def score_keywords(resume: ResumeData, job_description: str = "", role_id: str =
         if missing:
             issues.append(("suggestion", f"Missing key terms: {', '.join(missing)}"))
     elif role_id and level:
-        # Use role-specific typical keywords
+        # Use role-specific keywords
         try:
             level_enum = ExperienceLevel(level)
             role_data = get_role_scoring_data(role_id, level_enum)
 
-            if role_data and role_data.get('typical_keywords'):
-                typical_keywords = role_data['typical_keywords']
+            if role_data:
+                # Check both 'keywords' and 'typical_keywords' for compatibility
+                typical_keywords = role_data.get('typical_keywords') or role_data.get('keywords') or []
 
-                # Count matches
-                matches = sum(1 for keyword in typical_keywords if keyword.lower() in resume_text)
-                match_percentage = (matches / len(typical_keywords)) * 100 if typical_keywords else 0
+                if typical_keywords:
+                    # Count matches
+                    matches = sum(1 for keyword in typical_keywords if keyword.lower() in resume_text)
+                    match_percentage = (matches / len(typical_keywords)) * 100 if typical_keywords else 0
 
-                score = int((match_percentage / 100) * 15)
+                    score = int((match_percentage / 100) * 15)
 
-                if match_percentage < 40:
-                    issues.append(("warning", f"Low role keyword match: {match_percentage:.0f}% - add typical {level} {role_data['name']} keywords"))
-                elif match_percentage < 60:
-                    issues.append(("suggestion", f"Moderate keyword match: {match_percentage:.0f}% - consider adding more role-relevant terms"))
+                    if match_percentage < 40:
+                        issues.append(("warning", f"Low role keyword match: {match_percentage:.0f}% - add typical {level} {role_data['name']} keywords"))
+                    elif match_percentage < 60:
+                        issues.append(("suggestion", f"Moderate keyword match: {match_percentage:.0f}% - consider adding more role-relevant terms"))
 
-                # Identify missing keywords
-                missing = [kw for kw in typical_keywords[:5] if kw.lower() not in resume_text]
-                if missing:
-                    issues.append(("suggestion", f"Missing key terms for {role_data['name']}: {', '.join(missing)}"))
+                    # Identify missing keywords
+                    missing = [kw for kw in typical_keywords[:5] if kw.lower() not in resume_text]
+                    if missing:
+                        issues.append(("suggestion", f"Missing key terms for {role_data['name']}: {', '.join(missing)}"))
+                else:
+                    # Role data found but no keywords
+                    score = 10
+                    issues.append(("info", "Using generic scoring - provide job description for better matching"))
             else:
-                # Role data found but no keywords
+                # Role not found
                 score = 10
                 issues.append(("info", "Using generic scoring - provide job description for better matching"))
         except (ValueError, KeyError):
