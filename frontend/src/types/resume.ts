@@ -49,9 +49,15 @@ export interface UploadResponse {
   resumeId?: string
   fileName: string
   contact: ContactInfo
+  experience?: any[]
+  education?: any[]
+  skills?: string[]
+  certifications?: any[]
   metadata: ResumeMetadata
   score: ScoreResult
   uploadedAt: string
+  jobDescription?: string
+  industry?: string
 }
 
 export interface ApiError {

@@ -132,12 +132,13 @@ export default function EditorPage() {
         if (adResult.showAd) {
           setShowAd(true)
           setAdCheckPending(false)
-          return
+          return // Exit early to prevent re-scoring
         }
       } catch (err) {
         console.error('Ad check failed:', err)
+      } finally {
+        setAdCheckPending(false)
       }
-      setAdCheckPending(false)
 
       setIsRescoring(true)
       setRescoreError(null)
@@ -191,7 +192,8 @@ export default function EditorPage() {
   // Handle save/update resume
   const handleSave = async () => {
     if (!result || !currentScore || !isAuthenticated) {
-      alert('You must be logged in to save resumes')
+      setRescoreError('You must be logged in to save resumes')
+      setTimeout(() => setRescoreError(null), 3000)
       return
     }
 
@@ -219,15 +221,17 @@ export default function EditorPage() {
       if (currentSavedResumeId) {
         // Update existing
         await updateResume(currentSavedResumeId, scoreRequest)
-        alert('Resume updated successfully!')
+        setRescoreError('Resume updated successfully!')
+        setTimeout(() => setRescoreError(null), 3000)
       } else {
         // Save new
         const saved = await saveResume(scoreRequest)
         setCurrentSavedResumeId(saved.id)
-        alert('Resume saved successfully!')
+        setRescoreError('Resume saved successfully!')
+        setTimeout(() => setRescoreError(null), 3000)
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to save resume')
+      setRescoreError(err instanceof Error ? err.message : 'Failed to save resume')
     } finally {
       setIsSaving(false)
     }
@@ -299,13 +303,25 @@ export default function EditorPage() {
           </div>
         </div>
 
-        {/* Error Message */}
+        {/* Status Message */}
         {rescoreError && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-800">{rescoreError}</p>
+          <div className={`mb-6 p-4 rounded-md ${
+            rescoreError.includes('successfully')
+              ? 'bg-green-50 border border-green-200'
+              : 'bg-red-50 border border-red-200'
+          }`}>
+            <p className={`text-sm ${
+              rescoreError.includes('successfully')
+                ? 'text-green-800'
+                : 'text-red-800'
+            }`}>{rescoreError}</p>
             <button
               onClick={() => setRescoreError(null)}
-              className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+              className={`mt-2 text-sm underline ${
+                rescoreError.includes('successfully')
+                  ? 'text-green-600 hover:text-green-800'
+                  : 'text-red-600 hover:text-red-800'
+              }`}
             >
               Dismiss
             </button>

@@ -131,10 +131,29 @@ export interface SavedResume {
 
 /**
  * Set authentication token for API requests
+ * Validates token format and expiration before setting
  */
 export function setAuthToken(token: string | null) {
   if (token) {
-    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    // Basic JWT validation: check format and expiration
+    try {
+      const parts = token.split('.')
+      if (parts.length !== 3) {
+        console.warn('Invalid JWT format')
+        return
+      }
+
+      // Decode payload to check expiration
+      const payload = JSON.parse(atob(parts[1]))
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        console.warn('Token expired')
+        return
+      }
+
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    } catch (error) {
+      console.error('Failed to validate token:', error)
+    }
   } else {
     delete apiClient.defaults.headers.common['Authorization']
   }

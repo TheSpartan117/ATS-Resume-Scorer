@@ -31,12 +31,17 @@ export default function SavedResumesList() {
   }
 
   async function handleDelete(id: string) {
+    if (!window.confirm('Are you sure you want to delete this resume? This action cannot be undone.')) {
+      setDeleteConfirm(null)
+      return
+    }
+
     try {
       await deleteResume(id)
       setResumes(resumes.filter(r => r.id !== id))
       setDeleteConfirm(null)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete resume')
+      setError(err instanceof Error ? err.message : 'Failed to delete resume')
     }
   }
 
