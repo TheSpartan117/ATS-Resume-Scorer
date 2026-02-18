@@ -3,10 +3,13 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from typing import Optional
 from datetime import datetime, timezone
 import io
+import logging
 from backend.services.parser import parse_pdf, parse_docx
 from backend.services.scorer import calculate_overall_score
 from backend.services.format_checker import ATSFormatChecker
 from backend.schemas.resume import UploadResponse, ContactInfoResponse, MetadataResponse, ScoreResponse, CategoryBreakdown, FormatCheckResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["upload"])
 
@@ -84,23 +87,35 @@ async def upload_resume(
         )
 
     # Run format compatibility check
-    format_checker = ATSFormatChecker()
-    # Get raw text for format check (reconstruct from parsed data)
-    raw_text = " ".join([
-        " ".join([str(exp) for exp in resume_data.experience]),
-        " ".join([str(edu) for edu in resume_data.education]),
-        " ".join(resume_data.skills)
-    ])
-    format_check_result = format_checker.check_format(resume_data, raw_text)
+    try:
+        format_checker = ATSFormatChecker()
+        # Get raw text for format check (reconstruct from parsed data)
+        raw_text = " ".join([
+            " ".join([str(exp) for exp in resume_data.experience]),
+            " ".join([str(edu) for edu in resume_data.education]),
+            " ".join(resume_data.skills)
+        ])
+        logger.info(f"Running format check with raw_text length: {len(raw_text)}")
+        format_check_result = format_checker.check_format(resume_data, raw_text)
+        logger.info(f"Format check passed: {format_check_result.get('passed', False)}")
+    except Exception as e:
+        logger.error(f"Format check failed: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Format check failed: {str(e)}")
 
     # Calculate score with role and level (or fall back to industry for backward compatibility)
-    score_result = calculate_overall_score(
-        resume_data,
-        job_description=jobDescription or "",
-        role_id=role or "",
-        level=level or "",
-        industry=industry or ""
-    )
+    try:
+        logger.info(f"Calculating score with role={role}, level={level}")
+        score_result = calculate_overall_score(
+            resume_data,
+            job_description=jobDescription or "",
+            role_id=role or "",
+            level=level or "",
+            industry=industry or ""
+        )
+        logger.info(f"Score calculated: {score_result.get('overallScore', 0)}")
+    except Exception as e:
+        logger.error(f"Scoring failed: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Scoring failed: {str(e)}")
 
     # Format response
     contact_response = ContactInfoResponse(**resume_data.contact)
