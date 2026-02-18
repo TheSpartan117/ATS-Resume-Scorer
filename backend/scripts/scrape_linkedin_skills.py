@@ -29,16 +29,36 @@ ROLES = [
 ]
 
 
-def generate_mock_linkedin_skills() -> Dict[str, List[str]]:
+def role_name_to_id(role_name: str) -> str:
+    """
+    Convert role name to role_id format (lowercase with underscores).
+
+    Args:
+        role_name: Role display name (e.g., "Software Engineer")
+
+    Returns:
+        role_id in lowercase_underscore format (e.g., "software_engineer")
+    """
+    return role_name.lower().replace(" ", "_")
+
+
+def generate_mock_linkedin_skills() -> Dict[str, Dict[str, any]]:
     """
     Generate realistic mock skills data for each role.
     Returns 50-100 skills per role with modern tech terms.
 
     Returns:
-        Dict mapping role name to list of skills (lowercase)
+        Dict with structure:
+        {
+            "role_id": {
+                "role_name": "Display Name",
+                "trending_skills": ["skill1", "skill2", ...]
+            }
+        }
     """
 
-    skills_data = {
+    # First, generate the skills data with role names as keys
+    raw_skills_data = {
         "Software Engineer": [
             # Programming Languages
             "python", "javascript", "java", "typescript", "c++", "c#", "go",
@@ -387,6 +407,15 @@ def generate_mock_linkedin_skills() -> Dict[str, List[str]]:
         ]
     }
 
+    # Convert to the required nested structure
+    skills_data = {}
+    for role_name, skills in raw_skills_data.items():
+        role_id = role_name_to_id(role_name)
+        skills_data[role_id] = {
+            "role_name": role_name,
+            "trending_skills": skills
+        }
+
     return skills_data
 
 
@@ -405,9 +434,12 @@ def main() -> Path:
 
     # Verify we have all roles
     for role in ROLES:
-        assert role in skills_data, f"Missing role: {role}"
-        skill_count = len(skills_data[role])
-        print(f"  {role}: {skill_count} skills")
+        role_id = role_name_to_id(role)
+        assert role_id in skills_data, f"Missing role: {role}"
+        assert skills_data[role_id]["role_name"] == role, f"Role name mismatch for {role}"
+
+        skill_count = len(skills_data[role_id]["trending_skills"])
+        print(f"  {role} (id: {role_id}): {skill_count} skills")
 
         # Verify skill count is in range
         if not (50 <= skill_count <= 100):
@@ -422,9 +454,10 @@ def main() -> Path:
 
     print(f"\n✓ Generated mock LinkedIn skills for {len(skills_data)} roles")
     print(f"✓ Saved to {output_path}")
-    print(f"✓ Total skills generated: {sum(len(skills) for skills in skills_data.values())}")
+    print(f"✓ Total skills generated: {sum(len(role_data['trending_skills']) for role_data in skills_data.values())}")
     print("\nNote: This is MOCK data, not actual LinkedIn scraping.")
     print("Includes modern tech terms: Kubernetes, Terraform, GraphQL, Next.js, React, TypeScript, etc.")
+    print("\nStructure: role_id -> {role_name, trending_skills}")
 
     return output_path
 
