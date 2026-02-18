@@ -3,9 +3,9 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from typing import Optional
 from datetime import datetime, timezone
 import io
-from services.parser import parse_pdf, parse_docx
-from services.scorer import calculate_overall_score
-from schemas.resume import UploadResponse, ContactInfoResponse, MetadataResponse, ScoreResponse, CategoryBreakdown
+from backend.services.parser import parse_pdf, parse_docx
+from backend.services.scorer import calculate_overall_score
+from backend.schemas.resume import UploadResponse, ContactInfoResponse, MetadataResponse, ScoreResponse, CategoryBreakdown
 
 router = APIRouter(prefix="/api", tags=["upload"])
 

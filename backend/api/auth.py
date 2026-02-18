@@ -4,11 +4,11 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 
-from database import get_db
-from models.user import User
-from auth.password import hash_password, verify_password
-from auth.jwt import create_access_token
-from auth.dependencies import get_current_user
+from backend.database import get_db
+from backend.models.user import User
+from backend.auth.password import hash_password, verify_password
+from backend.auth.jwt import create_access_token
+from backend.auth.dependencies import get_current_user
 
 
 router = APIRouter(prefix="/api", tags=["auth"])

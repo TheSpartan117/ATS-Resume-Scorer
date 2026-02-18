@@ -6,10 +6,10 @@ from pydantic import BaseModel, Field
 from datetime import datetime, timezone
 import uuid
 
-from database import get_db
-from models.user import User
-from models.resume import Resume as ResumeModel
-from auth.dependencies import get_current_user
+from backend.database import get_db
+from backend.models.user import User
+from backend.models.resume import Resume as ResumeModel
+from backend.auth.dependencies import get_current_user
 
 
 router = APIRouter(prefix="/api", tags=["resumes"])

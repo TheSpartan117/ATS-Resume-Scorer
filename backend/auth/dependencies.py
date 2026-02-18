@@ -5,9 +5,9 @@ from sqlalchemy.orm import Session
 from typing import Optional
 import uuid
 
-from database import get_db
+from backend.database import get_db
 from auth.jwt import verify_token
-from models.user import User
+from backend.models.user import User
 
 
 security = HTTPBearer()

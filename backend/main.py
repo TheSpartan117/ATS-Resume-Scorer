@@ -42,11 +42,11 @@ app.add_middleware(
 )
 
 # Import routers
-from api.upload import router as upload_router
-from api.score import router as score_router
-from api.auth import router as auth_router
-from api.resumes import router as resumes_router
-from api.ads import router as ads_router
+from backend.api.upload import router as upload_router
+from backend.api.score import router as score_router
+from backend.api.auth import router as auth_router
+from backend.api.resumes import router as resumes_router
+from backend.api.ads import router as ads_router
 
 # Include routers
 app.include_router(upload_router)

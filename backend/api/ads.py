@@ -5,10 +5,10 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timezone
 
-from database import get_db
-from models.ad_view import AdView
-from models.user import User
-from auth.dependencies import get_current_user_optional
+from backend.database import get_db
+from backend.models.ad_view import AdView
+from backend.models.user import User
+from backend.auth.dependencies import get_current_user_optional
 
 
 router = APIRouter(prefix="/api", tags=["ads"])

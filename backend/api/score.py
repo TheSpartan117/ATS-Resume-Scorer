@@ -3,9 +3,9 @@ from fastapi import APIRouter, HTTPException
 from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
-from services.parser import ResumeData
-from services.scorer import calculate_overall_score
-from schemas.resume import ScoreResponse, CategoryBreakdown
+from backend.services.parser import ResumeData
+from backend.services.scorer import calculate_overall_score
+from backend.schemas.resume import ScoreResponse, CategoryBreakdown
 
 
 router = APIRouter(prefix="/api", tags=["score"])

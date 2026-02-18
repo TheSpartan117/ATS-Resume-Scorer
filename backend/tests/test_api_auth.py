@@ -4,11 +4,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from main import app
-from database import Base, get_db
+from backend.database import Base, get_db
 # Import all models to ensure they are registered with Base
-from models.user import User
-from models.resume import Resume
-from models.ad_view import AdView
+from backend.models.user import User
+from backend.models.resume import Resume
+from backend.models.ad_view import AdView
 from auth.password import hash_password
 
 
