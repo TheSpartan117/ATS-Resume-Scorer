@@ -169,33 +169,23 @@ export default function EditorPage() {
 
   // Manual re-score function
   const performRescore = useCallback(async (content: string = editorContent) => {
-    console.log('performRescore called')
+    if (!result || !isMountedRef.current) return
 
-    if (!result || !isMountedRef.current) {
-      console.log('Early return: result or isMountedRef check failed', { result: !!result, isMounted: isMountedRef.current })
-      return
+    // Check if ad should be shown before re-scoring
+    setAdCheckPending(true)
+    try {
+      const adResult = await shouldShowAd()
+      if (adResult.showAd) {
+        setShowAd(true)
+        setAdCheckPending(false)
+        return // Exit early to prevent re-scoring
+      }
+    } catch (err) {
+      console.error('Ad check failed:', err)
+    } finally {
+      setAdCheckPending(false)
     }
 
-    // TEMPORARILY BYPASS AD CHECK FOR DEBUGGING
-    // Check if ad should be shown before re-scoring
-    // console.log('Checking if ad should be shown...')
-    // setAdCheckPending(true)
-    // try {
-    //   const adResult = await shouldShowAd()
-    //   console.log('Ad check result:', adResult)
-    //   if (adResult.showAd) {
-    //     console.log('Showing ad, blocking re-score')
-    //     setShowAd(true)
-    //     setAdCheckPending(false)
-    //     return // Exit early to prevent re-scoring
-    //   }
-    // } catch (err) {
-    //   console.error('Ad check failed:', err)
-    // } finally {
-    //   setAdCheckPending(false)
-    // }
-
-    console.log('Starting re-score...')
     setIsRescoring(true)
     setRescoreError(null)
 
@@ -475,11 +465,7 @@ export default function EditorPage() {
                     {wordCount} words
                   </span>
                   <button
-                    onClick={() => {
-                      console.log('BUTTON CLICKED!')
-                      alert('Button clicked! Check console for details.')
-                      performRescore()
-                    }}
+                    onClick={() => performRescore()}
                     disabled={isRescoring}
                     className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
