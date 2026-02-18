@@ -33,6 +33,7 @@ class RedFlagsValidator:
         all_issues.extend(self.validate_experience_level(resume, level))
         all_issues.extend(self.validate_content_depth(resume))
         all_issues.extend(self.validate_section_completeness(resume))
+        all_issues.extend(self.validate_professional_standards(resume))
 
         # Categorize by severity
         return {
@@ -516,3 +517,178 @@ class RedFlagsValidator:
         # Leaving as future enhancement when parser is updated with section metadata
 
         return issues
+
+    def validate_professional_standards(self, resume: ResumeData) -> List[Dict]:
+        """
+        Validate professional standards for contact information.
+        Parameters 14-17 from design doc:
+        - P14: Email Professionalism (format, provider, characters)
+        - P15: LinkedIn URL Validation (format, presence)
+        - P16: Phone Format Consistency
+        - P17: Location Format (City, State/Country)
+        """
+        issues = []
+
+        if not resume.contact:
+            # No contact info - just flag missing LinkedIn
+            issues.append({
+                'severity': 'suggestion',
+                'category': 'linkedin',
+                'message': 'Consider adding LinkedIn profile URL to enhance professional presence'
+            })
+            return issues
+
+        contact = resume.contact
+
+        # P14: Email professionalism
+        email = contact.get('email', '')
+        if email:
+            # Check for outdated email providers
+            outdated_providers = ['aol.com', 'yahoo.com', 'hotmail.com']
+            email_lower = email.lower()
+
+            for provider in outdated_providers:
+                if provider in email_lower:
+                    issues.append({
+                        'severity': 'warning',
+                        'category': 'email_professionalism',
+                        'message': f'Email uses outdated provider ({provider}). '
+                                  f'Consider using Gmail or a professional domain email.'
+                    })
+                    break
+
+            # Extract username part (before @)
+            if '@' in email:
+                username = email.split('@')[0]
+
+                # Check for numbers
+                if re.search(r'\d', username):
+                    issues.append({
+                        'severity': 'warning',
+                        'category': 'email_professionalism',
+                        'message': 'Email contains numbers. Use professional format like firstname.lastname@domain.com'
+                    })
+
+                # Check for underscores
+                if '_' in username:
+                    issues.append({
+                        'severity': 'warning',
+                        'category': 'email_professionalism',
+                        'message': 'Email contains underscores. Use professional format like firstname.lastname@domain.com'
+                    })
+
+        # P15: LinkedIn URL validation
+        linkedin = contact.get('linkedin', '')
+        if not linkedin:
+            issues.append({
+                'severity': 'suggestion',
+                'category': 'linkedin',
+                'message': 'Consider adding LinkedIn profile URL to enhance professional presence'
+            })
+        elif linkedin:
+            # Check if it's a company page (not personal profile)
+            if '/company/' in linkedin.lower():
+                issues.append({
+                    'severity': 'warning',
+                    'category': 'linkedin',
+                    'message': 'LinkedIn URL appears to be a company page, not a personal profile. '
+                              'Use format: linkedin.com/in/username'
+                })
+            # Check for proper format (linkedin.com/in/username)
+            elif not re.search(r'linkedin\.com/in/[\w-]+', linkedin, re.IGNORECASE):
+                # Allow "LinkedIn (see resume)" type placeholder
+                if 'linkedin' in linkedin.lower() and 'see resume' not in linkedin.lower():
+                    issues.append({
+                        'severity': 'warning',
+                        'category': 'linkedin',
+                        'message': 'LinkedIn URL format should be: linkedin.com/in/username'
+                    })
+
+        # P16: Phone format consistency
+        phone = contact.get('phone', '')
+        if phone:
+            # Detect phone format in contact
+            contact_phone_formats = self._detect_phone_formats([phone])
+
+            # Check for phone numbers in experience descriptions
+            experience_phones = []
+            if resume.experience:
+                for exp in resume.experience:
+                    description = exp.get('description', '')
+                    if description:
+                        # Look for phone numbers in description
+                        phone_patterns = [
+                            r'\+?1?\s*\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}',
+                            r'\+?\d{1,3}[\s.-]?\d{3}[\s.-]?\d{3}[\s.-]?\d{4}',
+                        ]
+                        for pattern in phone_patterns:
+                            matches = re.findall(pattern, description)
+                            experience_phones.extend(matches)
+
+            # Check consistency if we found phones in experience
+            if experience_phones:
+                exp_phone_formats = self._detect_phone_formats(experience_phones)
+                all_formats = contact_phone_formats + exp_phone_formats
+
+                if len(set(all_formats)) > 1:
+                    issues.append({
+                        'severity': 'warning',
+                        'category': 'phone_format',
+                        'message': 'Phone number format is inconsistent throughout resume. '
+                                  'Use same format everywhere (e.g., "123-456-7890")'
+                    })
+
+        # P17: Location format validation
+        location = contact.get('location', '')
+        if location:
+            # Check for proper "City, State" or "City, Country" format
+            # Should have a comma separating city from state/country
+            if ',' not in location:
+                issues.append({
+                    'severity': 'warning',
+                    'category': 'location_format',
+                    'message': 'Location should use format "City, State" or "City, Country" '
+                              '(e.g., "San Francisco, CA" or "Mumbai, India")'
+                })
+            else:
+                # Check if format looks reasonable (has 2 parts)
+                parts = [p.strip() for p in location.split(',')]
+                if len(parts) < 2 or not parts[0] or not parts[1]:
+                    issues.append({
+                        'severity': 'warning',
+                        'category': 'location_format',
+                        'message': 'Location format appears incomplete. Use "City, State" or "City, Country"'
+                    })
+
+        return issues
+
+    def _detect_phone_formats(self, phone_numbers: List[str]) -> List[str]:
+        """
+        Detect phone number formats from a list of phone numbers.
+
+        Returns list of format identifiers:
+        - 'dashes': 123-456-7890
+        - 'parens': (123) 456-7890
+        - 'dots': 123.456.7890
+        - 'spaces': 123 456 7890
+        - 'mixed': Mixed format
+        """
+        formats = []
+
+        for phone in phone_numbers:
+            if not phone:
+                continue
+
+            # Detect format based on separators
+            if '(' in phone and ')' in phone:
+                formats.append('parens')
+            elif '-' in phone:
+                formats.append('dashes')
+            elif '.' in phone:
+                formats.append('dots')
+            elif ' ' in phone.strip() and '(' not in phone:
+                formats.append('spaces')
+            else:
+                formats.append('other')
+
+        return formats

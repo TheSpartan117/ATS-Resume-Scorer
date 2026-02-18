@@ -1046,3 +1046,408 @@ def test_validate_resume_includes_section_completeness():
     assert len(result['critical']) > 0
     section_issues = [i for i in result['critical'] if 'required' in i['message'].lower()]
     assert len(section_issues) >= 2  # At least experience and education missing
+
+
+# ===== Professional Standards Validation Tests (P14-P17) =====
+
+def test_professional_email_format():
+    """Test detection of professional email format (P14)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={
+            "name": "John Doe",
+            "email": "john.doe@company.com"  # Professional format
+        },
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_professional_standards(resume)
+
+    # Should have no email issues for professional format
+    email_issues = [i for i in issues if 'email' in i['message'].lower()]
+    assert len(email_issues) == 0
+
+
+def test_unprofessional_email_with_numbers():
+    """Test detection of unprofessional email with numbers (P14)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={
+            "name": "John Doe",
+            "email": "john123@gmail.com"  # Has numbers
+        },
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_professional_standards(resume)
+
+    email_issues = [i for i in issues if 'email' in i['message'].lower() and 'numbers' in i['message'].lower()]
+    assert len(email_issues) >= 1
+    assert email_issues[0]['severity'] == 'warning'
+
+
+def test_unprofessional_email_with_underscores():
+    """Test detection of unprofessional email with underscores (P14)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={
+            "name": "John Doe",
+            "email": "john_doe@gmail.com"  # Has underscore
+        },
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_professional_standards(resume)
+
+    email_issues = [i for i in issues if 'email' in i['message'].lower() and 'underscores' in i['message'].lower()]
+    assert len(email_issues) >= 1
+    assert email_issues[0]['severity'] == 'warning'
+
+
+def test_outdated_email_provider():
+    """Test detection of outdated email providers (P14)"""
+    outdated_providers = ['aol.com', 'yahoo.com', 'hotmail.com']
+
+    for provider in outdated_providers:
+        resume = ResumeData(
+            fileName="test.pdf",
+            contact={
+                "name": "John Doe",
+                "email": f"john.doe@{provider}"
+            },
+            experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+            education=[{"degree": "BS Computer Science", "institution": "University"}],
+            skills=["Python"],
+            certifications=[],
+            metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+        )
+
+        validator = RedFlagsValidator()
+        issues = validator.validate_professional_standards(resume)
+
+        outdated_issues = [i for i in issues if 'outdated' in i['message'].lower() or 'provider' in i['message'].lower()]
+        assert len(outdated_issues) >= 1, f"Failed to detect outdated provider: {provider}"
+        assert outdated_issues[0]['severity'] == 'warning'
+
+
+def test_linkedin_url_valid():
+    """Test valid LinkedIn URL format (P15)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={
+            "name": "John Doe",
+            "email": "john.doe@gmail.com",
+            "linkedin": "linkedin.com/in/johndoe"
+        },
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_professional_standards(resume)
+
+    # Should have no LinkedIn issues
+    linkedin_issues = [i for i in issues if 'linkedin' in i['message'].lower()]
+    assert len(linkedin_issues) == 0
+
+
+def test_linkedin_url_with_https():
+    """Test valid LinkedIn URL with https (P15)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={
+            "name": "John Doe",
+            "email": "john.doe@gmail.com",
+            "linkedin": "https://www.linkedin.com/in/johndoe"
+        },
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_professional_standards(resume)
+
+    # Should have no LinkedIn issues
+    linkedin_issues = [i for i in issues if 'linkedin' in i['message'].lower()]
+    assert len(linkedin_issues) == 0
+
+
+def test_linkedin_missing():
+    """Test missing LinkedIn URL triggers suggestion (P15)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={
+            "name": "John Doe",
+            "email": "john.doe@gmail.com"
+            # No LinkedIn
+        },
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_professional_standards(resume)
+
+    linkedin_issues = [i for i in issues if 'linkedin' in i['message'].lower() and 'adding' in i['message'].lower()]
+    assert len(linkedin_issues) >= 1
+    assert linkedin_issues[0]['severity'] == 'suggestion'
+
+
+def test_linkedin_company_page_invalid():
+    """Test LinkedIn company page is flagged as invalid (P15)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={
+            "name": "John Doe",
+            "email": "john.doe@gmail.com",
+            "linkedin": "linkedin.com/company/mycompany"
+        },
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_professional_standards(resume)
+
+    linkedin_issues = [i for i in issues if 'linkedin' in i['message'].lower() and 'company' in i['message'].lower()]
+    assert len(linkedin_issues) >= 1
+    assert linkedin_issues[0]['severity'] == 'warning'
+
+
+def test_phone_format_consistency_consistent():
+    """Test consistent phone formatting passes (P16)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={
+            "name": "John Doe",
+            "email": "john.doe@gmail.com",
+            "phone": "123-456-7890"
+        },
+        experience=[
+            {
+                "title": "Engineer",
+                "company": "Company A",
+                "startDate": "Jan 2020",
+                "endDate": "Dec 2021",
+                "description": "Contact: 123-456-7890"  # Same format
+            },
+            {
+                "title": "Senior Engineer",
+                "company": "Company B",
+                "startDate": "Jan 2022",
+                "endDate": "Present"
+            }
+        ],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_professional_standards(resume)
+
+    # Should have no phone format issues
+    phone_issues = [i for i in issues if 'phone' in i['message'].lower() and 'format' in i['message'].lower()]
+    assert len(phone_issues) == 0
+
+
+def test_phone_format_consistency_inconsistent():
+    """Test inconsistent phone formatting triggers warning (P16)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={
+            "name": "John Doe",
+            "email": "john.doe@gmail.com",
+            "phone": "123-456-7890"
+        },
+        experience=[
+            {
+                "title": "Engineer",
+                "company": "Company A",
+                "startDate": "Jan 2020",
+                "endDate": "Dec 2021",
+                "description": "Contact: (123) 456-7890"  # Different format (parentheses)
+            },
+            {
+                "title": "Senior Engineer",
+                "company": "Company B",
+                "startDate": "Jan 2022",
+                "endDate": "Present"
+            }
+        ],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_professional_standards(resume)
+
+    phone_issues = [i for i in issues if 'phone' in i['message'].lower() and 'consistent' in i['message'].lower()]
+    assert len(phone_issues) >= 1
+    assert phone_issues[0]['severity'] == 'warning'
+
+
+def test_location_format_valid():
+    """Test valid location format (P17)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={
+            "name": "John Doe",
+            "email": "john.doe@gmail.com",
+            "location": "San Francisco, CA"
+        },
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_professional_standards(resume)
+
+    # Should have no location issues
+    location_issues = [i for i in issues if 'location' in i['message'].lower()]
+    assert len(location_issues) == 0
+
+
+def test_location_format_invalid():
+    """Test invalid location format triggers warning (P17)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={
+            "name": "John Doe",
+            "email": "john.doe@gmail.com",
+            "location": "San Francisco"  # Missing state/country
+        },
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_professional_standards(resume)
+
+    location_issues = [i for i in issues if 'location' in i['message'].lower() and 'format' in i['message'].lower()]
+    assert len(location_issues) >= 1
+    assert location_issues[0]['severity'] == 'warning'
+
+
+def test_professional_standards_no_contact():
+    """Test professional standards validation with no contact info"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_professional_standards(resume)
+
+    # Should have issue for missing LinkedIn
+    linkedin_issues = [i for i in issues if 'linkedin' in i['message'].lower()]
+    assert len(linkedin_issues) >= 1
+
+
+def test_professional_standards_multiple_issues():
+    """Test professional standards with multiple issues"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={
+            "name": "John Doe",
+            "email": "john123_doe@yahoo.com",  # Numbers, underscore, outdated provider
+            "phone": "123-456-7890",
+            "location": "San Francisco"  # Missing state
+        },
+        experience=[
+            {
+                "title": "Engineer",
+                "company": "Company",
+                "startDate": "Jan 2020",
+                "endDate": "Present",
+                "description": "Contact: (123) 456 7890"  # Inconsistent phone format
+            }
+        ],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_professional_standards(resume)
+
+    # Should have multiple issues
+    assert len(issues) >= 3
+
+    # Email issues
+    email_issues = [i for i in issues if 'email' in i['message'].lower()]
+    assert len(email_issues) >= 1
+
+    # LinkedIn missing
+    linkedin_issues = [i for i in issues if 'linkedin' in i['message'].lower()]
+    assert len(linkedin_issues) >= 1
+
+    # Location format
+    location_issues = [i for i in issues if 'location' in i['message'].lower()]
+    assert len(location_issues) >= 1
+
+
+def test_validate_resume_includes_professional_standards():
+    """Test that validate_resume calls validate_professional_standards"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={
+            "name": "John Doe",
+            "email": "john123@yahoo.com"  # Unprofessional
+        },
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    result = validator.validate_resume(resume, "software_engineer", "mid")
+
+    # Should have professional standards issues in warnings or suggestions
+    all_issues = result['warnings'] + result['suggestions']
+    professional_issues = [i for i in all_issues if 'email' in i['message'].lower() or 'linkedin' in i['message'].lower()]
+    assert len(professional_issues) >= 1
