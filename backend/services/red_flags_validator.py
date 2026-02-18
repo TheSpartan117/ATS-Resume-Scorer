@@ -5,7 +5,7 @@ Checks all 44 parameters and returns issues by severity.
 
 import re
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 from backend.services.parser import ResumeData
 
 
@@ -39,8 +39,8 @@ class RedFlagsValidator:
             'suggestions': [i for i in all_issues if i['severity'] == 'suggestion']
         }
 
-    def parse_date(self, date_str: str) -> datetime:
-        """Parse date string into datetime"""
+    def parse_date(self, date_str: str) -> Optional[datetime]:
+        """Parse date string into datetime, returns None if unparseable"""
         if not date_str or date_str.lower() in ['present', 'current']:
             return datetime.now()
 
@@ -66,15 +66,22 @@ class RedFlagsValidator:
         return None
 
     def calculate_gap_months(self, end_date1: datetime, start_date2: datetime) -> int:
-        """Calculate gap in months between two dates"""
+        """Calculate gap in months between two dates using proper month arithmetic"""
         if not end_date1 or not start_date2:
             return 0
 
-        delta = start_date2 - end_date1
-        return delta.days // 30  # Approximate months
+        # Calculate month difference accounting for day of month
+        months = (start_date2.year - end_date1.year) * 12 + \
+                 (start_date2.month - end_date1.month)
+
+        # Adjust if we haven't reached the day in the target month
+        if start_date2.day < end_date1.day:
+            months -= 1
+
+        return max(0, months)
 
     def calculate_total_experience(self, experience: List[Dict]) -> float:
-        """Calculate total years of experience"""
+        """Calculate total years of experience accounting for days"""
         total_months = 0
 
         for exp in experience:
@@ -83,6 +90,9 @@ class RedFlagsValidator:
 
             if start and end:
                 months = (end.year - start.year) * 12 + (end.month - start.month)
+                # Add partial month if we've passed the start day
+                if end.day >= start.day:
+                    months += 1
                 total_months += months
 
         return total_months / 12  # Convert to years
@@ -137,10 +147,30 @@ class RedFlagsValidator:
                         'message': f'Employment gap of {gap_months} months detected between jobs'
                     })
 
-        # P2: Date validation (end before start, future dates)
+        # P2: Date validation (end before start, future dates, unparseable dates)
         for exp in resume.experience:
             start = self.parse_date(exp.get('startDate', ''))
             end = self.parse_date(exp.get('endDate', ''))
+
+            # Check for unparseable dates
+            start_date_str = exp.get('startDate', '')
+            end_date_str = exp.get('endDate', '')
+
+            if start_date_str and not start:
+                issues.append({
+                    'severity': 'critical',
+                    'category': 'date_error',
+                    'message': f"{exp.get('title', 'Job')} at {exp.get('company', 'company')}: "
+                              f"Unable to parse start date '{start_date_str}'"
+                })
+
+            if end_date_str and not end and end_date_str.lower() not in ['present', 'current']:
+                issues.append({
+                    'severity': 'critical',
+                    'category': 'date_error',
+                    'message': f"{exp.get('title', 'Job')} at {exp.get('company', 'company')}: "
+                              f"Unable to parse end date '{end_date_str}'"
+                })
 
             if start and end and end < start:
                 issues.append({
@@ -187,6 +217,9 @@ class RedFlagsValidator:
 
             if start and end:
                 tenure_months = (end.year - start.year) * 12 + (end.month - start.month)
+                # Add partial month if we've passed the start day
+                if end.day >= start.day:
+                    tenure_months += 1
                 if tenure_months < 12 and exp.get('endDate', '').lower() not in ['present', 'current']:
                     short_tenures.append(exp.get('company', 'unknown'))
 
@@ -234,6 +267,9 @@ class RedFlagsValidator:
         min_years, max_years = level_ranges.get(level, (0, 100))
 
         if total_years < min_years:
+            # Critical if significantly under-qualified (2+ years below minimum)
+            # Warning if slightly under-qualified (1-2 years below minimum)
+            # This buffer zone accounts for overlapping experience level ranges
             severity = 'critical' if total_years < min_years - 1 else 'warning'
             issues.append({
                 'severity': severity,
