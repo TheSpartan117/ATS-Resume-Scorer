@@ -317,7 +317,7 @@ export default function UploadPage() {
 
           {/* Right Column - Benefits & Info (40%) */}
           <div className="lg:col-span-2">
-            <div className="sticky top-24 space-y-6">
+            <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto space-y-6 pr-2" style={{scrollbarWidth: 'thin', scrollbarColor: '#d1d5db #f3f4f6'}}>
               {/* Why Choose Us */}
               <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
