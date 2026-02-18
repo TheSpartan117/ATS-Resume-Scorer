@@ -21,6 +21,79 @@ export default function ResultsPage() {
     }
   }, [result, navigate])
 
+  // Build resume content text from parsed data
+  const buildResumeContent = (): string => {
+    if (!result) return ''
+
+    const parts: string[] = []
+
+    // Contact Information
+    if (result.contact) {
+      parts.push('Contact Information')
+      if (result.contact.name) parts.push(`Name: ${result.contact.name}`)
+      if (result.contact.email) parts.push(`Email: ${result.contact.email}`)
+      if (result.contact.phone) parts.push(`Phone: ${result.contact.phone}`)
+      if (result.contact.location) parts.push(`Location: ${result.contact.location}`)
+      if (result.contact.linkedin) parts.push(`LinkedIn: ${result.contact.linkedin}`)
+      parts.push('')
+    }
+
+    // Experience
+    if (result.experience && result.experience.length > 0) {
+      parts.push('Experience')
+      parts.push('')
+      result.experience.forEach((exp: any) => {
+        if (exp.title) parts.push(exp.title)
+        if (exp.company) parts.push(exp.company)
+        if (exp.startDate || exp.endDate) {
+          parts.push(`${exp.startDate || ''} - ${exp.endDate || 'Present'}`)
+        }
+        if (exp.location) parts.push(exp.location)
+        if (exp.description) {
+          parts.push('')
+          parts.push(exp.description)
+        }
+        parts.push('')
+      })
+    }
+
+    // Education
+    if (result.education && result.education.length > 0) {
+      parts.push('Education')
+      parts.push('')
+      result.education.forEach((edu: any) => {
+        if (edu.degree) parts.push(edu.degree)
+        if (edu.institution) parts.push(edu.institution)
+        if (edu.graduationDate) parts.push(`Graduated: ${edu.graduationDate}`)
+        if (edu.location) parts.push(edu.location)
+        if (edu.gpa) parts.push(`GPA: ${edu.gpa}`)
+        parts.push('')
+      })
+    }
+
+    // Skills
+    if (result.skills && result.skills.length > 0) {
+      parts.push('Skills')
+      parts.push('')
+      parts.push(result.skills.join(', '))
+      parts.push('')
+    }
+
+    // Certifications
+    if (result.certifications && result.certifications.length > 0) {
+      parts.push('Certifications')
+      parts.push('')
+      result.certifications.forEach((cert: any) => {
+        if (cert.name) parts.push(cert.name)
+        if (cert.issuer) parts.push(`Issued by: ${cert.issuer}`)
+        if (cert.date) parts.push(`Date: ${cert.date}`)
+        parts.push('')
+      })
+    }
+
+    return parts.join('\n')
+  }
+
   if (!result) {
     return null
   }
@@ -50,7 +123,7 @@ export default function ResultsPage() {
             </div>
             <div className="flex items-center gap-3">
               <DownloadMenu
-                resumeContent=""
+                resumeContent={buildResumeContent()}
                 resumeName={result.contact?.name || 'Resume'}
                 resumeData={result}
                 scoreData={result.score}
