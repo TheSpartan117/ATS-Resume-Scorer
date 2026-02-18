@@ -6,10 +6,14 @@ This module provides intelligent scoring with two modes:
 - Mode B (Quality Coach): Balanced quality scoring (25/30/25/20)
 
 The mode is auto-detected based on job description presence.
+
+Main Scorer Orchestrator:
+- ResumeScorer: Main orchestrator class with interpretation and recommendations
+- AdaptiveScorer: Core scoring engine with dual-mode support
 """
 
 import re
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from backend.services.keyword_extractor import extract_keywords_from_jd, match_with_synonyms
 from backend.services.role_taxonomy import ExperienceLevel, get_role_scoring_data
 from backend.services.parser import ResumeData
@@ -775,3 +779,253 @@ class AdaptiveScorer:
                     issues.append((severity, item))
 
         return issues
+
+
+class ResumeScorer:
+    """
+    Main Scorer Orchestrator - coordinates dual-mode scoring with interpretation.
+
+    Features:
+    - Dual-mode support: 'ats' (ATS Simulation) and 'quality' (Quality Coach)
+    - Score interpretation layer (0-40: Needs significant improvement, etc.)
+    - Caching of validator results for quick mode switching
+    - Actionable recommendations based on issues
+    - Job description matching support
+    """
+
+    def __init__(self):
+        """Initialize scorer with caching support"""
+        self._adaptive_scorer = AdaptiveScorer()
+        self._validation_cache = {}  # Cache validator results by resume hash
+
+    def score(
+        self,
+        resume: ResumeData,
+        role: str,
+        level: ExperienceLevel,
+        mode: str = 'ats',
+        job_description: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Score a resume with interpretation and recommendations.
+
+        Args:
+            resume: Parsed resume data
+            role: Role identifier (e.g., "software_engineer")
+            level: Experience level enum
+            mode: Scoring mode - 'ats' or 'quality' (default: 'ats')
+            job_description: Optional job description for ATS mode
+
+        Returns:
+            Dictionary with:
+            - score: Overall score (0-100)
+            - mode: Scoring mode used
+            - interpretation: Human-readable score interpretation
+            - breakdown: Detailed scoring breakdown
+            - recommendations: List of actionable recommendations
+            - issues: Categorized issues (critical, warnings, suggestions, info)
+            - strengths: List of resume strengths
+            - keyword_details: Keyword matching details
+        """
+        # Validate mode
+        if mode not in ['ats', 'quality']:
+            raise ValueError(f"Invalid mode: {mode}. Use 'ats' or 'quality'")
+
+        # For ATS mode, require job description
+        if mode == 'ats' and not job_description:
+            raise ValueError("job_description is required for ATS mode")
+
+        # Map mode to adaptive scorer mode names
+        adaptive_mode = 'ats_simulation' if mode == 'ats' else 'quality_coach'
+
+        # Get score from adaptive scorer
+        result = self._adaptive_scorer.score(
+            resume_data=resume,
+            role_id=role,
+            level=level,
+            job_description=job_description,
+            mode=adaptive_mode
+        )
+
+        # Get overall score
+        overall_score = result.get('overallScore', 0)
+
+        # Add interpretation layer
+        interpretation = self._interpret_score(overall_score)
+
+        # Generate actionable recommendations
+        recommendations = self._generate_recommendations(result, mode)
+
+        # Build return structure
+        return {
+            'score': overall_score,
+            'mode': mode,
+            'interpretation': interpretation,
+            'breakdown': result.get('breakdown', {}),
+            'recommendations': recommendations,
+            'issues': result.get('issues', {}),
+            'strengths': result.get('strengths', []),
+            'keyword_details': result.get('keyword_details', {}),
+            # Include mode-specific fields
+            **({'auto_reject': result.get('auto_reject'),
+                'rejection_reason': result.get('rejection_reason')} if mode == 'ats' else {}),
+            **({'cta': result.get('cta')} if mode == 'quality' else {})
+        }
+
+    def _interpret_score(self, score: float) -> str:
+        """
+        Interpret score with human-readable labels.
+
+        Score ranges:
+        - 0-40: Needs significant improvement
+        - 41-60: Needs improvement
+        - 61-75: Good
+        - 76-85: Very good
+        - 86-100: Excellent
+
+        Args:
+            score: Overall score (0-100)
+
+        Returns:
+            Human-readable interpretation
+        """
+        if score >= 86:
+            return "Excellent"
+        elif score >= 76:
+            return "Very good"
+        elif score >= 61:
+            return "Good"
+        elif score >= 41:
+            return "Needs improvement"
+        else:
+            return "Needs significant improvement"
+
+    def _generate_recommendations(self, result: Dict, mode: str) -> List[str]:
+        """
+        Generate actionable recommendations based on issues.
+
+        Args:
+            result: Scoring result from adaptive scorer
+            mode: Scoring mode ('ats' or 'quality')
+
+        Returns:
+            List of actionable recommendation strings
+        """
+        recommendations = []
+        issues = result.get('issues', {})
+        breakdown = result.get('breakdown', {})
+
+        # Process critical issues first
+        critical_issues = issues.get('critical', [])
+        for severity, message in critical_issues:
+            recommendations.append(f"CRITICAL: {message}")
+
+        # Process warnings
+        warnings = issues.get('warnings', [])
+        for severity, message in warnings[:3]:  # Top 3 warnings
+            recommendations.append(f"WARNING: {message}")
+
+        # Mode-specific recommendations based on breakdown
+        if mode == 'ats':
+            keyword_details = result.get('keyword_details', {})
+
+            # Keyword recommendations
+            if keyword_details.get('required_match_pct', 0) < 80:
+                required_matched = keyword_details.get('required_matched', 0)
+                required_total = keyword_details.get('required_total', 0)
+                missing = required_total - required_matched
+                recommendations.append(
+                    f"Add {missing} missing required keywords to improve ATS compatibility"
+                )
+
+            if keyword_details.get('preferred_match_pct', 0) < 60:
+                preferred_matched = keyword_details.get('preferred_matched', 0)
+                preferred_total = keyword_details.get('preferred_total', 0)
+                missing = preferred_total - preferred_matched
+                recommendations.append(
+                    f"Include {missing} more preferred keywords to stand out"
+                )
+
+            # Format recommendations
+            format_data = breakdown.get('format', {})
+            if format_data.get('score', 0) < 15:
+                recommendations.append(
+                    "Improve resume format: ensure all required sections are present"
+                )
+
+            # Structure recommendations
+            structure_data = breakdown.get('structure', {})
+            if structure_data.get('score', 0) < 7:
+                recommendations.append(
+                    "Add more details to experience and skills sections"
+                )
+
+        else:  # quality mode
+            # Role keywords recommendations
+            role_kw_data = breakdown.get('role_keywords', {})
+            if role_kw_data.get('score', 0) < 18:
+                recommendations.append(
+                    "Add more role-specific keywords and action verbs to demonstrate expertise"
+                )
+
+            # Content quality recommendations
+            content_data = breakdown.get('content_quality', {})
+            if content_data.get('score', 0) < 24:
+                recommendations.append(
+                    "Quantify achievements with metrics (percentages, numbers, impact)"
+                )
+                recommendations.append(
+                    "Use more bullet points and strong action verbs"
+                )
+
+            # Format recommendations
+            format_data = breakdown.get('format', {})
+            if format_data.get('score', 0) < 20:
+                recommendations.append(
+                    "Ensure all standard resume sections are complete and well-formatted"
+                )
+
+            # Professional polish recommendations
+            polish_data = breakdown.get('professional_polish', {})
+            if polish_data.get('score', 0) < 15:
+                recommendations.append(
+                    "Optimize resume length and ensure complete contact information"
+                )
+
+        # Add suggestions if we have room (max 7 recommendations)
+        suggestions = issues.get('suggestions', [])
+        remaining_slots = 7 - len(recommendations)
+        for severity, message in suggestions[:remaining_slots]:
+            recommendations.append(f"TIP: {message}")
+
+        # If no specific recommendations, add generic positive message
+        if not recommendations:
+            recommendations.append("Your resume looks great! Keep it updated regularly.")
+
+        return recommendations[:7]  # Cap at 7 recommendations
+
+    def cache_validation_results(self, resume_hash: str, validation_results: Dict):
+        """
+        Cache validator results for quick mode switching.
+
+        Args:
+            resume_hash: Unique hash of resume content
+            validation_results: Validation results to cache
+        """
+        self._validation_cache[resume_hash] = validation_results
+
+    def get_cached_validation(self, resume_hash: str) -> Optional[Dict]:
+        """
+        Get cached validator results if available.
+
+        Args:
+            resume_hash: Unique hash of resume content
+
+        Returns:
+            Cached validation results or None
+        """
+        return self._validation_cache.get(resume_hash)
+
+    def clear_cache(self):
+        """Clear all cached validation results"""
+        self._validation_cache.clear()
