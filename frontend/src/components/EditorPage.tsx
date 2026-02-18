@@ -305,7 +305,7 @@ export default function EditorPage() {
       {/* Ad Display Overlay */}
       {showAd && <AdDisplay onAdViewed={handleAdViewed} />}
 
-      <div className="w-full px-2 py-4">
+      <div className="w-full">
         {/* Header */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
@@ -405,7 +405,7 @@ export default function EditorPage() {
         )}
 
         {/* Main Content - Balanced 70/30 Split */}
-        <div className="grid grid-cols-1 lg:grid-cols-10 gap-2">
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-1">
           {/* Score Panel - First in HTML (mobile top, laptop right) */}
           <div className="lg:col-span-3 lg:order-2">
             <div className="sticky top-4 space-y-3">
