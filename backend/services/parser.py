@@ -329,6 +329,63 @@ def parse_education_entry(text: str) -> Dict:
     return entry
 
 
+def split_education_entries(text: str) -> List[str]:
+    """
+    Split multiple education entries from a single text block.
+
+    Detects new entries by:
+    - Degree keywords (Bachelor, Master, PhD, etc.)
+    - Blank lines separating entries
+
+    Args:
+        text: Raw education section text with potentially multiple entries
+
+    Returns:
+        List of individual education entry texts
+    """
+    # Degree keywords that indicate a new education entry
+    degree_keywords = [
+        r'\b(Bachelor|B\.?\s*[ASC]\.?|BA|BS|BBA|BEng|BTech)\b',
+        r'\b(Master|M\.?\s*[ASC]\.?|MA|MS|MBA|MEng|MTech|MSc)\b',
+        r'\b(Doctor|PhD|Ph\.?D\.?|Doctorate)\b',
+        r'\b(Associate|A\.?\s*[AS]\.?|AA|AS)\b',
+        r'\b(Diploma|Certificate|Certification)\b',
+        r'\b(High School|Secondary School|XII|X)\b'
+    ]
+
+    lines = text.split('\n')
+    entries = []
+    current_entry = []
+
+    for line in lines:
+        line_stripped = line.strip()
+
+        # Skip empty lines
+        if not line_stripped:
+            continue
+
+        # Check if this line starts a new education entry
+        is_new_entry = False
+        for pattern in degree_keywords:
+            if re.search(pattern, line_stripped, re.IGNORECASE):
+                is_new_entry = True
+                break
+
+        if is_new_entry and current_entry:
+            # Save current entry and start new one
+            entries.append('\n'.join(current_entry))
+            current_entry = [line_stripped]
+        else:
+            # Add to current entry
+            current_entry.append(line_stripped)
+
+    # Add last entry
+    if current_entry:
+        entries.append('\n'.join(current_entry))
+
+    return entries
+
+
 def extract_resume_sections(text: str) -> Dict[str, List]:
     """
     Extract structured sections from resume text.
@@ -360,6 +417,9 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
     skills_headers = ['skills', 'technical skills', 'core competencies', 'expertise', 'technologies']
     cert_headers = ['certifications', 'certificates', 'licenses', 'professional certifications']
 
+    # Debug: Log all section headers found
+    logger.info(f"Scanning {len(lines)} lines for resume sections")
+
     for line in lines:
         line_lower = line.lower().strip()
 
@@ -387,6 +447,7 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
             current_section = 'education'
             current_content = []
         elif any(header in line_lower for header in skills_headers):
+            logger.info(f"Found skills header: '{line}' (matched: {[h for h in skills_headers if h in line_lower]})")
             if current_section and current_content:
                 content_text = '\n'.join(current_content)
                 if current_section == 'experience':
@@ -417,14 +478,20 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
         if current_section == 'experience':
             sections[current_section].append(parse_experience_entry(content_text))
         elif current_section == 'education':
-            sections[current_section].append(parse_education_entry(content_text))
+            # Split multiple education entries by blank lines or degree patterns
+            edu_entries = split_education_entries(content_text)
+            for edu_text in edu_entries:
+                if edu_text.strip():
+                    sections[current_section].append(parse_education_entry(edu_text))
         elif current_section == 'skills':
             # For skills, just add the raw text to be processed below
+            logger.info(f"Adding skills content: {content_text[:200]}...")
             sections[current_section].append(content_text)
         elif current_section == 'certifications':
             sections[current_section].append({'name': content_text})
 
     # Special handling for skills - split by commas/bullets (keep as strings)
+    logger.info(f"Skills section raw data: {sections['skills']}")
     if sections['skills']:
         all_skills = []
         for skill_block in sections['skills']:
@@ -432,6 +499,9 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
             skills = re.split(r'[,;•|\n]+', skill_block)
             all_skills.extend([s.strip() for s in skills if s.strip()])
         sections['skills'] = list(set(all_skills))[:50]  # Deduplicate, limit to 50
+        logger.info(f"Processed {len(sections['skills'])} skills: {sections['skills'][:10]}")
+    else:
+        logger.warning("No skills section found in resume")
 
     return sections
 
