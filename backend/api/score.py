@@ -4,8 +4,8 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from backend.services.parser import ResumeData
-from backend.services.scorer_v2 import ScorerV2
-from backend.services.role_taxonomy import RoleTaxonomy
+from backend.services.scorer_v2 import AdaptiveScorer
+from backend.services.role_taxonomy import get_role_scoring_data, ExperienceLevel
 from backend.schemas.resume import ScoreResponse, CategoryBreakdown
 
 
@@ -57,17 +57,13 @@ async def score_resume(request: ScoreRequest):
     # Determine scoring mode
     scoring_mode = "ats_simulation" if request.jobDescription else "quality_coach"
 
-    # Get role taxonomy and scorer
-    taxonomy = RoleTaxonomy()
-    role_data = taxonomy.get_role(request.role or "software_engineer")
-
-    # Calculate score using ScorerV2
-    scorer = ScorerV2()
-    score_result = scorer.score_resume(
-        resume_data,
-        role_data=role_data,
+    # Calculate score using AdaptiveScorer
+    scorer = AdaptiveScorer()
+    score_result = scorer.score(
+        resume_data=resume_data,
+        role_id=request.role or "software_engineer",
         level=request.level or "mid",
-        job_description=request.jobDescription or "",
+        job_description=request.jobDescription,
         mode=scoring_mode
     )
 

@@ -51,7 +51,7 @@ def test_ats_mode_triggered_with_jd(scorer, sample_resume):
     assert result["mode"] == "ats_simulation"
     assert "breakdown" in result
     assert "keyword_details" in result
-    assert "overall_score" in result
+    assert "overallScore" in result
 
 
 def test_quality_mode_triggered_without_jd(scorer, sample_resume):
@@ -67,7 +67,7 @@ def test_quality_mode_triggered_without_jd(scorer, sample_resume):
     assert result["mode"] == "quality_coach"
     assert "breakdown" in result
     assert "keyword_details" in result
-    assert "overall_score" in result
+    assert "overallScore" in result
     assert "cta" in result
 
 
