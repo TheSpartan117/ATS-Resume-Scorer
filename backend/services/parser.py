@@ -3,6 +3,7 @@ PDF and DOCX parser service for extracting structured data from resumes.
 """
 import re
 import io
+import logging
 from io import BytesIO
 from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
@@ -10,6 +11,8 @@ import fitz  # PyMuPDF
 import pypdf
 import pdfplumber
 from docx import Document
+
+logger = logging.getLogger(__name__)
 
 
 # Pydantic models for structured resume data
@@ -557,8 +560,6 @@ def parse_pdf(file_content: bytes, filename: str) -> ResumeData:
         # If extraction seems successful, continue with PyMuPDF
         if word_count >= 50:  # Minimum threshold for valid extraction
             # Debug: log first 1000 chars of extracted text
-            import logging
-            logger = logging.getLogger(__name__)
             logger.info(f"PyMuPDF extracted {word_count} words from PDF")
             logger.info(f"First 1000 chars: {full_text[:1000]}")
 
