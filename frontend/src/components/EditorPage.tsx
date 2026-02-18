@@ -404,37 +404,10 @@ export default function EditorPage() {
           </div>
         )}
 
-        {/* Main Content - Wider Editor */}
+        {/* Main Content - Balanced 70/30 Split */}
         <div className="grid grid-cols-1 lg:grid-cols-10 gap-2">
-          {/* Left Column: Editor (9/10 width = 90%) */}
-          <div className="lg:col-span-9">
-            <div className="bg-white rounded-lg shadow-sm p-2">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  📝 Resume Content
-                </h2>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600">
-                    {wordCount} words
-                  </span>
-                  <button
-                    onClick={() => performRescore()}
-                    disabled={isRescoring}
-                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isRescoring ? 'Re-scoring...' : '🔄 Re-score'}
-                  </button>
-                </div>
-              </div>
-              <WYSIWYGEditor
-                value={editorContent}
-                onChange={handleEditorChange}
-              />
-            </div>
-          </div>
-
-          {/* Right Column: Live Score (1/10 width = 10%) */}
-          <div className="lg:col-span-1">
+          {/* Score Panel - First in HTML (mobile top, laptop right) */}
+          <div className="lg:col-span-3 lg:order-2">
             <div className="sticky top-4 space-y-3">
               {/* Mode Indicator with Score */}
               <ModeIndicator
@@ -473,6 +446,33 @@ export default function EditorPage() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Editor - Second in HTML (mobile bottom, laptop left) */}
+          <div className="lg:col-span-7 lg:order-1">
+            <div className="bg-white rounded-lg shadow-sm p-2">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  📝 Resume Content
+                </h2>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600">
+                    {wordCount} words
+                  </span>
+                  <button
+                    onClick={() => performRescore()}
+                    disabled={isRescoring}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isRescoring ? 'Re-scoring...' : '🔄 Re-score'}
+                  </button>
+                </div>
+              </div>
+              <WYSIWYGEditor
+                value={editorContent}
+                onChange={handleEditorChange}
+              />
             </div>
           </div>
         </div>
