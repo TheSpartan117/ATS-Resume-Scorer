@@ -25,18 +25,26 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setError(null)
 
     // Validation
-    if (!email || !password) {
-      setError('Please fill in all fields')
+    // Email validation
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      setError('Please enter a valid email address')
       return
     }
 
+    // Password validation - require minimum 8 chars with at least one number
+    if (!password || password.length < 8) {
+      setError('Password must be at least 8 characters')
+      return
+    }
+
+    if (!/\d/.test(password)) {
+      setError('Password must contain at least one number')
+      return
+    }
+
+    // Confirm password for signup
     if (mode === 'signup' && password !== confirmPassword) {
       setError('Passwords do not match')
-      return
-    }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters')
       return
     }
 
