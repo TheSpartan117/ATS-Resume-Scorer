@@ -398,3 +398,382 @@ def test_executive_level_validation():
     level_issues = [i for i in issues if 'executive' in i['message'].lower()]
     assert len(level_issues) >= 1
     assert level_issues[0]['severity'] in ['warning', 'critical']
+
+
+# ===== Content Depth Validation Tests (P7-P9) =====
+
+def test_vague_phrases_detection():
+    """Test detection of vague phrases in experience descriptions (P7)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={},
+        experience=[
+            {
+                "title": "Software Engineer",
+                "company": "Company A",
+                "startDate": "Jan 2020",
+                "endDate": "Dec 2021",
+                "description": "• Responsible for developing applications\n• Worked on multiple projects\n• Helped with code reviews"
+            },
+            {
+                "title": "Senior Engineer",
+                "company": "Company B",
+                "startDate": "Jan 2022",
+                "endDate": "Present",
+                "description": "• Built scalable microservices architecture\n• Reduced deployment time by 40%"
+            }
+        ],
+        education=[],
+        skills=[],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_content_depth(resume)
+
+    vague_issues = [i for i in issues if 'vague' in i['message'].lower()]
+    assert len(vague_issues) >= 1
+    assert vague_issues[0]['severity'] == 'warning'
+    assert 'responsible for' in vague_issues[0]['message'].lower() or 'worked on' in vague_issues[0]['message'].lower()
+
+
+def test_bullet_length_too_short_critical():
+    """Test detection of critically short bullets (<30 chars) (P8)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={},
+        experience=[{
+            "title": "Engineer",
+            "company": "Company",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "• Fixed bugs\n• Code review\n• Built REST APIs using Python and FastAPI with PostgreSQL database"
+        }],
+        education=[],
+        skills=[],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_content_depth(resume)
+
+    short_issues = [i for i in issues if 'short' in i['message'].lower() and 'critical' in i['severity']]
+    assert len(short_issues) >= 1
+    assert short_issues[0]['severity'] == 'critical'
+
+
+def test_bullet_length_too_short_warning():
+    """Test detection of short bullets (30-49 chars) as warnings (P8)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={},
+        experience=[{
+            "title": "Engineer",
+            "company": "Company",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "• Developed features for web application"
+        }],
+        education=[],
+        skills=[],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_content_depth(resume)
+
+    short_issues = [i for i in issues if 'detailed' in i['message'].lower() and i['severity'] == 'warning']
+    assert len(short_issues) >= 1
+
+
+def test_bullet_length_too_long_critical():
+    """Test detection of critically long bullets (>200 chars) (P8)"""
+    long_bullet = "• " + "a" * 210  # 212 chars total
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={},
+        experience=[{
+            "title": "Engineer",
+            "company": "Company",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": long_bullet
+        }],
+        education=[],
+        skills=[],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_content_depth(resume)
+
+    long_issues = [i for i in issues if 'long' in i['message'].lower() and 'critical' in i['severity']]
+    assert len(long_issues) >= 1
+    assert long_issues[0]['severity'] == 'critical'
+
+
+def test_bullet_length_too_long_warning():
+    """Test detection of long bullets (151-200 chars) as warnings (P8)"""
+    long_bullet = "• Developed and deployed a comprehensive microservices architecture using Spring Boot, Docker, and Kubernetes that improved system scalability and reduced deployment time by forty percent"
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={},
+        experience=[{
+            "title": "Engineer",
+            "company": "Company",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": long_bullet
+        }],
+        education=[],
+        skills=[],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_content_depth(resume)
+
+    long_issues = [i for i in issues if 'concise' in i['message'].lower() and i['severity'] == 'warning']
+    assert len(long_issues) >= 1
+
+
+def test_bullet_length_optimal():
+    """Test that optimal length bullets (50-150 chars) trigger no issues (P8)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={},
+        experience=[{
+            "title": "Engineer",
+            "company": "Company",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "• Built scalable REST APIs using FastAPI and PostgreSQL\n• Reduced query response time by 60% through optimization"
+        }],
+        education=[],
+        skills=[],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_content_depth(resume)
+
+    # Should have no bullet length issues
+    length_issues = [i for i in issues if 'short' in i['message'].lower() or 'long' in i['message'].lower()]
+    assert len(length_issues) == 0
+
+
+def test_fragment_detection():
+    """Test detection of incomplete bullet points (P9)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={},
+        experience=[{
+            "title": "Engineer",
+            "company": "Company",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "• Python, Django\n• APIs\n• Was responsible for the project\n• Developed comprehensive application"
+        }],
+        education=[],
+        skills=[],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_content_depth(resume)
+
+    fragment_issues = [i for i in issues if 'fragment' in i['message'].lower() or 'incomplete' in i['message'].lower()]
+    assert len(fragment_issues) >= 1
+    assert fragment_issues[0]['severity'] == 'warning'
+
+
+def test_weak_verb_detection():
+    """Test detection of weak verbs (was, is, been) in bullets (P9)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={},
+        experience=[{
+            "title": "Engineer",
+            "company": "Company",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "• Was working on the API development\n• Is responsible for database management\n• Has been involved in code reviews"
+        }],
+        education=[],
+        skills=[],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_content_depth(resume)
+
+    weak_issues = [i for i in issues if 'weak' in i['message'].lower() or 'fragment' in i['message'].lower()]
+    assert len(weak_issues) >= 1
+    assert weak_issues[0]['severity'] == 'warning'
+
+
+def test_content_depth_with_multiple_issues():
+    """Test content depth validation with multiple types of issues"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={},
+        experience=[
+            {
+                "title": "Software Engineer",
+                "company": "Company A",
+                "startDate": "Jan 2020",
+                "endDate": "Dec 2021",
+                "description": "• Worked on projects\n• Was responsible for APIs\n• " + "x" * 205
+            },
+            {
+                "title": "Engineer",
+                "company": "Company B",
+                "startDate": "Jan 2022",
+                "endDate": "Present",
+                "description": "• Built scalable microservices with 99.9% uptime"
+            }
+        ],
+        education=[],
+        skills=[],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_content_depth(resume)
+
+    # Should have multiple types of issues
+    assert len(issues) >= 3
+
+    # Check for vague phrases
+    vague_issues = [i for i in issues if 'vague' in i['message'].lower()]
+    assert len(vague_issues) >= 1
+
+    # Check for fragments/weak verbs
+    fragment_issues = [i for i in issues if 'fragment' in i['message'].lower() or 'weak' in i['message'].lower()]
+    assert len(fragment_issues) >= 1
+
+    # Check for length issues
+    length_issues = [i for i in issues if 'long' in i['message'].lower()]
+    assert len(length_issues) >= 1
+
+
+def test_content_depth_no_description():
+    """Test content depth validation when experience has no description"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={},
+        experience=[{
+            "title": "Engineer",
+            "company": "Company",
+            "startDate": "Jan 2020",
+            "endDate": "Present"
+            # No description field
+        }],
+        education=[],
+        skills=[],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_content_depth(resume)
+
+    # Should not crash, may warn about missing descriptions
+    assert isinstance(issues, list)
+
+
+def test_content_depth_empty_description():
+    """Test content depth validation with empty description"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={},
+        experience=[{
+            "title": "Engineer",
+            "company": "Company",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": ""
+        }],
+        education=[],
+        skills=[],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_content_depth(resume)
+
+    # Should not crash
+    assert isinstance(issues, list)
+
+
+def test_validate_resume_includes_content_depth():
+    """Test that validate_resume calls validate_content_depth"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={},
+        experience=[{
+            "title": "Engineer",
+            "company": "Company",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "• Responsible for development\n• Short\n• " + "x" * 210
+        }],
+        education=[],
+        skills=[],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    result = validator.validate_resume(resume, "software_engineer", "mid")
+
+    # Should have content depth issues in warnings
+    all_issues = result['critical'] + result['warnings']
+    content_issues = [i for i in all_issues if 'vague' in i['message'].lower() or
+                      'short' in i['message'].lower() or 'long' in i['message'].lower()]
+    assert len(content_issues) > 0
+
+
+def test_all_vague_phrases():
+    """Test detection of all documented vague phrases"""
+    vague_phrases = [
+        "responsible for",
+        "worked on",
+        "helped with",
+        "assisted with",
+        "involved in",
+        "participated in"
+    ]
+
+    for phrase in vague_phrases:
+        resume = ResumeData(
+            fileName="test.pdf",
+            contact={},
+            experience=[{
+                "title": "Engineer",
+                "company": "Company",
+                "startDate": "Jan 2020",
+                "endDate": "Present",
+                "description": f"• {phrase.capitalize()} the project development and implementation"
+            }],
+            education=[],
+            skills=[],
+            certifications=[],
+            metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+        )
+
+        validator = RedFlagsValidator()
+        issues = validator.validate_content_depth(resume)
+
+        vague_issues = [i for i in issues if 'vague' in i['message'].lower()]
+        assert len(vague_issues) >= 1, f"Failed to detect vague phrase: {phrase}"

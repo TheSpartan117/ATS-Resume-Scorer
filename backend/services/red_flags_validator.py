@@ -31,6 +31,7 @@ class RedFlagsValidator:
         # Run all validators
         all_issues.extend(self.validate_employment_history(resume))
         all_issues.extend(self.validate_experience_level(resume, level))
+        all_issues.extend(self.validate_content_depth(resume))
 
         # Categorize by severity
         return {
@@ -279,3 +280,145 @@ class RedFlagsValidator:
             })
 
         return issues
+
+    def validate_content_depth(self, resume: ResumeData) -> List[Dict]:
+        """
+        Validate content depth and quality of experience descriptions.
+        Parameters 7-9 from design doc:
+        - P7: Achievement Depth (vague phrases)
+        - P8: Bullet Point Length (50-150 chars optimal)
+        - P9: Bullet Structure (complete thoughts)
+        """
+        issues = []
+
+        # P7: Vague phrases to detect
+        vague_phrases = [
+            r'\bresponsible for\b',
+            r'\bworked on\b',
+            r'\bhelped with\b',
+            r'\bassisted with\b',
+            r'\binvolved in\b',
+            r'\bparticipated in\b'
+        ]
+
+        # P9: Weak verbs that indicate fragments
+        weak_verbs = [r'\bwas\b', r'\bis\b', r'\bbeen\b', r'\bhas been\b', r'\bhave been\b']
+
+        if not resume.experience:
+            return issues
+
+        for exp in resume.experience:
+            company = exp.get('company', 'company')
+            title = exp.get('title', 'position')
+            description = exp.get('description', '')
+
+            if not description:
+                continue
+
+            # Parse bullets from description
+            bullets = self._parse_bullets(description)
+
+            for bullet in bullets:
+                bullet_text = bullet.strip()
+                if not bullet_text:
+                    continue
+
+                # P7: Check for vague phrases
+                for phrase_pattern in vague_phrases:
+                    if re.search(phrase_pattern, bullet_text, re.IGNORECASE):
+                        phrase_match = re.search(phrase_pattern, bullet_text, re.IGNORECASE)
+                        phrase = phrase_match.group(0) if phrase_match else 'vague phrase'
+                        issues.append({
+                            'severity': 'warning',
+                            'category': 'achievement_depth',
+                            'message': f"{title} at {company}: Vague phrase detected '{phrase}'. "
+                                      f"Use specific achievements with metrics instead."
+                        })
+                        break  # Only report once per bullet
+
+                # P8: Check bullet length
+                bullet_length = len(bullet_text)
+
+                if bullet_length < 30:
+                    issues.append({
+                        'severity': 'critical',
+                        'category': 'bullet_length',
+                        'message': f"{title} at {company}: Bullet too short ({bullet_length} chars). "
+                                  f"Minimum 30 characters recommended."
+                    })
+                elif bullet_length < 50:
+                    issues.append({
+                        'severity': 'warning',
+                        'category': 'bullet_length',
+                        'message': f"{title} at {company}: Bullet could be more detailed ({bullet_length} chars). "
+                                  f"Aim for 50-150 characters."
+                    })
+                elif bullet_length > 200:
+                    issues.append({
+                        'severity': 'critical',
+                        'category': 'bullet_length',
+                        'message': f"{title} at {company}: Bullet too long ({bullet_length} chars). "
+                                  f"Maximum 200 characters recommended."
+                    })
+                elif bullet_length > 150:
+                    issues.append({
+                        'severity': 'warning',
+                        'category': 'bullet_length',
+                        'message': f"{title} at {company}: Bullet could be more concise ({bullet_length} chars). "
+                                  f"Aim for 50-150 characters."
+                    })
+
+                # P9: Check for fragments (less than 3 words)
+                word_count = len(bullet_text.split())
+                if word_count < 3:
+                    issues.append({
+                        'severity': 'warning',
+                        'category': 'bullet_structure',
+                        'message': f"{title} at {company}: Incomplete bullet (fragment). "
+                                  f"Use complete thoughts with action verb + object."
+                    })
+                    continue  # Skip weak verb check for very short bullets
+
+                # P9: Check for weak verbs at start of bullet
+                for weak_verb_pattern in weak_verbs:
+                    # Check if bullet starts with weak verb (after bullet marker)
+                    if re.match(r'^[•\-*\d.)\s]*' + weak_verb_pattern, bullet_text, re.IGNORECASE):
+                        issues.append({
+                            'severity': 'warning',
+                            'category': 'bullet_structure',
+                            'message': f"{title} at {company}: Weak verb detected. "
+                                      f"Start with strong action verbs (built, developed, achieved)."
+                        })
+                        break  # Only report once per bullet
+
+        return issues
+
+    def _parse_bullets(self, description: str) -> List[str]:
+        """
+        Parse bullet points from experience description.
+
+        Args:
+            description: Raw description text with bullets
+
+        Returns:
+            List of individual bullet point texts
+        """
+        if not description:
+            return []
+
+        # Split by common bullet markers
+        # Matches: •, -, *, or numbered lists (1., 2.), or newlines
+        lines = description.split('\n')
+        bullets = []
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+
+            # Remove bullet markers at start: •, -, *, numbers followed by . or )
+            cleaned = re.sub(r'^[•\-*\d.)\s]+', '', line).strip()
+            if cleaned:
+                bullets.append(cleaned)
+
+        return bullets
