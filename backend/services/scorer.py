@@ -2,8 +2,9 @@
 Resume scoring engine that evaluates resumes based on ATS best practices.
 """
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 from services.parser import ResumeData
+from services.role_taxonomy import get_role_scoring_data, ExperienceLevel
 
 
 def score_contact_info(resume: ResumeData) -> Dict:
@@ -139,7 +140,7 @@ def score_formatting(resume: ResumeData) -> Dict:
     }
 
 
-def score_content(resume: ResumeData) -> Dict:
+def score_content(resume: ResumeData, role_id: str = "", level: str = "") -> Dict:
     """
     Score resume content quality based on CV writing standards (25 points max).
 
@@ -150,31 +151,31 @@ def score_content(resume: ResumeData) -> Dict:
     - No passive voice: 3 points
     - Professional language: 3 points
     - Low buzzword count: 2 points
+
+    Args:
+        resume: ResumeData object with parsed resume information
+        role_id: Optional role identifier for role-specific action verbs
+        level: Optional experience level for role-specific action verbs
     """
     score = 0
     issues: List[Tuple[str, str]] = []
 
-    # Comprehensive action verb list (past tense for completed work)
-    strong_action_verbs = [
-        # Leadership & Management
-        'led', 'managed', 'directed', 'supervised', 'coordinated', 'orchestrated', 'spearheaded',
-        'oversaw', 'mentored', 'trained', 'guided', 'delegated', 'executed',
-        # Creation & Development
-        'developed', 'created', 'designed', 'built', 'established', 'launched', 'implemented',
-        'engineered', 'architected', 'crafted', 'authored', 'pioneered', 'initiated',
-        # Improvement & Optimization
-        'improved', 'optimized', 'enhanced', 'streamlined', 'refined', 'transformed',
-        'modernized', 'revitalized', 'upgraded', 'accelerated', 'strengthened',
-        # Achievement & Results
-        'achieved', 'delivered', 'exceeded', 'increased', 'decreased', 'reduced', 'generated',
-        'drove', 'boosted', 'maximized', 'minimized', 'secured', 'attained',
-        # Analysis & Strategy
-        'analyzed', 'evaluated', 'assessed', 'researched', 'identified', 'diagnosed',
-        'forecasted', 'strategized', 'planned', 'formulated',
-        # Communication & Collaboration
-        'collaborated', 'partnered', 'presented', 'communicated', 'negotiated', 'facilitated',
-        'advocated', 'consulted', 'advised', 'liaised'
-    ]
+    # Get role-specific action verbs if role provided
+    if role_id and level:
+        try:
+            level_enum = ExperienceLevel(level)
+            role_data = get_role_scoring_data(role_id, level_enum)
+            if role_data and role_data.get('action_verbs'):
+                strong_action_verbs = role_data['action_verbs']
+            else:
+                # Fallback to generic action verbs
+                strong_action_verbs = _get_generic_action_verbs()
+        except (ValueError, KeyError):
+            # Fallback to generic action verbs
+            strong_action_verbs = _get_generic_action_verbs()
+    else:
+        # Use generic action verbs
+        strong_action_verbs = _get_generic_action_verbs()
 
     # Weak/passive constructions to avoid
     passive_indicators = [
@@ -342,18 +343,20 @@ def score_content(resume: ResumeData) -> Dict:
     return {"score": score, "issues": issues}
 
 
-def score_keywords(resume: ResumeData, job_description: str = "") -> Dict:
+def score_keywords(resume: ResumeData, job_description: str = "", role_id: str = "", level: str = "") -> Dict:
     """
     Score keyword optimization for ATS (15 points max).
 
     Scoring:
     - With JD: Match percentage * 15 points (0-100% match)
-    - With role: 10 points if key role keywords present
-    - Without context: 10 points default, suggest adding JD
+    - With role: Match percentage against typical role keywords
+    - Without context: 10 points default, suggest adding JD or role
 
     Args:
         resume: ResumeData object with parsed resume information
         job_description: Optional job description to match against
+        role_id: Optional role identifier for role-specific keywords
+        level: Optional experience level for role-specific keywords
 
     Returns:
         Dict with "score" (int) and "issues" (List[Tuple[str, str]])
@@ -388,10 +391,42 @@ def score_keywords(resume: ResumeData, job_description: str = "") -> Dict:
         missing = [kw for kw in jd_keywords[:5] if kw.lower() not in resume_text]
         if missing:
             issues.append(("suggestion", f"Missing key terms: {', '.join(missing)}"))
+    elif role_id and level:
+        # Use role-specific typical keywords
+        try:
+            level_enum = ExperienceLevel(level)
+            role_data = get_role_scoring_data(role_id, level_enum)
+
+            if role_data and role_data.get('typical_keywords'):
+                typical_keywords = role_data['typical_keywords']
+
+                # Count matches
+                matches = sum(1 for keyword in typical_keywords if keyword.lower() in resume_text)
+                match_percentage = (matches / len(typical_keywords)) * 100 if typical_keywords else 0
+
+                score = int((match_percentage / 100) * 15)
+
+                if match_percentage < 40:
+                    issues.append(("warning", f"Low role keyword match: {match_percentage:.0f}% - add typical {level} {role_data['name']} keywords"))
+                elif match_percentage < 60:
+                    issues.append(("suggestion", f"Moderate keyword match: {match_percentage:.0f}% - consider adding more role-relevant terms"))
+
+                # Identify missing keywords
+                missing = [kw for kw in typical_keywords[:5] if kw.lower() not in resume_text]
+                if missing:
+                    issues.append(("suggestion", f"Missing key terms for {role_data['name']}: {', '.join(missing)}"))
+            else:
+                # Role data found but no keywords
+                score = 10
+                issues.append(("info", "Using generic scoring - provide job description for better matching"))
+        except (ValueError, KeyError):
+            # Invalid role or level
+            score = 10
+            issues.append(("info", "Invalid role/level - provide job description for better matching"))
     else:
-        # No JD provided - give default score
+        # No JD or role provided - give default score
         score = 10
-        issues.append(("suggestion", "Provide job description for better keyword matching"))
+        issues.append(("suggestion", "Provide job description or select role for better keyword matching"))
 
     return {"score": score, "issues": issues}
 
@@ -587,7 +622,143 @@ def score_industry_specific(resume: ResumeData, industry: str = "") -> Dict:
     return {"score": score, "issues": issues}
 
 
-def calculate_overall_score(resume: ResumeData, job_description: str = "", industry: str = "") -> Dict:
+def _get_generic_action_verbs() -> List[str]:
+    """
+    Get generic action verb list for resume content scoring.
+    Used as fallback when no role-specific verbs are available.
+    """
+    return [
+        # Leadership & Management
+        'led', 'managed', 'directed', 'supervised', 'coordinated', 'orchestrated', 'spearheaded',
+        'oversaw', 'mentored', 'trained', 'guided', 'delegated', 'executed',
+        # Creation & Development
+        'developed', 'created', 'designed', 'built', 'established', 'launched', 'implemented',
+        'engineered', 'architected', 'crafted', 'authored', 'pioneered', 'initiated',
+        # Improvement & Optimization
+        'improved', 'optimized', 'enhanced', 'streamlined', 'refined', 'transformed',
+        'modernized', 'revitalized', 'upgraded', 'accelerated', 'strengthened',
+        # Achievement & Results
+        'achieved', 'delivered', 'exceeded', 'increased', 'decreased', 'reduced', 'generated',
+        'drove', 'boosted', 'maximized', 'minimized', 'secured', 'attained',
+        # Analysis & Strategy
+        'analyzed', 'evaluated', 'assessed', 'researched', 'identified', 'diagnosed',
+        'forecasted', 'strategized', 'planned', 'formulated',
+        # Communication & Collaboration
+        'collaborated', 'partnered', 'presented', 'communicated', 'negotiated', 'facilitated',
+        'advocated', 'consulted', 'advised', 'liaised'
+    ]
+
+
+def score_role_specific(resume: ResumeData, role_id: str = "", level: str = "") -> Dict:
+    """
+    Score role-specific requirements (20 points max).
+
+    Scoring based on role and experience level:
+    - Required skills present: 5 points
+    - Level-appropriate keywords: 10 points
+    - Preferred sections: 5 points
+
+    Args:
+        resume: ResumeData object with parsed resume information
+        role_id: Role identifier (e.g., "software_engineer", "product_manager")
+        level: Experience level ("entry", "mid", "senior", "lead", "executive")
+
+    Returns:
+        Dict with "score" (int) and "issues" (List[Tuple[str, str]])
+    """
+    score = 0
+    issues: List[Tuple[str, str]] = []
+
+    if not role_id or not level:
+        score = 10  # Default score
+        issues.append(("suggestion", "Select role and experience level for tailored scoring"))
+        return {"score": score, "issues": issues}
+
+    # Get role criteria
+    try:
+        level_enum = ExperienceLevel(level)
+        role_data = get_role_scoring_data(role_id, level_enum)
+    except (ValueError, KeyError):
+        score = 10
+        issues.append(("info", "Invalid role or level - using generic scoring"))
+        return {"score": score, "issues": issues}
+
+    if not role_data:
+        score = 10
+        issues.append(("info", f"Role '{role_id}' not found - using generic scoring"))
+        return {"score": score, "issues": issues}
+
+    # Get resume text
+    all_text = " ".join([
+        " ".join([str(exp) for exp in resume.experience]),
+        " ".join(resume.skills),
+        " ".join([str(edu) for edu in resume.education])
+    ]).lower()
+
+    # Required skills (5 points)
+    required_skills = role_data.get('required_skills', [])
+    if required_skills:
+        found_required = sum(1 for skill in required_skills if skill.lower() in all_text)
+
+        if found_required == len(required_skills):
+            score += 5
+        elif found_required >= len(required_skills) * 0.66:
+            score += 3
+            missing = [s for s in required_skills if s.lower() not in all_text]
+            issues.append(("suggestion", f"Add required skills: {', '.join(missing)}"))
+        else:
+            score += 1
+            issues.append(("warning", f"Missing most required skills for {role_data['name']}"))
+    else:
+        score += 5  # Default if no required skills defined
+
+    # Level-appropriate keywords (10 points)
+    level_keywords = role_data.get('typical_keywords', [])
+    if level_keywords:
+        found_keywords = sum(1 for keyword in level_keywords if keyword.lower() in all_text)
+        keyword_percentage = (found_keywords / len(level_keywords)) * 100 if level_keywords else 0
+
+        if keyword_percentage >= 60:
+            score += 10
+        elif keyword_percentage >= 40:
+            score += 6
+            issues.append(("suggestion", f"Add more {level} level keywords for {role_data['name']}"))
+        elif keyword_percentage >= 20:
+            score += 3
+            issues.append(("warning", f"Few {level} level keywords found - showcase relevant experience"))
+        else:
+            score += 1
+            issues.append(("warning", f"Very few {level} level keywords - highlight relevant skills and experience"))
+    else:
+        score += 5  # Default if no keywords defined
+
+    # Preferred sections (5 points)
+    preferred_sections = role_data.get('preferred_sections', [])
+    if preferred_sections:
+        found_sections = sum(1 for section in preferred_sections if section.lower() in all_text)
+
+        if found_sections >= len(preferred_sections) * 0.66:
+            score += 5
+        elif found_sections > 0:
+            score += 3
+            missing = [s for s in preferred_sections if s.lower() not in all_text]
+            issues.append(("info", f"Consider adding: {', '.join(missing)}"))
+        else:
+            score += 1
+            issues.append(("suggestion", f"For {role_data['name']}, include: {', '.join(preferred_sections)}"))
+    else:
+        score += 5  # Default if no preferred sections
+
+    return {"score": score, "issues": issues}
+
+
+def calculate_overall_score(
+    resume: ResumeData,
+    job_description: str = "",
+    role_id: str = "",
+    level: str = "",
+    industry: str = ""  # Kept for backward compatibility
+) -> Dict:
     """
     Calculate overall ATS score by aggregating all scoring components.
 
@@ -597,12 +768,14 @@ def calculate_overall_score(resume: ResumeData, job_description: str = "", indus
     - Content quality: 25 points
     - Keywords: 15 points
     - Length & Density: 10 points
-    - Industry-specific: 20 points
+    - Role-specific: 20 points
 
     Args:
         resume: ResumeData object with parsed resume information
         job_description: Optional job description for keyword matching
-        industry: Optional industry for industry-specific scoring
+        role_id: Optional role identifier (e.g., "software_engineer")
+        level: Optional experience level (e.g., "mid", "senior")
+        industry: Deprecated - use role_id and level instead
 
     Returns:
         Dict with overall score, breakdown, and all issues
@@ -610,10 +783,18 @@ def calculate_overall_score(resume: ResumeData, job_description: str = "", indus
     # Score each component
     contact_result = score_contact_info(resume)
     formatting_result = score_formatting(resume)
-    content_result = score_content(resume)
-    keywords_result = score_keywords(resume, job_description)
+    content_result = score_content(resume, role_id, level)
+    keywords_result = score_keywords(resume, job_description, role_id, level)
     length_density_result = score_length_density(resume)
-    industry_result = score_industry_specific(resume, industry)
+
+    # Use role-specific scoring if role_id provided, otherwise fall back to industry
+    if role_id and level:
+        role_result = score_role_specific(resume, role_id, level)
+    elif industry:
+        # Backward compatibility: use old industry-specific scoring
+        role_result = score_industry_specific(resume, industry)
+    else:
+        role_result = score_role_specific(resume, "", "")
 
     # Calculate total score
     total_score = (
@@ -622,7 +803,7 @@ def calculate_overall_score(resume: ResumeData, job_description: str = "", indus
         content_result["score"] +
         keywords_result["score"] +
         length_density_result["score"] +
-        industry_result["score"]
+        role_result["score"]
     )
 
     # Aggregate all issues
@@ -632,7 +813,7 @@ def calculate_overall_score(resume: ResumeData, job_description: str = "", indus
         content_result["issues"] +
         keywords_result["issues"] +
         length_density_result["issues"] +
-        industry_result["issues"]
+        role_result["issues"]
     )
 
     # Categorize issues by severity
@@ -670,10 +851,10 @@ def calculate_overall_score(resume: ResumeData, job_description: str = "", indus
                 "maxScore": 10,
                 "issues": length_density_result["issues"]
             },
-            "industrySpecific": {
-                "score": industry_result["score"],
+            "roleSpecific": {
+                "score": role_result["score"],
                 "maxScore": 20,
-                "issues": industry_result["issues"]
+                "issues": role_result["issues"]
             }
         },
         "issues": {

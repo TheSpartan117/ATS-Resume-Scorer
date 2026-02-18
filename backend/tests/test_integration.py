@@ -37,7 +37,7 @@ def test_complete_scoring_integration():
     )
 
     jd = "Senior Software Engineer with Python, React, AWS, Docker, and Kubernetes experience"
-    result = calculate_overall_score(resume, jd, "tech")
+    result = calculate_overall_score(resume, jd, "", "", "tech")  # Use industry for backward compatibility
 
     # Should score well across all categories
     assert result["overallScore"] >= 70, f"Overall score {result['overallScore']} should be >= 70"
@@ -46,7 +46,7 @@ def test_complete_scoring_integration():
     assert result["breakdown"]["keywords"]["score"] >= 10  # Good keyword match
     assert result["breakdown"]["content"]["score"] >= 15  # Action verbs and numbers
     assert result["breakdown"]["lengthDensity"]["score"] >= 8  # Good length
-    assert result["breakdown"]["industrySpecific"]["score"] >= 15  # Tech role match
+    assert result["breakdown"]["roleSpecific"]["score"] >= 15  # Tech role match (backward compatible with industry)
 
 
 def test_poor_resume_scoring():
