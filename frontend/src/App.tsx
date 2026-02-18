@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import UploadPage from './components/UploadPage'
 import ResultsPage from './components/ResultsPage'
 import EditorPage from './components/EditorPage'
+import SavedResumesPage from './components/SavedResumesPage'
 import './index.css'
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
           <Route path="/" element={<UploadPage />} />
           <Route path="/results" element={<ResultsPage />} />
           <Route path="/editor" element={<EditorPage />} />
+          <Route path="/my-resumes" element={<SavedResumesPage />} />
         </Routes>
       </AuthProvider>
     </ErrorBoundary>

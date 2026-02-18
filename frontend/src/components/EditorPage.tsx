@@ -9,8 +9,10 @@ import CategoryBreakdown from './CategoryBreakdown'
 import IssuesList from './IssuesList'
 import LoadingSpinner from './LoadingSpinner'
 import UserMenu from './UserMenu'
+import AdDisplay from './AdDisplay'
 import { useDebounce } from '../hooks/useDebounce'
-import { rescoreResume, type ScoreRequest } from '../api/client'
+import { useAuth } from '../hooks/useAuth'
+import { rescoreResume, shouldShowAd, saveResume, updateResume, type ScoreRequest } from '../api/client'
 import type { UploadResponse, ScoreResult } from '../types/resume'
 
 // Helper function to escape HTML entities to prevent XSS
@@ -70,7 +72,9 @@ export default function EditorPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const result = location.state?.result as UploadResponse | undefined
+  const savedResumeId = location.state?.savedResumeId as string | undefined
   const isMountedRef = useRef(true)
+  const { isAuthenticated } = useAuth()
 
   // Redirect if no result data
   useEffect(() => {
@@ -89,6 +93,10 @@ export default function EditorPage() {
   const [isRescoring, setIsRescoring] = useState(false)
   const [rescoreError, setRescoreError] = useState<string | null>(null)
   const [wordCount, setWordCount] = useState(0)
+  const [showAd, setShowAd] = useState(false)
+  const [adCheckPending, setAdCheckPending] = useState(false)
+  const [currentSavedResumeId, setCurrentSavedResumeId] = useState<string | undefined>(savedResumeId)
+  const [isSaving, setIsSaving] = useState(false)
   const isInitialMount = useRef(true)
 
   // Initialize editor with parsed resume text
@@ -116,6 +124,20 @@ export default function EditorPage() {
 
     const performRescore = async () => {
       if (!isMountedRef.current) return
+
+      // Check if ad should be shown before re-scoring
+      setAdCheckPending(true)
+      try {
+        const adResult = await shouldShowAd()
+        if (adResult.showAd) {
+          setShowAd(true)
+          setAdCheckPending(false)
+          return
+        }
+      } catch (err) {
+        console.error('Ad check failed:', err)
+      }
+      setAdCheckPending(false)
 
       setIsRescoring(true)
       setRescoreError(null)
@@ -160,6 +182,57 @@ export default function EditorPage() {
     performRescore()
   }, [debouncedContent, result])
 
+  // Handle ad viewed callback
+  const handleAdViewed = useCallback(() => {
+    setShowAd(false)
+    // Ad tracking is already done in AdDisplay component
+  }, [])
+
+  // Handle save/update resume
+  const handleSave = async () => {
+    if (!result || !currentScore || !isAuthenticated) {
+      alert('You must be logged in to save resumes')
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      // Count words
+      const textContent = editorContent.replace(/<[^>]*>/g, ' ')
+      const words = textContent.trim().split(/\s+/).filter(Boolean).length
+
+      const scoreRequest: ScoreRequest = {
+        fileName: result.fileName,
+        contact: result.contact,
+        experience: result.experience || [],
+        education: result.education || [],
+        skills: result.skills || [],
+        certifications: result.certifications || [],
+        metadata: {
+          ...result.metadata,
+          wordCount: words
+        },
+        jobDescription: result.jobDescription,
+        industry: result.industry
+      }
+
+      if (currentSavedResumeId) {
+        // Update existing
+        await updateResume(currentSavedResumeId, scoreRequest)
+        alert('Resume updated successfully!')
+      } else {
+        // Save new
+        const saved = await saveResume(scoreRequest)
+        setCurrentSavedResumeId(saved.id)
+        alert('Resume saved successfully!')
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to save resume')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   // Handle editor changes
   const handleEditorChange = useCallback((content: string) => {
     setEditorContent(content)
@@ -171,6 +244,9 @@ export default function EditorPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Ad Display Overlay */}
+      {showAd && <AdDisplay onAdViewed={handleAdViewed} />}
+
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
@@ -181,7 +257,18 @@ export default function EditorPage() {
             >
               ← Back to Results
             </button>
-            <UserMenu />
+            <div className="flex items-center space-x-4">
+              {isAuthenticated && (
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving ? 'Saving...' : currentSavedResumeId ? 'Update Resume' : 'Save Resume'}
+                </button>
+              )}
+              <UserMenu />
+            </div>
           </div>
           <div className="flex items-center justify-between">
             <div>
@@ -196,6 +283,12 @@ export default function EditorPage() {
               </p>
             </div>
             <div className="text-right">
+              {adCheckPending && (
+                <div className="flex items-center text-blue-600">
+                  <LoadingSpinner size="sm" />
+                  <span className="ml-2 text-sm">Checking...</span>
+                </div>
+              )}
               {isRescoring && (
                 <div className="flex items-center text-blue-600">
                   <LoadingSpinner size="sm" />

@@ -120,6 +120,15 @@ export interface User {
   createdAt: string
 }
 
+export interface SavedResume {
+  id: string
+  fileName: string
+  content: any
+  score: ScoreResult
+  createdAt: string
+  updatedAt: string
+}
+
 /**
  * Set authentication token for API requests
  */
@@ -167,6 +176,94 @@ export async function getCurrentUser(): Promise<User> {
   } catch (error) {
     const axiosError = error as AxiosError<ApiError>
     throw new Error(axiosError.response?.data?.detail || 'Failed to get user info')
+  }
+}
+
+/**
+ * Save resume for authenticated user
+ */
+export async function saveResume(data: ScoreRequest): Promise<SavedResume> {
+  try {
+    const response = await apiClient.post<SavedResume>('/api/resumes', data)
+    return response.data
+  } catch (error) {
+    const axiosError = error as AxiosError<ApiError>
+    throw new Error(axiosError.response?.data?.detail || 'Failed to save resume')
+  }
+}
+
+/**
+ * Get all saved resumes
+ */
+export async function getSavedResumes(): Promise<SavedResume[]> {
+  try {
+    const response = await apiClient.get<SavedResume[]>('/api/resumes')
+    return response.data
+  } catch (error) {
+    const axiosError = error as AxiosError<ApiError>
+    throw new Error(axiosError.response?.data?.detail || 'Failed to load resumes')
+  }
+}
+
+/**
+ * Get single saved resume
+ */
+export async function getSavedResume(id: string): Promise<SavedResume> {
+  try {
+    const response = await apiClient.get<SavedResume>(`/api/resumes/${id}`)
+    return response.data
+  } catch (error) {
+    const axiosError = error as AxiosError<ApiError>
+    throw new Error(axiosError.response?.data?.detail || 'Failed to load resume')
+  }
+}
+
+/**
+ * Update saved resume
+ */
+export async function updateResume(id: string, data: ScoreRequest): Promise<SavedResume> {
+  try {
+    const response = await apiClient.put<SavedResume>(`/api/resumes/${id}`, data)
+    return response.data
+  } catch (error) {
+    const axiosError = error as AxiosError<ApiError>
+    throw new Error(axiosError.response?.data?.detail || 'Failed to update resume')
+  }
+}
+
+/**
+ * Delete saved resume
+ */
+export async function deleteResume(id: string): Promise<void> {
+  try {
+    await apiClient.delete(`/api/resumes/${id}`)
+  } catch (error) {
+    const axiosError = error as AxiosError<ApiError>
+    throw new Error(axiosError.response?.data?.detail || 'Failed to delete resume')
+  }
+}
+
+/**
+ * Check if ad should be shown
+ */
+export async function shouldShowAd(): Promise<{ showAd: boolean; message?: string }> {
+  try {
+    const response = await apiClient.get<{ showAd: boolean; message?: string }>('/api/should-show-ad')
+    return response.data
+  } catch (error) {
+    // If not authenticated, show ad after first score
+    return { showAd: true, message: 'Ad required for additional scoring' }
+  }
+}
+
+/**
+ * Track ad view
+ */
+export async function trackAdView(): Promise<void> {
+  try {
+    await apiClient.post('/api/ad-view')
+  } catch (error) {
+    console.error('Failed to track ad view:', error)
   }
 }
 

@@ -2,10 +2,12 @@
  * User menu component with login/logout
  */
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import AuthModal from './AuthModal'
 
 export default function UserMenu() {
+  const navigate = useNavigate()
   const { user, logout, isAuthenticated, isLoading } = useAuth()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -59,6 +61,15 @@ export default function UserMenu() {
 
           {/* Menu */}
           <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border border-gray-200">
+            <button
+              onClick={() => {
+                navigate('/my-resumes')
+                setIsDropdownOpen(false)
+              }}
+              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              My Resumes
+            </button>
             <button
               onClick={() => {
                 logout()
