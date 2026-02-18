@@ -167,10 +167,11 @@ print(f\"Interpretation: {result['interpretation']}\")
 ## 🐛 Known Issues
 
 ### LanguageTool Grammar Checking
-- **Status:** Requires Java 11+ to be configured
-- **Impact:** Grammar validation (P18-P21) returns empty list
-- **Workaround:** System has graceful fallback - other validations work fine
-- **Fix:** Set up Java path as shown in openjdk@11 installation output
+- **Status:** Requires network access for first-time download
+- **Impact:** Grammar validation (P18-P21) returns empty list until LanguageTool is downloaded
+- **Workaround:** System has graceful fallback - all other validations work fine
+- **Fix:** Java 11 is configured (`/opt/homebrew/opt/openjdk@11`), LanguageTool will auto-download when network permits
+- **Note:** Application works perfectly without grammar checking - this is an enhancement feature
 
 ### Distribution Test
 - **Status:** One test (`test_score_all_resumes_adaptive_scorer_quality_mode`) expects different distribution
