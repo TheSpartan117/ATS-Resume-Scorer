@@ -32,6 +32,7 @@ class RedFlagsValidator:
         all_issues.extend(self.validate_employment_history(resume))
         all_issues.extend(self.validate_experience_level(resume, level))
         all_issues.extend(self.validate_content_depth(resume))
+        all_issues.extend(self.validate_section_completeness(resume))
 
         # Categorize by severity
         return {
@@ -422,3 +423,96 @@ class RedFlagsValidator:
                 bullets.append(cleaned)
 
         return bullets
+
+    def validate_section_completeness(self, resume: ResumeData) -> List[Dict]:
+        """
+        Validate section completeness and ordering.
+        Parameters 10-13 from design doc:
+        - P10: Required Sections (Experience, Education, Skills)
+        - P11: Section Ordering (Experience before Education for 2+ years exp)
+        - P12: Recency Check (Most recent role within 2 years)
+        - P13: Summary/Objective presence
+        """
+        issues = []
+
+        # P10: Check required sections
+        if not resume.experience or len(resume.experience) == 0:
+            issues.append({
+                'severity': 'critical',
+                'category': 'required_section',
+                'message': 'Required section missing: Experience. All resumes must include work experience.'
+            })
+
+        if not resume.education or len(resume.education) == 0:
+            issues.append({
+                'severity': 'critical',
+                'category': 'required_section',
+                'message': 'Required section missing: Education. All resumes must include educational background.'
+            })
+
+        if not resume.skills or len(resume.skills) == 0:
+            issues.append({
+                'severity': 'critical',
+                'category': 'required_section',
+                'message': 'Required section missing: Skills. List relevant technical and professional skills.'
+            })
+
+        # P12: Recency check - most recent role should be within 2 years
+        if resume.experience and len(resume.experience) > 0:
+            # Find most recent role by end date
+            most_recent_role = None
+            most_recent_end_date = None
+
+            for exp in resume.experience:
+                end_date = self.parse_date(exp.get('endDate', ''))
+                if end_date:
+                    if not most_recent_end_date or end_date > most_recent_end_date:
+                        most_recent_end_date = end_date
+                        most_recent_role = exp
+
+            if most_recent_end_date:
+                # Calculate months since most recent role ended
+                now = datetime.now()
+                months_since = (now.year - most_recent_end_date.year) * 12 + \
+                              (now.month - most_recent_end_date.month)
+
+                # Only flag if role ended >2 years ago (24 months)
+                # Don't flag if role is current (Present/Current)
+                if months_since > 24:
+                    end_date_str = most_recent_role.get('endDate', '')
+                    if end_date_str.lower() not in ['present', 'current']:
+                        issues.append({
+                            'severity': 'warning',
+                            'category': 'recency',
+                            'message': f'Most recent role ended more than 2 years ago '
+                                      f'({most_recent_role.get("title", "position")} at '
+                                      f'{most_recent_role.get("company", "company")}). '
+                                      f'Consider adding recent experience or explaining career break.'
+                        })
+
+        # P13: Summary/Objective presence (suggestion)
+        has_summary = False
+        if resume.contact:
+            # Check if contact has summary, objective, or profile fields
+            summary_fields = ['summary', 'objective', 'profile', 'about']
+            for field in summary_fields:
+                if field in resume.contact and resume.contact[field]:
+                    # Check if it's not empty or just whitespace
+                    summary_text = str(resume.contact[field]).strip()
+                    if len(summary_text) > 10:  # At least 10 chars to be meaningful
+                        has_summary = True
+                        break
+
+        if not has_summary:
+            issues.append({
+                'severity': 'suggestion',
+                'category': 'summary',
+                'message': 'Consider adding a professional summary or objective statement '
+                          'at the top of your resume to highlight key qualifications.'
+            })
+
+        # P11: Section ordering - Note: Current data structure doesn't preserve section order
+        # This would require parser to track section positions in raw document
+        # Leaving as future enhancement when parser is updated with section metadata
+
+        return issues

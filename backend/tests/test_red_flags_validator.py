@@ -777,3 +777,272 @@ def test_all_vague_phrases():
 
         vague_issues = [i for i in issues if 'vague' in i['message'].lower()]
         assert len(vague_issues) >= 1, f"Failed to detect vague phrase: {phrase}"
+
+
+# ===== Section Completeness Validation Tests (P10-P13) =====
+
+def test_missing_required_section_experience():
+    """Test that missing Experience section is flagged as critical (P10)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[],  # Missing experience
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python", "Java"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_section_completeness(resume)
+
+    missing_issues = [i for i in issues if 'experience' in i['message'].lower() and 'required' in i['message'].lower()]
+    assert len(missing_issues) >= 1
+    assert missing_issues[0]['severity'] == 'critical'
+
+
+def test_missing_required_section_education():
+    """Test that missing Education section is flagged as critical (P10)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[],  # Missing education
+        skills=["Python", "Java"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_section_completeness(resume)
+
+    missing_issues = [i for i in issues if 'education' in i['message'].lower() and 'required' in i['message'].lower()]
+    assert len(missing_issues) >= 1
+    assert missing_issues[0]['severity'] == 'critical'
+
+
+def test_missing_required_section_skills():
+    """Test that missing Skills section is flagged as critical (P10)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=[],  # Missing skills
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_section_completeness(resume)
+
+    missing_issues = [i for i in issues if 'skills' in i['message'].lower() and 'required' in i['message'].lower()]
+    assert len(missing_issues) >= 1
+    assert missing_issues[0]['severity'] == 'critical'
+
+
+def test_all_required_sections_present():
+    """Test that no issues when all required sections are present (P10)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python", "Java"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_section_completeness(resume)
+
+    # Should have no critical missing section issues
+    missing_issues = [i for i in issues if 'required' in i['message'].lower() and i['severity'] == 'critical']
+    assert len(missing_issues) == 0
+
+
+def test_recency_check_within_2_years():
+    """Test that most recent role within 2 years passes recency check (P12)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Engineer",
+            "company": "Company",
+            "startDate": "Jan 2024",
+            "endDate": "Present"
+        }],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_section_completeness(resume)
+
+    recency_issues = [i for i in issues if 'recency' in i['message'].lower() or 'most recent' in i['message'].lower()]
+    assert len(recency_issues) == 0
+
+
+def test_recency_check_more_than_2_years():
+    """Test that most recent role >2 years ago triggers warning (P12)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Engineer",
+            "company": "Company",
+            "startDate": "Jan 2020",
+            "endDate": "Dec 2021"  # Ended >2 years ago
+        }],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_section_completeness(resume)
+
+    recency_issues = [i for i in issues if 'recent' in i['message'].lower() or '2 years' in i['message'].lower()]
+    assert len(recency_issues) >= 1
+    assert recency_issues[0]['severity'] == 'warning'
+
+
+def test_recency_check_with_present_role():
+    """Test recency check with current ongoing role"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[
+            {
+                "title": "Senior Engineer",
+                "company": "Current Company",
+                "startDate": "Jan 2022",
+                "endDate": "Present"
+            },
+            {
+                "title": "Engineer",
+                "company": "Old Company",
+                "startDate": "Jan 2018",
+                "endDate": "Dec 2021"
+            }
+        ],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_section_completeness(resume)
+
+    # Should pass recency check since current role is ongoing
+    recency_issues = [i for i in issues if 'recent' in i['message'].lower()]
+    assert len(recency_issues) == 0
+
+
+def test_missing_summary_objective():
+    """Test that missing summary/objective triggers suggestion (P13)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe", "email": "john@example.com"},  # No summary
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_section_completeness(resume)
+
+    summary_issues = [i for i in issues if 'summary' in i['message'].lower() or 'objective' in i['message'].lower()]
+    assert len(summary_issues) >= 1
+    assert summary_issues[0]['severity'] == 'suggestion'
+
+
+def test_summary_present():
+    """Test that summary presence is detected (P13)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={
+            "name": "John Doe",
+            "email": "john@example.com",
+            "summary": "Experienced software engineer with 5 years of expertise"
+        },
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_section_completeness(resume)
+
+    # Should not have summary/objective suggestions
+    summary_issues = [i for i in issues if 'summary' in i['message'].lower() or 'objective' in i['message'].lower()]
+    assert len(summary_issues) == 0
+
+
+def test_section_completeness_multiple_issues():
+    """Test section completeness with multiple issues"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Engineer",
+            "company": "Company",
+            "startDate": "Jan 2019",
+            "endDate": "Dec 2021"  # More than 2 years ago
+        }],
+        education=[],  # Missing education
+        skills=[],  # Missing skills
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_section_completeness(resume)
+
+    # Should have multiple issues
+    assert len(issues) >= 3
+
+    # Check for missing education (critical)
+    education_issues = [i for i in issues if 'education' in i['message'].lower() and i['severity'] == 'critical']
+    assert len(education_issues) >= 1
+
+    # Check for missing skills (critical)
+    skills_issues = [i for i in issues if 'skills' in i['message'].lower() and i['severity'] == 'critical']
+    assert len(skills_issues) >= 1
+
+    # Check for recency warning
+    recency_issues = [i for i in issues if 'recent' in i['message'].lower() and i['severity'] == 'warning']
+    assert len(recency_issues) >= 1
+
+    # Check for missing summary (suggestion)
+    summary_issues = [i for i in issues if ('summary' in i['message'].lower() or 'objective' in i['message'].lower()) and i['severity'] == 'suggestion']
+    assert len(summary_issues) >= 1
+
+
+def test_validate_resume_includes_section_completeness():
+    """Test that validate_resume calls validate_section_completeness"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={},
+        experience=[],  # Missing experience
+        education=[],  # Missing education
+        skills=[],  # Missing skills
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    result = validator.validate_resume(resume, "software_engineer", "mid")
+
+    # Should have section completeness issues in critical
+    assert len(result['critical']) > 0
+    section_issues = [i for i in result['critical'] if 'required' in i['message'].lower()]
+    assert len(section_issues) >= 2  # At least experience and education missing
