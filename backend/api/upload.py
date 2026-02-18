@@ -1,9 +1,13 @@
 """Upload endpoint for resume file upload and initial scoring"""
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi.responses import FileResponse
 from typing import Optional
 from datetime import datetime, timezone
 import io
+import os
+import uuid
 import logging
+from pathlib import Path
 from backend.services.parser import parse_pdf, parse_docx
 from backend.services.scorer import calculate_overall_score
 from backend.services.scorer_v2 import AdaptiveScorer
@@ -16,6 +20,10 @@ router = APIRouter(prefix="/api", tags=["upload"])
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 ALLOWED_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+
+# Storage directory for uploaded files
+UPLOAD_DIR = Path(__file__).parent.parent / "storage" / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @router.post("/upload", response_model=UploadResponse)
@@ -59,6 +67,16 @@ async def upload_resume(
 
     # Now read file content
     file_content = await file.read()
+
+    # Save original file for preview
+    file_id = str(uuid.uuid4())
+    file_extension = ".pdf" if file.content_type == "application/pdf" else ".docx"
+    file_path = UPLOAD_DIR / f"{file_id}{file_extension}"
+
+    with open(file_path, "wb") as f:
+        f.write(file_content)
+
+    logger.info(f"Saved original file: {file_path}")
 
     # Parse resume based on file type
     try:
@@ -165,6 +183,8 @@ async def upload_resume(
     return UploadResponse(
         resumeId=None,  # Guest user, no saved resume
         fileName=file.filename,
+        fileId=file_id,
+        originalFileUrl=f"/api/files/{file_id}{file_extension}",
         contact=contact_response,
         experience=resume_data.experience,
         education=resume_data.education,
@@ -179,4 +199,35 @@ async def upload_resume(
         jobDescription=jobDescription,
         uploadedAt=datetime.now(timezone.utc),
         industry=industry
+    )
+
+
+@router.get("/files/{file_name}")
+async def get_original_file(file_name: str):
+    """
+    Serve original uploaded file for preview.
+
+    Args:
+        file_name: File name with extension (e.g., "uuid.pdf")
+
+    Returns:
+        File response with original uploaded file
+    """
+    file_path = UPLOAD_DIR / file_name
+
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Determine media type
+    if file_name.endswith(".pdf"):
+        media_type = "application/pdf"
+    elif file_name.endswith(".docx"):
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    else:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+
+    return FileResponse(
+        path=file_path,
+        media_type=media_type,
+        filename=file_name
     )

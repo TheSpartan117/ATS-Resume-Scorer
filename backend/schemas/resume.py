@@ -52,6 +52,8 @@ class UploadResponse(BaseModel):
     """Response for upload endpoint"""
     resumeId: Optional[str] = None  # Only if user is authenticated
     fileName: str
+    fileId: Optional[str] = None  # ID to retrieve original file
+    originalFileUrl: Optional[str] = None  # URL to access original file
     contact: ContactInfoResponse
     experience: List[Dict] = []
     education: List[Dict] = []

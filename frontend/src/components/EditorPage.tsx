@@ -10,6 +10,7 @@ import UserMenu from './UserMenu'
 import AdDisplay from './AdDisplay'
 import { ModeIndicator } from './ModeIndicator'
 import { DownloadMenu } from './DownloadMenu'
+import { PDFViewer } from './PDFViewer'
 import { useDebounce } from '../hooks/useDebounce'
 import { useAuth } from '../hooks/useAuth'
 import { rescoreResume, shouldShowAd, saveResume, updateResume, type ScoreRequest } from '../api/client'
@@ -401,11 +402,22 @@ export default function EditorPage() {
           </div>
         )}
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Left Column: Editor */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-sm p-4">
+        {/* Main Content - Split View */}
+        <div className="flex gap-4 h-[calc(100vh-200px)]">
+          {/* Left Panel: PDF Preview */}
+          {result.originalFileUrl && result.metadata.fileFormat === 'pdf' && (
+            <div className="w-1/2 border border-gray-300 rounded-lg overflow-hidden">
+              <PDFViewer
+                fileUrl={`http://localhost:8000${result.originalFileUrl}`}
+                fileName={result.fileName}
+              />
+            </div>
+          )}
+
+          {/* Right Panel: Editor & Score */}
+          <div className={`${result.originalFileUrl && result.metadata.fileFormat === 'pdf' ? 'w-1/2' : 'w-full'} flex flex-col gap-4`}>
+            {/* Editor */}
+            <div className="flex-1 bg-white rounded-lg shadow-sm p-4 overflow-auto">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-base font-semibold text-gray-900">
                   Resume Content
@@ -420,11 +432,9 @@ export default function EditorPage() {
                 placeholder="Edit your resume content..."
               />
             </div>
-          </div>
 
-          {/* Right Column: Live Score */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-4 space-y-3">
+            {/* Score Display */}
+            <div className="space-y-3">
               {/* Mode Indicator with Score */}
               <ModeIndicator
                 mode={(currentScore.mode || result.scoringMode || 'quality_coach') as 'ats_simulation' | 'quality_coach'}
