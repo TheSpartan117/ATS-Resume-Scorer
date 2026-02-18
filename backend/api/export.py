@@ -31,24 +31,65 @@ async def export_resume(request: ExportResumeRequest):
     """Export edited resume as PDF or DOCX"""
 
     if request.format == "pdf":
-        # Simple PDF generation
+        # Simple PDF generation with text wrapping
         buffer = io.BytesIO()
         c = canvas.Canvas(buffer, pagesize=letter)
-
-        # Basic text rendering (simplified)
-        c.setFont("Helvetica", 12)
-        y = 750
 
         # Strip HTML tags for simple text
         import re
         text = re.sub('<[^<]+?>', '', request.content)
 
+        # Page dimensions
+        page_width = 612  # letter size width in points
+        margin = 50
+        max_width = page_width - (2 * margin)
+
+        y = 750
+
         for line in text.split('\n'):
-            if y < 50:
-                c.showPage()
-                y = 750
-            c.drawString(50, y, line[:80])
-            y -= 15
+            # Skip empty lines but preserve spacing
+            if not line.strip():
+                y -= 15
+                if y < 50:
+                    c.showPage()
+                    y = 750
+                continue
+
+            # Check if this line looks like a section header (short, uppercase words)
+            is_header = len(line.strip().split()) <= 3 and any(word.isupper() for word in line.strip().split())
+
+            if is_header:
+                c.setFont("Helvetica-Bold", 14)
+            else:
+                c.setFont("Helvetica", 11)
+
+            # Word wrap long lines
+            words = line.split()
+            current_line = []
+
+            for word in words:
+                test_line = ' '.join(current_line + [word])
+                text_width = c.stringWidth(test_line, c._fontname, c._fontsize)
+
+                if text_width <= max_width:
+                    current_line.append(word)
+                else:
+                    # Draw current line and start new one
+                    if current_line:
+                        if y < 50:
+                            c.showPage()
+                            y = 750
+                        c.drawString(margin, y, ' '.join(current_line))
+                        y -= 15
+                    current_line = [word]
+
+            # Draw remaining words
+            if current_line:
+                if y < 50:
+                    c.showPage()
+                    y = 750
+                c.drawString(margin, y, ' '.join(current_line))
+                y -= 15
 
         c.save()
         buffer.seek(0)

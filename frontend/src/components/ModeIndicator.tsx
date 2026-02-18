@@ -109,9 +109,20 @@ export const ModeIndicator: React.FC<ModeIndicatorProps> = ({
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-gray-700 mb-2">📊 BREAKDOWN</h4>
         {Object.entries(breakdown).map(([category, scoreVal]) => {
-          const maxScore = isATSMode
-            ? (category === 'keyword_match' ? 70 : category === 'ats_format' ? 20 : 10)
-            : 25;
+          // Determine max score based on mode and category
+          let maxScore: number;
+          if (isATSMode) {
+            maxScore = category === 'keyword_match' ? 70 : category === 'format' ? 20 : 10;
+          } else {
+            // Quality Coach mode: role_keywords=25, content_quality=30, format=25, professional_polish=20
+            if (category === 'content_quality') {
+              maxScore = 30;
+            } else if (category === 'professional_polish') {
+              maxScore = 20;
+            } else {
+              maxScore = 25; // role_keywords and format
+            }
+          }
           const percentage = (scoreVal / maxScore) * 100;
 
           return (
