@@ -63,6 +63,7 @@ class RedFlagsValidator:
         all_issues.extend(self.validate_section_completeness(resume))
         all_issues.extend(self.validate_professional_standards(resume))
         all_issues.extend(self.validate_grammar(resume))
+        all_issues.extend(self.validate_metadata(resume))
         all_issues.extend(self.validate_content_analysis(resume))
 
         # Categorize by severity
@@ -862,5 +863,901 @@ class RedFlagsValidator:
                 })
 
                 issue_counts[category] += 1
+
+        return issues
+
+    def validate_metadata(self, resume: ResumeData) -> List[Dict]:
+        """
+        Validate metadata and document quality.
+        Parameters 36-44 from design doc:
+        - P36: Page Count (1-2 pages optimal)
+        - P37: Word Count (400-800 optimal)
+        - P38: File Format (PDF preferred)
+        - P39: File Size (<2MB recommended) - Note: Not available in metadata
+        - P40: Readability Score (Flesch-Kincaid)
+        - P41: Keyword Density (not over-stuffed)
+        - P42: Section Balance (experience should be 50-60% of content)
+        - P43: White Space (adequate margins/spacing) - Note: Difficult to assess from parsed data
+        - P44: ATS Compatibility (no images/tables blocking parsing)
+        """
+        issues = []
+
+        if not resume.metadata:
+            return issues
+
+        metadata = resume.metadata
+
+        # P36: Page Count validation
+        page_count = metadata.get('pageCount', 0)
+        if page_count > 4:
+            issues.append({
+                'severity': 'critical',
+                'category': 'page_count',
+                'message': f'Resume is {page_count} pages long. Optimal length is 1-2 pages. '
+                          f'Consider condensing to most relevant experience.'
+            })
+        elif page_count > 3:
+            issues.append({
+                'severity': 'warning',
+                'category': 'page_count',
+                'message': f'Resume is {page_count} pages long. Optimal length is 1-2 pages. '
+                          f'Recruiters prefer concise resumes.'
+            })
+        elif page_count < 1:
+            issues.append({
+                'severity': 'critical',
+                'category': 'page_count',
+                'message': 'Resume appears to have no content or failed to parse properly.'
+            })
+
+        # P37: Word Count validation
+        word_count = metadata.get('wordCount', 0)
+        if word_count < 300:
+            issues.append({
+                'severity': 'warning',
+                'category': 'word_count',
+                'message': f'Resume has only {word_count} words. Optimal range is 400-800 words. '
+                          f'Add more detail to experience and achievements.'
+            })
+        elif word_count > 1200:
+            issues.append({
+                'severity': 'warning',
+                'category': 'word_count',
+                'message': f'Resume has {word_count} words. Optimal range is 400-800 words. '
+                          f'Consider being more concise and removing less relevant details.'
+            })
+        elif word_count < 400:
+            issues.append({
+                'severity': 'suggestion',
+                'category': 'word_count',
+                'message': f'Resume has {word_count} words. Consider adding more detail to reach optimal range of 400-800 words.'
+            })
+        elif word_count > 800:
+            issues.append({
+                'severity': 'suggestion',
+                'category': 'word_count',
+                'message': f'Resume has {word_count} words. Consider condensing to optimal range of 400-800 words.'
+            })
+
+        # P38: File Format validation
+        file_format = metadata.get('fileFormat', '').lower()
+        if file_format in ['doc', 'docx']:
+            issues.append({
+                'severity': 'warning',
+                'category': 'file_format',
+                'message': 'Resume is in Word format. PDF is preferred for better ATS compatibility '
+                          'and consistent formatting across systems.'
+            })
+        elif file_format not in ['pdf', 'doc', 'docx']:
+            issues.append({
+                'severity': 'critical',
+                'category': 'file_format',
+                'message': f'Unsupported file format: {file_format}. Use PDF or DOCX format.'
+            })
+
+        # P40: Readability Score (Flesch-Kincaid grade level)
+        readability_score = self._calculate_readability(resume)
+        if readability_score is not None:
+            if readability_score < 8:
+                issues.append({
+                    'severity': 'suggestion',
+                    'category': 'readability',
+                    'message': f'Readability score is {readability_score:.1f} grade level (too simple). '
+                              f'Aim for 8-12 grade level to demonstrate professional communication.'
+                })
+            elif readability_score > 14:
+                issues.append({
+                    'severity': 'warning',
+                    'category': 'readability',
+                    'message': f'Readability score is {readability_score:.1f} grade level (too complex). '
+                              f'Aim for 8-12 grade level for better clarity.'
+                })
+            elif readability_score > 12:
+                issues.append({
+                    'severity': 'suggestion',
+                    'category': 'readability',
+                    'message': f'Readability score is {readability_score:.1f} grade level. '
+                              f'Consider simplifying slightly to 8-12 grade level range.'
+                })
+
+        # P41: Keyword Density (check for over-stuffing)
+        keyword_issues = self._check_keyword_density(resume)
+        issues.extend(keyword_issues)
+
+        # P42: Section Balance (experience should be 50-60% of content)
+        balance_issues = self._check_section_balance(resume)
+        issues.extend(balance_issues)
+
+        # P44: ATS Compatibility
+        ats_issues = self._check_ats_compatibility(resume, metadata)
+        issues.extend(ats_issues)
+
+        return issues
+
+    def _calculate_readability(self, resume: ResumeData) -> Optional[float]:
+        """
+        Calculate Flesch-Kincaid grade level for resume text.
+        Returns None if calculation fails.
+        """
+        try:
+            # Collect all text from resume
+            text_parts = []
+
+            # Add experience descriptions
+            if resume.experience:
+                for exp in resume.experience:
+                    description = exp.get('description', '')
+                    if description:
+                        text_parts.append(description)
+
+            # Add summary/objective
+            if resume.contact:
+                for field in ['summary', 'objective', 'profile', 'about']:
+                    if field in resume.contact and resume.contact[field]:
+                        text_parts.append(str(resume.contact[field]))
+
+            # Add education descriptions
+            if resume.education:
+                for edu in resume.education:
+                    description = edu.get('description', '')
+                    if description:
+                        text_parts.append(description)
+
+            if not text_parts:
+                return None
+
+            full_text = ' '.join(text_parts)
+
+            # Calculate Flesch-Kincaid grade level
+            # Formula: 0.39 * (words/sentences) + 11.8 * (syllables/words) - 15.59
+            sentences = self._count_sentences(full_text)
+            words = len(full_text.split())
+            syllables = self._count_syllables(full_text)
+
+            if sentences == 0 or words == 0:
+                return None
+
+            grade_level = 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59
+            return max(0, grade_level)  # Can't be negative
+
+        except Exception:
+            return None
+
+    def _count_sentences(self, text: str) -> int:
+        """Count sentences in text"""
+        # Split by sentence endings
+        sentences = re.split(r'[.!?]+', text)
+        # Filter out empty strings and very short fragments
+        sentences = [s for s in sentences if len(s.strip()) > 10]
+        return max(1, len(sentences))  # At least 1 sentence
+
+    def _count_syllables(self, text: str) -> int:
+        """
+        Estimate syllable count using vowel groups.
+        This is an approximation but works well for English.
+        """
+        text = text.lower()
+        syllables = 0
+        words = text.split()
+
+        for word in words:
+            # Remove non-alphabetic characters
+            word = re.sub(r'[^a-z]', '', word)
+            if len(word) == 0:
+                continue
+
+            # Count vowel groups
+            vowel_groups = re.findall(r'[aeiouy]+', word)
+            syllable_count = len(vowel_groups)
+
+            # Adjust for silent 'e' at end
+            if word.endswith('e') and syllable_count > 1:
+                syllable_count -= 1
+
+            # Every word has at least 1 syllable
+            syllables += max(1, syllable_count)
+
+        return syllables
+
+    def _check_keyword_density(self, resume: ResumeData) -> List[Dict]:
+        """
+        Check for keyword over-stuffing.
+        Warns if same keywords appear too frequently.
+        """
+        issues = []
+
+        # Collect all text
+        text_parts = []
+        if resume.experience:
+            for exp in resume.experience:
+                description = exp.get('description', '')
+                if description:
+                    text_parts.append(description)
+
+        if resume.contact:
+            for field in ['summary', 'objective', 'profile', 'about']:
+                if field in resume.contact and resume.contact[field]:
+                    text_parts.append(str(resume.contact[field]))
+
+        if not text_parts:
+            return issues
+
+        full_text = ' '.join(text_parts).lower()
+        words = re.findall(r'\b[a-z]{3,}\b', full_text)  # Words 3+ chars
+
+        if len(words) == 0:
+            return issues
+
+        # Count word frequencies
+        word_counts = {}
+        for word in words:
+            # Skip common words
+            if word in ['the', 'and', 'for', 'with', 'from', 'have', 'this', 'that', 'was', 'are', 'been']:
+                continue
+            word_counts[word] = word_counts.get(word, 0) + 1
+
+        # Check for over-stuffing (word appears in >8% of text)
+        total_words = len(words)
+        for word, count in word_counts.items():
+            density = count / total_words
+            if density > 0.08:  # 8% threshold
+                issues.append({
+                    'severity': 'warning',
+                    'category': 'keyword_density',
+                    'message': f"Keyword '{word}' appears {count} times ({density*100:.1f}% of text). "
+                              f"This may appear as keyword stuffing to ATS systems."
+                })
+            elif density > 0.06:  # 6% threshold
+                issues.append({
+                    'severity': 'suggestion',
+                    'category': 'keyword_density',
+                    'message': f"Keyword '{word}' appears {count} times ({density*100:.1f}% of text). "
+                              f"Consider using synonyms to avoid repetition."
+                })
+
+        return issues
+
+    def _check_section_balance(self, resume: ResumeData) -> List[Dict]:
+        """
+        Check if experience section takes appropriate portion of resume.
+        Experience should be 50-60% of total content.
+        """
+        issues = []
+
+        # Count words in each section
+        experience_words = 0
+        if resume.experience:
+            for exp in resume.experience:
+                description = exp.get('description', '')
+                if description:
+                    experience_words += len(description.split())
+                # Count title and company
+                experience_words += len(exp.get('title', '').split())
+                experience_words += len(exp.get('company', '').split())
+
+        education_words = 0
+        if resume.education:
+            for edu in resume.education:
+                education_words += len(edu.get('degree', '').split())
+                education_words += len(edu.get('institution', '').split())
+                description = edu.get('description', '')
+                if description:
+                    education_words += len(description.split())
+
+        skills_words = 0
+        if resume.skills:
+            skills_words = sum(len(skill.split()) for skill in resume.skills)
+
+        summary_words = 0
+        if resume.contact:
+            for field in ['summary', 'objective', 'profile', 'about']:
+                if field in resume.contact and resume.contact[field]:
+                    summary_words += len(str(resume.contact[field]).split())
+
+        total_words = experience_words + education_words + skills_words + summary_words
+
+        if total_words == 0:
+            return issues
+
+        experience_percentage = (experience_words / total_words) * 100
+
+        if experience_percentage < 40:
+            issues.append({
+                'severity': 'warning',
+                'category': 'section_balance',
+                'message': f'Experience section is only {experience_percentage:.0f}% of resume content. '
+                          f'Optimal range is 50-60%. Add more detail to work experience.'
+            })
+        elif experience_percentage < 50:
+            issues.append({
+                'severity': 'suggestion',
+                'category': 'section_balance',
+                'message': f'Experience section is {experience_percentage:.0f}% of resume content. '
+                          f'Consider expanding to 50-60% range.'
+            })
+        elif experience_percentage > 70:
+            issues.append({
+                'severity': 'warning',
+                'category': 'section_balance',
+                'message': f'Experience section is {experience_percentage:.0f}% of resume content. '
+                          f'Optimal range is 50-60%. Balance with other sections like skills and education.'
+            })
+        elif experience_percentage > 60:
+            issues.append({
+                'severity': 'suggestion',
+                'category': 'section_balance',
+                'message': f'Experience section is {experience_percentage:.0f}% of resume content. '
+                          f'Consider condensing to 50-60% range.'
+            })
+
+        return issues
+
+    def _check_ats_compatibility(self, resume: ResumeData, metadata: Dict) -> List[Dict]:
+        """
+        Check for ATS compatibility issues.
+        Looks for signs that images, tables, or complex formatting may block parsing.
+        """
+        issues = []
+
+        # Check if resume has photos (from metadata)
+        has_photo = metadata.get('hasPhoto', False)
+        if has_photo:
+            issues.append({
+                'severity': 'warning',
+                'category': 'ats_compatibility',
+                'message': 'Resume contains a photo. Many ATS systems cannot parse photos and they '
+                          'may cause parsing errors. Consider removing photo for better ATS compatibility.'
+            })
+
+        # Check for very low word count relative to page count (indicates tables/graphics)
+        page_count = metadata.get('pageCount', 1)
+        word_count = metadata.get('wordCount', 0)
+
+        if page_count > 0:
+            words_per_page = word_count / page_count
+            if words_per_page < 150:
+                issues.append({
+                    'severity': 'warning',
+                    'category': 'ats_compatibility',
+                    'message': f'Resume has very few words per page ({words_per_page:.0f} words/page). '
+                              f'This suggests heavy use of tables, graphics, or formatting that may not '
+                              f'parse well in ATS systems. Use simple text-based formatting.'
+                })
+
+        # Check for incomplete parsing (missing critical sections could indicate parsing failure)
+        parsing_issues = []
+        if not resume.experience or len(resume.experience) == 0:
+            parsing_issues.append('experience')
+        if not resume.contact or not resume.contact.get('name'):
+            parsing_issues.append('contact info')
+        if not resume.education or len(resume.education) == 0:
+            parsing_issues.append('education')
+
+        if len(parsing_issues) >= 2:
+            issues.append({
+                'severity': 'warning',
+                'category': 'ats_compatibility',
+                'message': f'Multiple sections appear to be missing or failed to parse: {", ".join(parsing_issues)}. '
+                          f'This may indicate complex formatting that ATS systems cannot read. '
+                          f'Use simple, standard section headings and avoid tables/text boxes.'
+            })
+
+        return issues
+    def validate_content_analysis(self, resume: ResumeData) -> List[Dict]:
+        """
+        Validate content analysis for quality and professionalism.
+        Parameters 26-35 from design doc:
+        - P26: Action Verbs (% bullets starting with strong verbs)
+        - P27: Quantified Achievements (% bullets with metrics)
+        - P28: Passive Voice (count passive constructions)
+        - P29: Professional Language (no first-person pronouns)
+        - P30: Buzzword Density (empty buzzwords: synergy, rockstar, ninja)
+        - P31: Skills Density (skills mentioned in experience)
+        - P32: Keyword Context (keywords in achievement context)
+        - P33: Sentence Structure (proper bullet length, no run-ons)
+        - P34: First-Person Pronouns (should use third-person)
+        - P35: Informal Language (avoid "stuff", "things", "lots of")
+        """
+        issues = []
+
+        if not resume.experience or len(resume.experience) == 0:
+            return issues
+
+        # Collect all bullets from experience
+        all_bullets = []
+        for exp in resume.experience:
+            description = exp.get('description', '')
+            if description:
+                bullets = self._parse_bullets(description)
+                for bullet in bullets:
+                    bullet_text = bullet.strip()
+                    if bullet_text and len(bullet_text) > 3:
+                        all_bullets.append({
+                            'text': bullet_text,
+                            'company': exp.get('company', 'company'),
+                            'title': exp.get('title', 'position')
+                        })
+
+        if not all_bullets:
+            return issues
+
+        total_bullets = len(all_bullets)
+
+        # P26: Action Verbs - Check if bullets start with strong action verbs
+        strong_action_verbs = [
+            'achieved', 'accelerated', 'accomplished', 'analyzed', 'architected',
+            'built', 'created', 'designed', 'developed', 'drove', 'delivered',
+            'engineered', 'enhanced', 'established', 'executed', 'generated',
+            'implemented', 'improved', 'increased', 'launched', 'led', 'managed',
+            'optimized', 'orchestrated', 'pioneered', 'reduced', 'resolved',
+            'scaled', 'spearheaded', 'streamlined', 'transformed'
+        ]
+
+        action_verb_count = 0
+        for bullet in all_bullets:
+            text = bullet['text'].lower()
+            # Check if bullet starts with strong action verb
+            for verb in strong_action_verbs:
+                if text.startswith(verb):
+                    action_verb_count += 1
+                    break
+
+        action_verb_percentage = (action_verb_count / total_bullets) * 100
+
+        if action_verb_percentage < 70:
+            issues.append({
+                'severity': 'critical',
+                'category': 'action_verbs',
+                'message': f'Only {action_verb_percentage:.0f}% of bullets start with strong action verbs. '
+                          f'Aim for at least 90% (currently {action_verb_count}/{total_bullets}). '
+                          f'Start bullets with: built, developed, achieved, led, etc.'
+            })
+        elif action_verb_percentage < 90:
+            issues.append({
+                'severity': 'warning',
+                'category': 'action_verbs',
+                'message': f'Only {action_verb_percentage:.0f}% of bullets start with strong action verbs. '
+                          f'Aim for at least 90% (currently {action_verb_count}/{total_bullets}).'
+            })
+
+        # P27: Quantified Achievements - Check for metrics/numbers
+        quantified_count = 0
+        number_patterns = [
+            r'\d+%',  # Percentages
+            r'\d+[xX]',  # Multipliers (2x, 3X)
+            r'\$\d+',  # Dollar amounts
+            r'\d+\+',  # Numbers with plus (10+)
+            r'\d+\s*(million|billion|thousand|k|m|b)',  # Large numbers
+            r'\d+\s*(hours|days|weeks|months|years)',  # Time metrics
+            r'\d+\s*(users|customers|clients|requests|transactions)',  # Count metrics
+        ]
+
+        for bullet in all_bullets:
+            text = bullet['text']
+            # Check if bullet contains any quantification
+            has_metric = False
+            for pattern in number_patterns:
+                if re.search(pattern, text, re.IGNORECASE):
+                    has_metric = True
+                    break
+            if has_metric:
+                quantified_count += 1
+
+        quantified_percentage = (quantified_count / total_bullets) * 100
+
+        if quantified_percentage < 40:
+            issues.append({
+                'severity': 'critical',
+                'category': 'quantified_achievements',
+                'message': f'Only {quantified_percentage:.0f}% of bullets include metrics. '
+                          f'Aim for at least 60% (currently {quantified_count}/{total_bullets}). '
+                          f'Add specific numbers, percentages, and measurable results.'
+            })
+        elif quantified_percentage < 60:
+            issues.append({
+                'severity': 'warning',
+                'category': 'quantified_achievements',
+                'message': f'Only {quantified_percentage:.0f}% of bullets include metrics. '
+                          f'Aim for at least 60% (currently {quantified_count}/{total_bullets}).'
+            })
+
+        # P28: Passive Voice Detection
+        passive_patterns = [
+            r'\bwas\s+\w+ed\b',  # was completed, was developed
+            r'\bwere\s+\w+ed\b',  # were implemented
+            r'\bbeen\s+\w+ed\b',  # has been implemented
+            r'\bis\s+being\s+\w+ed\b',  # is being developed
+            r'\bhave\s+been\s+\w+ed\b',  # have been completed
+            r'\bhas\s+been\s+\w+ed\b',  # has been developed
+        ]
+
+        passive_voice_count = 0
+        passive_examples = []
+        for bullet in all_bullets:
+            text = bullet['text']
+            for pattern in passive_patterns:
+                matches = re.findall(pattern, text, re.IGNORECASE)
+                if matches:
+                    passive_voice_count += len(matches)
+                    if len(passive_examples) < 3:
+                        passive_examples.append({
+                            'text': text[:80] + '...' if len(text) > 80 else text,
+                            'company': bullet['company']
+                        })
+                    break
+
+        if passive_voice_count > 5:
+            examples_str = '; '.join([f"{ex['company']}: {ex['text']}" for ex in passive_examples[:2]])
+            issues.append({
+                'severity': 'warning',
+                'category': 'passive_voice',
+                'message': f'Detected {passive_voice_count} instances of passive voice. '
+                          f'Use active voice for stronger impact. Examples: {examples_str}'
+            })
+
+        # P29 & P34: First-Person Pronouns Detection
+        first_person_pronouns = [
+            r'\bI\b', r'\bmy\b', r'\bme\b', r'\bmine\b', r'\bmyself\b',
+            r'\bwe\b', r'\bour\b', r'\bus\b', r'\bours\b', r'\bourselves\b'
+        ]
+
+        pronoun_count = 0
+        pronoun_examples = []
+        for bullet in all_bullets:
+            text = bullet['text']
+            for pattern in first_person_pronouns:
+                matches = re.findall(pattern, text, re.IGNORECASE)
+                if matches:
+                    pronoun_count += len(matches)
+                    if len(pronoun_examples) < 3:
+                        pronoun_examples.append({
+                            'text': text[:80] + '...' if len(text) > 80 else text,
+                            'company': bullet['company'],
+                            'pronoun': matches[0]
+                        })
+
+        if pronoun_count > 0:
+            examples_str = '; '.join([f"{ex['company']}: '{ex['pronoun']}' in '{ex['text']}'"
+                                     for ex in pronoun_examples[:2]])
+            issues.append({
+                'severity': 'warning',
+                'category': 'first_person_pronouns',
+                'message': f'Detected {pronoun_count} first-person pronouns. '
+                          f'Use third-person for professional tone. Examples: {examples_str}'
+            })
+
+        # P30: Buzzword Density - Empty buzzwords to avoid
+        buzzwords = [
+            r'\bsynergy\b', r'\bsynergies\b', r'\brockstar\b', r'\bninja\b',
+            r'\bguru\b', r'\bthought leader\b', r'\bworld-class\b',
+            r'\bbest of breed\b', r'\bbest-in-class\b', r'\bgame changer\b',
+            r'\bdisruptive\b', r'\binnovative\b(?!\s+solution)',  # innovative alone is vague
+            r'\bgo-getter\b', r'\bself-starter\b', r'\bteam player\b',
+            r'\bhard worker\b', r'\bresults-oriented\b', r'\bdetail-oriented\b'
+        ]
+
+        buzzword_count = 0
+        buzzword_examples = []
+        for bullet in all_bullets:
+            text = bullet['text']
+            for pattern in buzzwords:
+                matches = re.findall(pattern, text, re.IGNORECASE)
+                if matches:
+                    buzzword_count += len(matches)
+                    if len(buzzword_examples) < 3:
+                        buzzword_examples.append({
+                            'text': text[:80] + '...' if len(text) > 80 else text,
+                            'company': bullet['company'],
+                            'buzzword': matches[0]
+                        })
+
+        if buzzword_count > 3:
+            examples_str = '; '.join([f"'{ex['buzzword']}'" for ex in buzzword_examples[:3]])
+            issues.append({
+                'severity': 'warning',
+                'category': 'buzzword_density',
+                'message': f'Detected {buzzword_count} empty buzzwords ({examples_str}). '
+                          f'Replace with specific achievements and technical details.'
+            })
+
+        # P31: Skills Density - Check if skills are mentioned in experience context
+        if resume.skills and len(resume.skills) > 0:
+            skills_in_context = set()
+            for skill in resume.skills:
+                skill_lower = skill.lower()
+                for bullet in all_bullets:
+                    text = bullet['text'].lower()
+                    if skill_lower in text:
+                        skills_in_context.add(skill)
+                        break
+
+            skills_density_percentage = (len(skills_in_context) / len(resume.skills)) * 100
+
+            if skills_density_percentage < 40:
+                issues.append({
+                    'severity': 'warning',
+                    'category': 'skills_density',
+                    'message': f'Only {skills_density_percentage:.0f}% of listed skills appear in experience descriptions '
+                              f'({len(skills_in_context)}/{len(resume.skills)} skills). '
+                              f'Demonstrate skills with concrete examples in bullet points.'
+                })
+
+            # P32: Keyword Context - Ensure keywords appear in achievement context
+            # Check that technical skills/keywords are used with action verbs and metrics
+            skills_with_context = set()
+            for skill in resume.skills:
+                skill_lower = skill.lower()
+                for bullet in all_bullets:
+                    text = bullet['text'].lower()
+                    if skill_lower in text:
+                        # Check if used with action verb or metric
+                        has_context = False
+                        for verb in strong_action_verbs:
+                            if verb in text:
+                                has_context = True
+                                break
+                        for pattern in number_patterns:
+                            if re.search(pattern, text, re.IGNORECASE):
+                                has_context = True
+                                break
+                        if has_context:
+                            skills_with_context.add(skill)
+                            break
+
+            if skills_in_context and len(skills_in_context) > 0:
+                context_percentage = (len(skills_with_context) / len(skills_in_context)) * 100
+                if context_percentage < 60:
+                    issues.append({
+                        'severity': 'suggestion',
+                        'category': 'keyword_context',
+                        'message': f'Only {context_percentage:.0f}% of mentioned skills include achievement context '
+                                  f'({len(skills_with_context)}/{len(skills_in_context)} skills). '
+                                  f'Pair technical skills with action verbs and measurable results.'
+                    })
+
+        # P33: Sentence Structure - Check for run-on sentences
+        # Run-on detection: sentences with multiple independent clauses without proper punctuation
+        run_on_count = 0
+        run_on_examples = []
+        for bullet in all_bullets:
+            text = bullet['text']
+            # Count coordinating conjunctions without proper punctuation
+            # Look for patterns like: "... and ... and ..." or very long sentences with multiple "and"
+            and_count = len(re.findall(r'\band\b', text, re.IGNORECASE))
+            comma_count = text.count(',')
+
+            # If >2 "and" with few commas, likely run-on
+            if and_count > 2 and comma_count < and_count - 1:
+                run_on_count += 1
+                if len(run_on_examples) < 2:
+                    run_on_examples.append({
+                        'text': text[:100] + '...' if len(text) > 100 else text,
+                        'company': bullet['company']
+                    })
+
+        if run_on_count > 0:
+            examples_str = '; '.join([f"{ex['company']}: {ex['text']}" for ex in run_on_examples[:2]])
+            issues.append({
+                'severity': 'suggestion',
+                'category': 'sentence_structure',
+                'message': f'Detected {run_on_count} potential run-on sentences. '
+                          f'Break long sentences into multiple bullets. Examples: {examples_str}'
+            })
+
+        # P35: Informal Language Detection
+        informal_phrases = [
+            r'\bstuff\b', r'\bthings\b', r'\blots of\b', r'\ba lot of\b',
+            r'\bkinda\b', r'\bsorta\b', r'\bgonna\b', r'\bwanna\b',
+            r'\bpretty good\b', r'\breally\b', r'\bvery\b(?!\s+large|\s+high)',
+            r'\bbasically\b', r'\bjust\b(?!\s+in\s+time)'
+        ]
+
+        informal_count = 0
+        informal_examples = []
+        for bullet in all_bullets:
+            text = bullet['text']
+            for pattern in informal_phrases:
+                matches = re.findall(pattern, text, re.IGNORECASE)
+                if matches:
+                    informal_count += len(matches)
+                    if len(informal_examples) < 3:
+                        informal_examples.append({
+                            'text': text[:80] + '...' if len(text) > 80 else text,
+                            'company': bullet['company'],
+                            'phrase': matches[0]
+                        })
+
+        if informal_count > 0:
+            examples_str = '; '.join([f"'{ex['phrase']}'" for ex in informal_examples[:3]])
+            issues.append({
+                'severity': 'warning',
+                'category': 'informal_language',
+                'message': f'Detected {informal_count} instances of informal language ({examples_str}). '
+                          f'Use professional, precise language.'
+            })
+
+        return issues
+
+    def validate_formatting(self, resume: ResumeData) -> List[Dict]:
+        """
+        Validate formatting consistency and ATS-compatibility.
+        Parameters 22-25 from design doc:
+        - P22: Bullet Consistency (all bullets same marker)
+        - P23: Font Readability (no decorative fonts that break ATS)
+        - P24: Section Header Consistency (all CAPS or Title Case)
+        - P25: Header/Footer Content (critical info shouldn't be there)
+        """
+        issues = []
+
+        # P22: Bullet marker consistency across all experience
+        if resume.experience:
+            bullet_markers = []
+
+            for exp in resume.experience:
+                description = exp.get('description', '')
+                if not description:
+                    continue
+
+                # Detect bullet markers used in this experience
+                lines = description.split('\n')
+                for line in lines:
+                    line = line.strip()
+                    if not line:
+                        continue
+
+                    # Detect bullet marker type
+                    if line.startswith('•'):
+                        bullet_markers.append('bullet')
+                    elif re.match(r'^\d+[\.)]\s', line):
+                        bullet_markers.append('numbered')
+                    elif line.startswith('-'):
+                        bullet_markers.append('dash')
+                    elif line.startswith('*'):
+                        bullet_markers.append('asterisk')
+
+            # Check for inconsistency
+            unique_markers = set(bullet_markers)
+            if len(unique_markers) > 1:
+                marker_names = {
+                    'bullet': '•',
+                    'dash': '-',
+                    'asterisk': '*',
+                    'numbered': '1., 2., etc.'
+                }
+                used_markers = [marker_names.get(m, m) for m in unique_markers]
+                issues.append({
+                    'severity': 'warning',
+                    'category': 'bullet_consistency',
+                    'message': f'Inconsistent bullet markers used: {", ".join(used_markers)}. '
+                              f'Use the same bullet style throughout (recommend •).'
+                })
+
+        # P23: Font detection from metadata (if available)
+        if resume.metadata:
+            fonts = resume.metadata.get('fonts', [])
+            if fonts:
+                # List of problematic decorative fonts
+                decorative_fonts = [
+                    'comic sans', 'papyrus', 'curlz', 'brush script',
+                    'lucida handwriting', 'freestyle script', 'zapfino',
+                    'mistral', 'vivaldi', 'edwardian script'
+                ]
+
+                # Check for decorative fonts
+                font_names_lower = [f.lower() if isinstance(f, str) else '' for f in fonts]
+                for decorative in decorative_fonts:
+                    if any(decorative in font_name for font_name in font_names_lower):
+                        issues.append({
+                            'severity': 'critical',
+                            'category': 'font_readability',
+                            'message': f'Decorative font detected ({decorative}). '
+                                      f'Use standard fonts like Arial, Calibri, or Times New Roman for ATS compatibility.'
+                        })
+                        break
+
+                # Check for too many fonts (>2 is excessive)
+                unique_fonts = set(fonts) if isinstance(fonts, list) else set()
+                if len(unique_fonts) > 2:
+                    issues.append({
+                        'severity': 'warning',
+                        'category': 'font_readability',
+                        'message': f'Multiple fonts detected ({len(unique_fonts)} different fonts). '
+                                  f'Use 1-2 standard fonts for consistency.'
+                    })
+
+        # P24: Section header consistency
+        section_headers = []
+
+        # Extract section headers from raw text if available
+        if resume.metadata and 'rawText' in resume.metadata:
+            raw_text = resume.metadata.get('rawText', '')
+            lines = raw_text.split('\n')
+
+            # Common section header keywords
+            header_keywords = [
+                'experience', 'education', 'skills', 'certifications',
+                'work history', 'employment', 'professional experience',
+                'technical skills', 'core competencies', 'projects',
+                'achievements', 'summary', 'objective', 'profile'
+            ]
+
+            for line in lines:
+                line_stripped = line.strip()
+                line_lower = line_stripped.lower()
+
+                # Check if line contains a section header keyword
+                if any(keyword in line_lower for keyword in header_keywords):
+                    # Check if it's likely a header (short line, not a sentence)
+                    if len(line_stripped) < 50 and not line_stripped.endswith('.'):
+                        section_headers.append(line_stripped)
+
+        # Analyze header consistency
+        if len(section_headers) >= 2:
+            all_caps = []
+            title_case = []
+            other = []
+
+            for header in section_headers:
+                if header.isupper():
+                    all_caps.append(header)
+                elif header.istitle() or (header[0].isupper() and any(c.isupper() for c in header[1:])):
+                    title_case.append(header)
+                else:
+                    other.append(header)
+
+            # Check for inconsistency
+            styles_used = sum([len(all_caps) > 0, len(title_case) > 0, len(other) > 0])
+            if styles_used > 1:
+                issues.append({
+                    'severity': 'warning',
+                    'category': 'header_consistency',
+                    'message': 'Section headers use inconsistent capitalization. '
+                              'Use either ALL CAPS or Title Case consistently for all headers.'
+                })
+
+        # P25: Header/Footer content check
+        if resume.metadata:
+            # Check for header content in metadata
+            header_content = resume.metadata.get('headerContent', '')
+            footer_content = resume.metadata.get('footerContent', '')
+
+            # Critical contact info that shouldn't be in header/footer
+            critical_patterns = [
+                (r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', 'email address'),
+                (r'\+?1?\s*\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}', 'phone number'),
+                (r'linkedin\.com/in/[\w-]+', 'LinkedIn URL')
+            ]
+
+            for content, location in [(header_content, 'header'), (footer_content, 'footer')]:
+                if content:
+                    for pattern, info_type in critical_patterns:
+                        if re.search(pattern, content, re.IGNORECASE):
+                            issues.append({
+                                'severity': 'critical',
+                                'category': 'header_footer_content',
+                                'message': f'Critical contact information ({info_type}) detected in {location}. '
+                                          f'ATS systems may not parse {location} content correctly. '
+                                          f'Place all contact info in the main document body.'
+                            })
 
         return issues

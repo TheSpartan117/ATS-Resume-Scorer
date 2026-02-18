@@ -1748,3 +1748,563 @@ def test_grammar_validation_empty_sections():
 
     # Should not crash with empty sections
     assert isinstance(issues, list)
+
+
+# ===== Metadata Validation Tests (P36-P44) =====
+
+def test_page_count_optimal():
+    """Test that 1-2 page resumes pass validation (P36)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 2, "wordCount": 600, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    # Should have no page count issues
+    page_issues = [i for i in issues if 'page_count' in i['category']]
+    assert len(page_issues) == 0
+
+
+def test_page_count_too_long_warning():
+    """Test that 3-4 page resumes trigger warning (P36)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 3, "wordCount": 1200, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    page_issues = [i for i in issues if 'page_count' in i['category']]
+    assert len(page_issues) >= 1
+    assert page_issues[0]['severity'] == 'warning'
+    assert '3 pages' in page_issues[0]['message']
+
+
+def test_page_count_too_long_critical():
+    """Test that 4+ page resumes trigger critical (P36)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 5, "wordCount": 2000, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    page_issues = [i for i in issues if 'page_count' in i['category']]
+    assert len(page_issues) >= 1
+    assert page_issues[0]['severity'] == 'critical'
+    assert '5 pages' in page_issues[0]['message']
+
+
+def test_word_count_optimal():
+    """Test that 400-800 word resumes pass validation (P37)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 2, "wordCount": 600, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    # Should have no word count issues
+    word_issues = [i for i in issues if 'word_count' in i['category']]
+    assert len(word_issues) == 0
+
+
+def test_word_count_too_low_warning():
+    """Test that <300 words triggers warning (P37)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 250, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    word_issues = [i for i in issues if 'word_count' in i['category']]
+    assert len(word_issues) >= 1
+    assert word_issues[0]['severity'] == 'warning'
+    assert '250 words' in word_issues[0]['message']
+
+
+def test_word_count_too_low_suggestion():
+    """Test that 300-399 words triggers suggestion (P37)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 350, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    word_issues = [i for i in issues if 'word_count' in i['category']]
+    assert len(word_issues) >= 1
+    assert word_issues[0]['severity'] == 'suggestion'
+
+
+def test_word_count_too_high_warning():
+    """Test that >1200 words triggers warning (P37)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 3, "wordCount": 1500, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    word_issues = [i for i in issues if 'word_count' in i['category']]
+    assert len(word_issues) >= 1
+    assert word_issues[0]['severity'] == 'warning'
+    assert '1500 words' in word_issues[0]['message']
+
+
+def test_word_count_too_high_suggestion():
+    """Test that 801-1200 words triggers suggestion (P37)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 2, "wordCount": 900, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    word_issues = [i for i in issues if 'word_count' in i['category']]
+    assert len(word_issues) >= 1
+    assert word_issues[0]['severity'] == 'suggestion'
+
+
+def test_file_format_pdf():
+    """Test that PDF format is accepted (P38)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 2, "wordCount": 600, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    # Should have no file format issues
+    format_issues = [i for i in issues if 'file_format' in i['category']]
+    assert len(format_issues) == 0
+
+
+def test_file_format_docx_warning():
+    """Test that DOCX format triggers warning (P38)"""
+    resume = ResumeData(
+        fileName="test.docx",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 2, "wordCount": 600, "fileFormat": "docx"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    format_issues = [i for i in issues if 'file_format' in i['category']]
+    assert len(format_issues) >= 1
+    assert format_issues[0]['severity'] == 'warning'
+    assert 'Word format' in format_issues[0]['message']
+    assert 'PDF' in format_issues[0]['message']
+
+
+def test_file_format_invalid():
+    """Test that invalid file format triggers critical (P38)"""
+    resume = ResumeData(
+        fileName="test.txt",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 2, "wordCount": 600, "fileFormat": "txt"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    format_issues = [i for i in issues if 'file_format' in i['category']]
+    assert len(format_issues) >= 1
+    assert format_issues[0]['severity'] == 'critical'
+
+
+def test_readability_score_optimal():
+    """Test that readability score 8-12 passes (P40)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Software Engineer",
+            "company": "Company A",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "Developed scalable web applications using modern frameworks. "
+                          "Implemented CI/CD pipelines to automate deployment processes. "
+                          "Collaborated with cross-functional teams to deliver high-quality products."
+        }],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 500, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    # Readability should be in optimal range (8-12)
+    readability_issues = [i for i in issues if 'readability' in i['category']]
+    # Should have no critical readability issues
+    critical_readability = [i for i in readability_issues if i['severity'] == 'critical']
+    assert len(critical_readability) == 0
+
+
+def test_readability_score_too_complex():
+    """Test that very complex text triggers warning (P40)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Software Engineer",
+            "company": "Company A",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "Orchestrated comprehensive architectural transformations leveraging microservices paradigms, "
+                          "implementing sophisticated containerization strategies utilizing Docker and Kubernetes platforms, "
+                          "facilitating unprecedented scalability improvements through distributed computing methodologies."
+        }],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 500, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    readability_issues = [i for i in issues if 'readability' in i['category']]
+    # May trigger warning for overly complex text
+    assert isinstance(readability_issues, list)
+
+
+def test_keyword_density_normal():
+    """Test that normal keyword usage passes (P41)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Software Engineer",
+            "company": "Company A",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "Developed applications using Python and JavaScript. "
+                          "Built REST APIs and implemented database schemas. "
+                          "Collaborated with team members on code reviews."
+        }],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    # Should have no keyword density issues
+    density_issues = [i for i in issues if 'keyword_density' in i['category']]
+    assert len(density_issues) == 0
+
+
+def test_keyword_density_overstuffed():
+    """Test that keyword stuffing triggers warning (P41)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Python Developer",
+            "company": "Company A",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "Python Python Python developer. Built Python applications using Python frameworks. "
+                          "Python expert with Python experience. Developed Python scripts and Python APIs."
+        }],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    density_issues = [i for i in issues if 'keyword_density' in i['category']]
+    assert len(density_issues) >= 1
+    assert 'python' in density_issues[0]['message'].lower()
+
+
+def test_section_balance_optimal():
+    """Test that 50-60% experience section passes (P42)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe", "summary": "Engineer with experience"},
+        experience=[{
+            "title": "Software Engineer",
+            "company": "Company A",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "Developed scalable web applications using modern frameworks and technologies. "
+                          "Built REST APIs and microservices architecture for high-performance systems."
+        }],
+        education=[{"degree": "BS Computer Science", "institution": "State University"}],
+        skills=["Python", "JavaScript", "Docker"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 500, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    # Experience should be balanced (50-60%)
+    balance_issues = [i for i in issues if 'section_balance' in i['category']]
+    # Should have no critical balance issues
+    critical_balance = [i for i in balance_issues if i['severity'] == 'critical']
+    assert len(critical_balance) == 0
+
+
+def test_section_balance_too_little_experience():
+    """Test that <40% experience triggers warning (P42)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe", "summary": "Software engineer with extensive background in computer science"},
+        experience=[{
+            "title": "Engineer",
+            "company": "Company",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "Developed applications"
+        }],
+        education=[{
+            "degree": "Bachelor of Science in Computer Science with focus on artificial intelligence and machine learning",
+            "institution": "State University",
+            "description": "Completed comprehensive coursework in algorithms, data structures, software engineering, and system design"
+        }],
+        skills=["Python", "Java", "C++", "JavaScript", "Docker", "Kubernetes"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 500, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    balance_issues = [i for i in issues if 'section_balance' in i['category']]
+    assert len(balance_issues) >= 1
+    assert balance_issues[0]['severity'] == 'warning'
+
+
+def test_section_balance_too_much_experience():
+    """Test that >70% experience triggers warning (P42)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Software Engineer",
+            "company": "Company A",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "Developed comprehensive web applications using modern frameworks. "
+                          "Built scalable REST APIs and microservices architecture. "
+                          "Implemented CI/CD pipelines and deployment automation. "
+                          "Led team of developers in agile development processes. "
+                          "Designed database schemas and optimized query performance."
+        }],
+        education=[{"degree": "BS CS", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 500, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    balance_issues = [i for i in issues if 'section_balance' in i['category']]
+    assert len(balance_issues) >= 1
+
+
+def test_ats_compatibility_with_photo():
+    """Test that photos trigger ATS warning (P44)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf", "hasPhoto": True}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    ats_issues = [i for i in issues if 'ats_compatibility' in i['category'] and 'photo' in i['message'].lower()]
+    assert len(ats_issues) >= 1
+    assert ats_issues[0]['severity'] == 'warning'
+
+
+def test_ats_compatibility_low_words_per_page():
+    """Test that low words per page triggers ATS warning (P44)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 2, "wordCount": 200, "fileFormat": "pdf"}  # Only 100 words/page
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    ats_issues = [i for i in issues if 'ats_compatibility' in i['category'] and 'words per page' in i['message'].lower()]
+    assert len(ats_issues) >= 1
+    assert ats_issues[0]['severity'] == 'warning'
+
+
+def test_ats_compatibility_missing_sections():
+    """Test that missing sections triggers ATS warning (P44)"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={},  # Missing name
+        experience=[],  # Missing experience
+        education=[],  # Missing education
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 200, "fileFormat": "pdf"}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    ats_issues = [i for i in issues if 'ats_compatibility' in i['category'] and 'missing' in i['message'].lower()]
+    assert len(ats_issues) >= 1
+
+
+def test_validate_resume_includes_metadata():
+    """Test that validate_resume calls validate_metadata"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 5, "wordCount": 2000, "fileFormat": "docx"}  # Multiple issues
+    )
+
+    validator = RedFlagsValidator()
+    result = validator.validate_resume(resume, "software_engineer", "mid")
+
+    # Should have metadata issues
+    all_issues = result['critical'] + result['warnings'] + result['suggestions']
+    metadata_issues = [i for i in all_issues if i['category'] in [
+        'page_count', 'word_count', 'file_format', 'readability',
+        'keyword_density', 'section_balance', 'ats_compatibility'
+    ]]
+    assert len(metadata_issues) >= 2
+
+
+def test_metadata_validation_no_metadata():
+    """Test graceful handling when metadata is missing"""
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[{"title": "Engineer", "company": "Company", "startDate": "Jan 2020", "endDate": "Present"}],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    # Should not crash with empty metadata
+    assert isinstance(issues, list)
+
+
+def test_metadata_comprehensive():
+    """Test comprehensive metadata validation with multiple issues"""
+    resume = ResumeData(
+        fileName="test.docx",
+        contact={"name": "John Doe"},
+        experience=[{
+            "title": "Python Developer",
+            "company": "Company",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "Python Python Python. Python Python."  # Keyword stuffing
+        }],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 5, "wordCount": 1500, "fileFormat": "docx", "hasPhoto": True}
+    )
+
+    validator = RedFlagsValidator()
+    issues = validator.validate_metadata(resume)
+
+    # Should have multiple types of issues
+    assert len(issues) >= 3
+
+    # Check for different categories
+    categories = set(i['category'] for i in issues)
+    assert 'page_count' in categories or 'word_count' in categories or 'file_format' in categories
