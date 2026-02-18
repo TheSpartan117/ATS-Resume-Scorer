@@ -52,18 +52,68 @@ function convertResumeToHTML(result: UploadResponse): string {
     parts.push(`<p><strong>Website:</strong> ${escapeHtml(result.contact.website)}</p>`)
   }
 
-  // Add sections even if empty (user can fill in)
+  // Professional Summary Section
   parts.push('<h2>Professional Summary</h2>')
   parts.push('<p>Edit this section to add your professional summary...</p>')
 
+  // Experience Section - Display parsed experience
   parts.push('<h2>Experience</h2>')
-  parts.push('<p>Edit this section to add your work experience...</p>')
+  if (result.experience && result.experience.length > 0) {
+    result.experience.forEach((exp: any) => {
+      if (exp.title) {
+        parts.push(`<p><strong>${escapeHtml(exp.title)}</strong></p>`)
+      }
+      if (exp.company || exp.location) {
+        const companyLocation = [exp.company, exp.location].filter(Boolean).join(', ')
+        parts.push(`<p><em>${escapeHtml(companyLocation)}</em></p>`)
+      }
+      if (exp.startDate || exp.endDate) {
+        const dates = [exp.startDate, exp.endDate].filter(Boolean).join(' - ')
+        parts.push(`<p>${escapeHtml(dates)}</p>`)
+      }
+      if (exp.description) {
+        // Convert newlines to paragraphs
+        const descLines = exp.description.split('\n').filter((line: string) => line.trim())
+        descLines.forEach((line: string) => {
+          parts.push(`<p>${escapeHtml(line)}</p>`)
+        })
+      }
+      parts.push('<br>')
+    })
+  } else {
+    parts.push('<p>Edit this section to add your work experience...</p>')
+  }
 
+  // Education Section - Display parsed education
   parts.push('<h2>Education</h2>')
-  parts.push('<p>Edit this section to add your education...</p>')
+  if (result.education && result.education.length > 0) {
+    result.education.forEach((edu: any) => {
+      if (edu.degree) {
+        parts.push(`<p><strong>${escapeHtml(edu.degree)}</strong></p>`)
+      }
+      if (edu.institution || edu.location) {
+        const institutionLocation = [edu.institution, edu.location].filter(Boolean).join(', ')
+        parts.push(`<p><em>${escapeHtml(institutionLocation)}</em></p>`)
+      }
+      if (edu.graduationDate) {
+        parts.push(`<p>Graduated: ${escapeHtml(edu.graduationDate)}</p>`)
+      }
+      if (edu.gpa) {
+        parts.push(`<p>GPA: ${escapeHtml(edu.gpa)}</p>`)
+      }
+      parts.push('<br>')
+    })
+  } else {
+    parts.push('<p>Edit this section to add your education...</p>')
+  }
 
+  // Skills Section - Display parsed skills
   parts.push('<h2>Skills</h2>')
-  parts.push('<p>Edit this section to add your skills...</p>')
+  if (result.skills && result.skills.length > 0) {
+    parts.push(`<p>${result.skills.map(skill => escapeHtml(skill)).join(', ')}</p>`)
+  } else {
+    parts.push('<p>Edit this section to add your skills...</p>')
+  }
 
   return parts.join('\n')
 }
@@ -149,19 +199,20 @@ export default function EditorPage() {
         const words = textContent.trim().split(/\s+/).filter(Boolean).length
         setWordCount(words)
 
-        // NOTE: This is an MVP limitation - we're only updating word count
-        // Full structured parsing of HTML back to resume sections is a future enhancement
+        // Include actual parsed data for accurate re-scoring
         const scoreRequest: ScoreRequest = {
           fileName: result.fileName,
           contact: result.contact,
-          experience: [],
-          education: [],
-          skills: [],
-          certifications: [],
+          experience: result.experience || [],
+          education: result.education || [],
+          skills: result.skills || [],
+          certifications: result.certifications || [],
           metadata: {
             ...result.metadata,
             wordCount: words
-          }
+          },
+          jobDescription: result.jobDescription,
+          industry: result.industry
         }
 
         const newScore = await rescoreResume(scoreRequest)
@@ -281,9 +332,6 @@ export default function EditorPage() {
               </h1>
               <p className="text-gray-600">
                 {result.fileName}
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                MVP Note: Text edits update word count. Full section parsing coming soon.
               </p>
             </div>
             <div className="text-right">

@@ -132,6 +132,89 @@ export default function ResultsPage() {
                 </ul>
               </div>
             )}
+
+            {/* Parsed Experience Section */}
+            {result.experience && result.experience.length > 0 && (
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  💼 Extracted Experience
+                </h3>
+                <div className="space-y-4">
+                  {result.experience.map((exp: any, idx: number) => (
+                    <div key={idx} className="border-l-4 border-blue-500 pl-4">
+                      {exp.title && (
+                        <h4 className="font-semibold text-gray-900">{exp.title}</h4>
+                      )}
+                      {(exp.company || exp.location) && (
+                        <p className="text-sm text-gray-600">
+                          {[exp.company, exp.location].filter(Boolean).join(', ')}
+                        </p>
+                      )}
+                      {(exp.startDate || exp.endDate) && (
+                        <p className="text-xs text-gray-500 mb-2">
+                          {[exp.startDate, exp.endDate].filter(Boolean).join(' - ')}
+                        </p>
+                      )}
+                      {exp.description && (
+                        <div className="text-sm text-gray-700 whitespace-pre-line">
+                          {exp.description}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Parsed Education Section */}
+            {result.education && result.education.length > 0 && (
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  🎓 Extracted Education
+                </h3>
+                <div className="space-y-4">
+                  {result.education.map((edu: any, idx: number) => (
+                    <div key={idx} className="border-l-4 border-purple-500 pl-4">
+                      {edu.degree && (
+                        <h4 className="font-semibold text-gray-900">{edu.degree}</h4>
+                      )}
+                      {(edu.institution || edu.location) && (
+                        <p className="text-sm text-gray-600">
+                          {[edu.institution, edu.location].filter(Boolean).join(', ')}
+                        </p>
+                      )}
+                      {edu.graduationDate && (
+                        <p className="text-xs text-gray-500">
+                          Graduated: {edu.graduationDate}
+                        </p>
+                      )}
+                      {edu.gpa && (
+                        <p className="text-xs text-gray-500">GPA: {edu.gpa}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Parsed Skills Section */}
+            {result.skills && result.skills.length > 0 && (
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  ⚡ Extracted Skills
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {result.skills.map((skill: string, idx: number) => (
+                    <span
+                      key={idx}
+                      className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-200"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
