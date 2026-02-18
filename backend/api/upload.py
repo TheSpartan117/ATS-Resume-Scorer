@@ -156,8 +156,14 @@ async def upload_resume(
         resumeId=None,  # Guest user, no saved resume
         fileName=file.filename,
         contact=contact_response,
+        experience=resume_data.experience,
+        education=resume_data.education,
+        skills=resume_data.skills,
+        certifications=resume_data.certifications,
         metadata=metadata_response,
         score=score_response,
         formatCheck=format_check_response,
-        uploadedAt=datetime.now(timezone.utc)
+        uploadedAt=datetime.now(timezone.utc),
+        jobDescription=jobDescription,
+        industry=industry
     )

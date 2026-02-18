@@ -50,7 +50,13 @@ class UploadResponse(BaseModel):
     resumeId: Optional[str] = None  # Only if user is authenticated
     fileName: str
     contact: ContactInfoResponse
+    experience: List[Dict] = []
+    education: List[Dict] = []
+    skills: List[str] = []
+    certifications: List[Dict] = []
     metadata: MetadataResponse
     score: ScoreResponse
     formatCheck: FormatCheckResponse
     uploadedAt: datetime
+    jobDescription: Optional[str] = None
+    industry: Optional[str] = None
