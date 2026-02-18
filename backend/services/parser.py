@@ -2,10 +2,13 @@
 PDF and DOCX parser service for extracting structured data from resumes.
 """
 import re
+import io
 from io import BytesIO
 from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 import fitz  # PyMuPDF
+import pypdf
+import pdfplumber
 from docx import Document
 
 
@@ -344,9 +347,192 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
     return sections
 
 
+def parse_pdf_with_pypdf(file_content: bytes, filename: str) -> ResumeData:
+    """
+    Parse PDF using pypdf library (fallback strategy).
+
+    Args:
+        file_content: PDF file bytes
+        filename: Original filename
+
+    Returns:
+        ResumeData with extracted content
+    """
+    try:
+        reader = pypdf.PdfReader(io.BytesIO(file_content))
+
+        # Extract text from all pages
+        full_text = ""
+        for page in reader.pages:
+            full_text += page.extract_text() + "\n"
+
+        # Get metadata
+        page_count = len(reader.pages)
+        word_count = len(full_text.split())
+
+        # Extract sections
+        sections = extract_resume_sections(full_text)
+
+        # Extract contact info
+        header_text = full_text[:500]
+        name = extract_name_from_header(full_text)
+        email = extract_email(header_text)
+        phone = extract_phone(header_text)
+        linkedin = extract_linkedin(header_text)
+
+        contact_info = {
+            "name": name,
+            "email": email,
+            "phone": phone,
+            "linkedin": linkedin
+        }
+
+        metadata = {
+            "pageCount": page_count,
+            "wordCount": word_count,
+            "hasPhoto": False,
+            "fileFormat": "pdf"
+        }
+
+        return ResumeData(
+            fileName=filename,
+            contact=contact_info,
+            experience=sections.get('experience', []),
+            education=sections.get('education', []),
+            skills=sections.get('skills', []),
+            certifications=sections.get('certifications', []),
+            metadata=metadata
+        )
+
+    except Exception as e:
+        # Return minimal result on failure
+        return ResumeData(
+            fileName=filename,
+            contact={},
+            experience=[],
+            education=[],
+            skills=[],
+            metadata={"pageCount": 0, "wordCount": 0, "hasPhoto": False, "fileFormat": "pdf"}
+        )
+
+
+def parse_pdf_with_pdfplumber(file_content: bytes, filename: str) -> ResumeData:
+    """
+    Parse PDF using pdfplumber library (fallback for tables).
+
+    Args:
+        file_content: PDF file bytes
+        filename: Original filename
+
+    Returns:
+        ResumeData with extracted content
+    """
+    try:
+        with pdfplumber.open(io.BytesIO(file_content)) as pdf:
+            # Extract text from all pages
+            full_text_parts = []
+
+            for page in pdf.pages:
+                # Get regular text
+                page_text = page.extract_text()
+                if page_text:
+                    full_text_parts.append(page_text)
+
+                # Get table content (pdfplumber's specialty)
+                tables = page.extract_tables()
+                for table in tables:
+                    for row in table:
+                        if row:
+                            row_text = " | ".join([str(cell) for cell in row if cell])
+                            full_text_parts.append(row_text)
+
+            full_text = "\n".join(full_text_parts)
+
+            # Get metadata
+            page_count = len(pdf.pages)
+            word_count = len(full_text.split())
+
+            # Extract sections
+            sections = extract_resume_sections(full_text)
+
+            # Extract contact info
+            header_text = full_text[:500]
+            name = extract_name_from_header(full_text)
+            email = extract_email(header_text)
+            phone = extract_phone(header_text)
+            linkedin = extract_linkedin(header_text)
+
+            contact_info = {
+                "name": name,
+                "email": email,
+                "phone": phone,
+                "linkedin": linkedin
+            }
+
+            metadata = {
+                "pageCount": page_count,
+                "wordCount": word_count,
+                "hasPhoto": False,
+                "fileFormat": "pdf"
+            }
+
+            return ResumeData(
+                fileName=filename,
+                contact=contact_info,
+                experience=sections.get('experience', []),
+                education=sections.get('education', []),
+                skills=sections.get('skills', []),
+                certifications=sections.get('certifications', []),
+                metadata=metadata
+            )
+
+    except Exception as e:
+        # Return minimal result on failure
+        return ResumeData(
+            fileName=filename,
+            contact={},
+            experience=[],
+            education=[],
+            skills=[],
+            metadata={"pageCount": 0, "wordCount": 0, "hasPhoto": False, "fileFormat": "pdf"}
+        )
+
+
+def assess_parse_quality(resume: ResumeData, raw_text: str) -> float:
+    """
+    Assess quality of parsed resume.
+
+    Args:
+        resume: Parsed ResumeData
+        raw_text: Raw extracted text
+
+    Returns:
+        Quality score 0.0-1.0
+    """
+    score = 0.0
+
+    # Check word count
+    if resume.metadata["wordCount"] >= 200:
+        score += 0.3
+    elif resume.metadata["wordCount"] >= 100:
+        score += 0.15
+
+    # Check sections found
+    if resume.experience:
+        score += 0.3
+    if resume.education:
+        score += 0.2
+    if resume.skills:
+        score += 0.2
+
+    return score
+
+
 def parse_pdf(file_content: bytes, filename: str) -> ResumeData:
     """
-    Parse a PDF resume and extract structured data.
+    Parse a PDF resume using multi-strategy approach.
+
+    Tries PyMuPDF first, falls back to pypdf, then pdfplumber if needed.
 
     Args:
         file_content: PDF file content as bytes
@@ -355,59 +541,82 @@ def parse_pdf(file_content: bytes, filename: str) -> ResumeData:
     Returns:
         ResumeData object with extracted information
     """
-    # Open PDF from bytes using PyMuPDF
-    doc = fitz.open(stream=file_content, filetype="pdf")
+    # Strategy 1: PyMuPDF (current implementation - fast and reliable)
+    try:
+        doc = fitz.open(stream=file_content, filetype="pdf")
 
-    # Extract text from all pages
-    full_text = ""
-    for page in doc:
-        full_text += page.get_text()
+        # Extract text from all pages
+        full_text = ""
+        for page in doc:
+            full_text += page.get_text()
 
-    # Get metadata
-    page_count = len(doc)
-    word_count = len(full_text.split())
+        page_count = len(doc)
+        word_count = len(full_text.split())
+        doc.close()
 
-    # Close document
-    doc.close()
+        # If extraction seems successful, continue with PyMuPDF
+        if word_count >= 50:  # Minimum threshold for valid extraction
+            sections = extract_resume_sections(full_text)
 
-    # Extract sections (experience, education, skills)
-    sections = extract_resume_sections(full_text)
+            header_text = full_text[:500]
+            name = extract_name_from_header(full_text)
+            email = extract_email(header_text)
+            phone = extract_phone(header_text)
+            linkedin = extract_linkedin(header_text)
 
-    # Extract contact information from the header (first 500 characters)
-    header_text = full_text[:500]
+            contact_info = {
+                "name": name,
+                "email": email,
+                "phone": phone,
+                "linkedin": linkedin
+            }
 
-    name = extract_name_from_header(full_text)
-    email = extract_email(header_text)
-    phone = extract_phone(header_text)
-    linkedin = extract_linkedin(header_text)
+            metadata = {
+                "pageCount": page_count,
+                "wordCount": word_count,
+                "hasPhoto": False,
+                "fileFormat": "pdf"
+            }
 
-    contact_info = {
-        "name": name,
-        "email": email,
-        "phone": phone,
-        "linkedin": linkedin
-    }
+            result = ResumeData(
+                fileName=filename,
+                contact=contact_info,
+                experience=sections.get('experience', []),
+                education=sections.get('education', []),
+                skills=sections.get('skills', []),
+                certifications=sections.get('certifications', []),
+                metadata=metadata
+            )
 
-    # Metadata
-    metadata = {
-        "pageCount": page_count,
-        "wordCount": word_count,
-        "hasPhoto": False,  # TODO: Implement image detection
-        "fileFormat": "pdf"
-    }
+            quality = assess_parse_quality(result, full_text)
+            if quality >= 0.7:  # Good quality, use it
+                return result
+    except Exception as e:
+        pass  # Fall through to next strategy
 
-    # Create ResumeData object with extracted sections
-    resume_data = ResumeData(
-        fileName=filename,
-        contact=contact_info,
-        experience=sections.get('experience', []),
-        education=sections.get('education', []),
-        skills=sections.get('skills', []),
-        certifications=sections.get('certifications', []),
-        metadata=metadata
-    )
+    # Strategy 2: pypdf fallback
+    try:
+        result = parse_pdf_with_pypdf(file_content, filename)
+        quality = assess_parse_quality(result, "")  # Note: no raw text available
+        if quality >= 0.5:  # Lower threshold for fallback
+            return result
+    except Exception as e:
+        pass  # Fall through to next strategy
 
-    return resume_data
+    # Strategy 3: pdfplumber (best for tables)
+    try:
+        result = parse_pdf_with_pdfplumber(file_content, filename)
+        return result  # Use whatever we got
+    except Exception as e:
+        # All strategies failed - return minimal result
+        return ResumeData(
+            fileName=filename,
+            contact={},
+            experience=[],
+            education=[],
+            skills=[],
+            metadata={"pageCount": 0, "wordCount": 0, "hasPhoto": False, "fileFormat": "pdf"}
+        )
 
 
 def parse_docx(file_content: bytes, filename: str) -> ResumeData:
