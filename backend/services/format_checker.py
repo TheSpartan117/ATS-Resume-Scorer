@@ -84,7 +84,9 @@ class ATSFormatChecker:
         for exp in resume.experience:
             if isinstance(exp, dict) and "description" in exp:
                 desc = exp.get("description", "")
-                bullets = [line for line in desc.split('\n') if line.strip().startswith('-')]
+                # Check for multiple bullet formats: -, •, *, ◦, ▪, ▫
+                bullets = [line for line in desc.split('\n')
+                          if line.strip() and any(line.strip().startswith(b) for b in ['-', '•', '*', '◦', '▪', '▫', '–', '—'])]
                 total_bullets += len(bullets)
 
         score = 1.0 if total_bullets >= 5 else (total_bullets / 5.0)
