@@ -143,3 +143,120 @@ def test_upload_without_jd_returns_quality_mode(client):
     result = response.json()
     assert result["scoringMode"] == "quality_coach"
     assert result["score"]["mode"] == "quality_coach"
+
+
+def test_upload_explicit_ats_mode(client):
+    """Test upload with explicit ATS mode parameter"""
+    pdf_content = create_test_pdf()
+    files = {"file": ("resume.pdf", io.BytesIO(pdf_content), "application/pdf")}
+    data = {
+        "role": "software_engineer",
+        "level": "senior",
+        "jobDescription": "Python, AWS, Docker required",
+        "mode": "ats"
+    }
+
+    response = client.post("/api/upload", files=files, data=data)
+
+    assert response.status_code == 200
+    result = response.json()
+    assert result["scoringMode"] == "ats_simulation"
+    assert result["score"]["mode"] == "ats_simulation"
+    assert "keywordDetails" in result["score"]
+    assert result["score"]["keywordDetails"] is not None
+
+
+def test_upload_explicit_quality_mode(client):
+    """Test upload with explicit Quality mode parameter"""
+    pdf_content = create_test_pdf()
+    files = {"file": ("resume.pdf", io.BytesIO(pdf_content), "application/pdf")}
+    data = {
+        "role": "software_engineer",
+        "level": "mid",
+        "mode": "quality"
+    }
+
+    response = client.post("/api/upload", files=files, data=data)
+
+    assert response.status_code == 200
+    result = response.json()
+    assert result["scoringMode"] == "quality_coach"
+    assert result["score"]["mode"] == "quality_coach"
+    # Quality mode should have specific breakdown categories
+    assert "role_keywords" in result["score"]["breakdown"]
+    assert "content_quality" in result["score"]["breakdown"]
+    assert "professional_polish" in result["score"]["breakdown"]
+
+
+def test_upload_auto_mode_with_jd(client):
+    """Test upload with auto mode and JD defaults to ATS"""
+    pdf_content = create_test_pdf()
+    files = {"file": ("resume.pdf", io.BytesIO(pdf_content), "application/pdf")}
+    data = {
+        "role": "software_engineer",
+        "level": "senior",
+        "jobDescription": "Python developer",
+        "mode": "auto"
+    }
+
+    response = client.post("/api/upload", files=files, data=data)
+
+    assert response.status_code == 200
+    result = response.json()
+    assert result["scoringMode"] == "ats_simulation"
+
+
+def test_upload_auto_mode_without_jd(client):
+    """Test upload with auto mode and no JD defaults to Quality"""
+    pdf_content = create_test_pdf()
+    files = {"file": ("resume.pdf", io.BytesIO(pdf_content), "application/pdf")}
+    data = {
+        "role": "software_engineer",
+        "level": "mid",
+        "mode": "auto"
+    }
+
+    response = client.post("/api/upload", files=files, data=data)
+
+    assert response.status_code == 200
+    result = response.json()
+    assert result["scoringMode"] == "quality_coach"
+
+
+def test_upload_response_includes_issue_counts(client):
+    """Test upload response includes issue counts"""
+    pdf_content = create_test_pdf()
+    files = {"file": ("resume.pdf", io.BytesIO(pdf_content), "application/pdf")}
+    data = {"role": "software_engineer", "level": "senior"}
+
+    response = client.post("/api/upload", files=files, data=data)
+
+    assert response.status_code == 200
+    result = response.json()
+    assert "score" in result
+    assert "issueCounts" in result["score"]
+    assert "critical" in result["score"]["issueCounts"]
+    assert "warnings" in result["score"]["issueCounts"]
+    assert "suggestions" in result["score"]["issueCounts"]
+    assert isinstance(result["score"]["issueCounts"]["critical"], int)
+    assert isinstance(result["score"]["issueCounts"]["warnings"], int)
+    assert isinstance(result["score"]["issueCounts"]["suggestions"], int)
+
+
+def test_upload_mode_backward_compatibility(client):
+    """Test upload without mode parameter maintains backward compatibility"""
+    pdf_content = create_test_pdf()
+    files = {"file": ("resume.pdf", io.BytesIO(pdf_content), "application/pdf")}
+    data = {
+        "role": "software_engineer",
+        "level": "mid"
+        # No mode parameter - should auto-detect
+    }
+
+    response = client.post("/api/upload", files=files, data=data)
+
+    assert response.status_code == 200
+    result = response.json()
+    # Should default to quality_coach without JD
+    assert result["scoringMode"] == "quality_coach"
+    assert result["score"]["mode"] == "quality_coach"

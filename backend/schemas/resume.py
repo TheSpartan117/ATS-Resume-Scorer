@@ -38,6 +38,7 @@ class ScoreResponse(BaseModel):
     mode: str  # "ats_simulation" or "quality_coach"
     keywordDetails: Optional[Dict] = None  # Keyword matching details for ATS mode
     autoReject: Optional[bool] = None  # Auto-reject flag for ATS mode
+    issueCounts: Optional[Dict[str, int]] = None  # Count of critical, warnings, suggestions
 
 
 class FormatCheckResponse(BaseModel):

@@ -24,6 +24,7 @@ class ScoreRequest(BaseModel):
     jobDescription: Optional[str] = ""
     role: Optional[str] = ""
     level: Optional[str] = ""
+    mode: Optional[str] = "auto"  # "ats", "quality", or "auto" (default)
     industry: Optional[str] = ""  # Deprecated, kept for backward compatibility
 
 
@@ -38,9 +39,13 @@ async def score_resume(request: ScoreRequest):
     - **jobDescription**: (Optional) Job description for keyword matching
     - **role**: (Optional) Role identifier (e.g., "software_engineer", "product_manager")
     - **level**: (Optional) Experience level ("entry", "mid", "senior", "lead", "executive")
+    - **mode**: (Optional) Scoring mode: "ats", "quality", or "auto" (default: "auto")
+        - "ats" or "ats_simulation": ATS Simulation mode (keyword-heavy, requires job description)
+        - "quality" or "quality_coach": Quality Coach mode (balanced quality scoring)
+        - "auto": Auto-detect based on job description presence
     - **industry**: (Optional, deprecated) Use role+level instead
 
-    Returns updated ATS score (0-100).
+    Returns updated score (0-100) with mode-specific breakdown.
     """
 
     # Convert request to ResumeData
@@ -54,8 +59,16 @@ async def score_resume(request: ScoreRequest):
         metadata=request.metadata
     )
 
-    # Determine scoring mode
-    scoring_mode = "ats_simulation" if request.jobDescription else "quality_coach"
+    # Normalize mode parameter (support both "ats" and "ats_simulation", etc.)
+    mode = request.mode or "auto"
+    if mode == "ats":
+        mode = "ats_simulation"
+    elif mode == "quality":
+        mode = "quality_coach"
+
+    # Auto-detect mode if mode="auto"
+    if mode == "auto":
+        mode = "ats_simulation" if request.jobDescription else "quality_coach"
 
     # Calculate score using AdaptiveScorer
     scorer = AdaptiveScorer()
@@ -64,7 +77,7 @@ async def score_resume(request: ScoreRequest):
         role_id=request.role or "software_engineer",
         level=request.level or "mid",
         job_description=request.jobDescription,
-        mode=scoring_mode
+        mode=mode
     )
 
     # Convert breakdown to response format
@@ -83,12 +96,20 @@ async def score_resume(request: ScoreRequest):
     for severity, issue_list in score_result["issues"].items():
         issues_response[severity] = [issue[1] if isinstance(issue, tuple) else issue for issue in issue_list]
 
+    # Calculate issue counts for frontend
+    issue_counts = {
+        "critical": len(issues_response.get("critical", [])),
+        "warnings": len(issues_response.get("warnings", [])),
+        "suggestions": len(issues_response.get("suggestions", []))
+    }
+
     return ScoreResponse(
         overallScore=score_result["overallScore"],
         breakdown=breakdown_response,
         issues=issues_response,
         strengths=score_result.get("strengths", []),
-        mode=score_result.get("mode", scoring_mode),
+        mode=score_result.get("mode", mode),
         keywordDetails=score_result.get("keyword_details"),
-        autoReject=score_result.get("auto_reject")
+        autoReject=score_result.get("auto_reject"),
+        issueCounts=issue_counts
     )
