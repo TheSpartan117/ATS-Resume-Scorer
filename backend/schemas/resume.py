@@ -24,17 +24,18 @@ class MetadataResponse(BaseModel):
 
 class CategoryBreakdown(BaseModel):
     """Score breakdown for a single category"""
-    score: int
-    maxScore: int
+    score: float
+    maxScore: float
     issues: List[str]
 
 
 class ScoreResponse(BaseModel):
     """Complete scoring response"""
-    overallScore: int
+    overallScore: float
     breakdown: Dict[str, CategoryBreakdown]
     issues: Dict[str, List[str]]  # critical, warnings, suggestions, info
     strengths: List[str]
+    mode: str  # "ats_simulation" or "quality_coach"
 
 
 class FormatCheckResponse(BaseModel):
@@ -57,6 +58,9 @@ class UploadResponse(BaseModel):
     metadata: MetadataResponse
     score: ScoreResponse
     formatCheck: FormatCheckResponse
-    uploadedAt: datetime
+    scoringMode: str  # "ats_simulation" or "quality_coach"
+    role: str
+    level: str
     jobDescription: Optional[str] = None
+    uploadedAt: datetime
     industry: Optional[str] = None

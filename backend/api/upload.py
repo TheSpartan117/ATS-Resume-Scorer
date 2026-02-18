@@ -6,6 +6,7 @@ import io
 import logging
 from backend.services.parser import parse_pdf, parse_docx
 from backend.services.scorer import calculate_overall_score
+from backend.services.scorer_v2 import AdaptiveScorer
 from backend.services.format_checker import ATSFormatChecker
 from backend.schemas.resume import UploadResponse, ContactInfoResponse, MetadataResponse, ScoreResponse, CategoryBreakdown, FormatCheckResponse
 
@@ -20,9 +21,9 @@ ALLOWED_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocume
 @router.post("/upload", response_model=UploadResponse)
 async def upload_resume(
     file: UploadFile = File(...),
+    role: str = Form(...),
+    level: str = Form(...),
     jobDescription: Optional[str] = Form(None),
-    role: Optional[str] = Form(None),
-    level: Optional[str] = Form(None),
     industry: Optional[str] = Form(None)  # Kept for backward compatibility
 ):
     """
@@ -102,20 +103,26 @@ async def upload_resume(
         logger.error(f"Format check failed: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Format check failed: {str(e)}")
 
-    # Calculate score with role and level (or fall back to industry for backward compatibility)
+    # Determine scoring mode
+    scoring_mode = "ats_simulation" if jobDescription else "quality_coach"
+    logger.info(f"Scoring mode: {scoring_mode}")
+
+    # Use adaptive scorer
+    scorer = AdaptiveScorer()
+
     try:
         logger.info(f"Calculating score with role={role}, level={level}")
-        score_result = calculate_overall_score(
-            resume_data,
-            job_description=jobDescription or "",
-            role_id=role or "",
-            level=level or "",
-            industry=industry or ""
+        score_result = scorer.score(
+            resume_data=resume_data,
+            role_id=role,
+            level=level,
+            job_description=jobDescription,
+            mode=scoring_mode
         )
         logger.info(f"Score calculated: {score_result.get('overallScore', 0)}")
     except Exception as e:
         logger.error(f"Scoring failed: {str(e)}")
-        raise HTTPException(status_code=400, detail=f"Scoring failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to score resume: {str(e)}")
 
     # Format response
     contact_response = ContactInfoResponse(**resume_data.contact)
@@ -141,7 +148,8 @@ async def upload_resume(
         overallScore=score_result["overallScore"],
         breakdown=breakdown_response,
         issues=issues_response,
-        strengths=score_result.get("strengths", [])
+        strengths=score_result.get("strengths", []),
+        mode=score_result.get("mode", scoring_mode)
     )
 
     # Format check response
@@ -163,7 +171,10 @@ async def upload_resume(
         metadata=metadata_response,
         score=score_response,
         formatCheck=format_check_response,
-        uploadedAt=datetime.now(timezone.utc),
+        scoringMode=scoring_mode,
+        role=role,
+        level=level,
         jobDescription=jobDescription,
+        uploadedAt=datetime.now(timezone.utc),
         industry=industry
     )

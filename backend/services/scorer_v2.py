@@ -105,26 +105,56 @@ class AdaptiveScorer:
         # Determine auto-reject
         auto_reject = keyword_result["required_match_pct"] < 60.0
 
+        # Convert details strings to issue lists
+        keyword_issues = self._details_to_issues(keyword_result.get("details", ""), keyword_score, 70)
+        format_issues = self._details_to_issues(format_result.get("details", ""), format_score, 20)
+        structure_issues = self._details_to_issues(structure_result.get("details", ""), structure_score, 10)
+
+        # Collect all issues for categorization
+        all_issues = keyword_issues + format_issues + structure_issues
+
+        # Categorize issues by severity
+        critical_issues = [issue for issue in all_issues if issue[0] == "critical"]
+        warnings = [issue for issue in all_issues if issue[0] == "warning"]
+        suggestions = [issue for issue in all_issues if issue[0] == "suggestion"]
+        info_issues = [issue for issue in all_issues if issue[0] == "info"]
+
+        # Generate strengths
+        strengths = []
+        if keyword_result["required_match_pct"] >= 80:
+            strengths.append("Strong keyword match with required skills")
+        if keyword_result["preferred_match_pct"] >= 60:
+            strengths.append("Good coverage of preferred qualifications")
+        if format_score >= 15:
+            strengths.append("ATS-compatible format")
+
         return {
-            "overall_score": round(overall_score, 1),
+            "overallScore": round(overall_score, 1),
             "mode": "ats_simulation",
             "breakdown": {
                 "keyword_match": {
                     "score": round(keyword_score, 1),
-                    "max_score": 70,
-                    "details": keyword_result["details"]
+                    "maxScore": 70,
+                    "issues": keyword_issues
                 },
                 "format": {
                     "score": round(format_score, 1),
-                    "max_score": 20,
-                    "details": format_result["details"]
+                    "maxScore": 20,
+                    "issues": format_issues
                 },
                 "structure": {
                     "score": round(structure_score, 1),
-                    "max_score": 10,
-                    "details": structure_result["details"]
+                    "maxScore": 10,
+                    "issues": structure_issues
                 }
             },
+            "issues": {
+                "critical": critical_issues,
+                "warnings": warnings,
+                "suggestions": suggestions,
+                "info": info_issues
+            },
+            "strengths": strengths,
             "keyword_details": {
                 "required_matched": keyword_result["required_matched"],
                 "required_total": keyword_result["required_total"],
@@ -180,31 +210,64 @@ class AdaptiveScorer:
         # Calculate overall score
         overall_score = role_keyword_score + content_score + format_score + polish_score
 
+        # Convert details strings to issue lists
+        role_keyword_issues = self._details_to_issues(role_keyword_result.get("details", ""), role_keyword_score, 25)
+        content_issues = self._details_to_issues(content_result.get("details", ""), content_score, 30)
+        format_issues = self._details_to_issues(format_result.get("details", ""), format_score, 25)
+        polish_issues = self._details_to_issues(polish_result.get("details", ""), polish_score, 20)
+
+        # Collect all issues for categorization
+        all_issues = role_keyword_issues + content_issues + format_issues + polish_issues
+
+        # Categorize issues by severity
+        critical_issues = [issue for issue in all_issues if issue[0] == "critical"]
+        warnings = [issue for issue in all_issues if issue[0] == "warning"]
+        suggestions = [issue for issue in all_issues if issue[0] == "suggestion"]
+        info_issues = [issue for issue in all_issues if issue[0] == "info"]
+
+        # Generate strengths
+        strengths = []
+        if role_keyword_score >= 20:
+            strengths.append("Strong alignment with role requirements")
+        if content_score >= 24:
+            strengths.append("High-quality, well-written content")
+        if format_score >= 20:
+            strengths.append("Professional formatting")
+        if polish_score >= 16:
+            strengths.append("Polished and error-free presentation")
+
         return {
-            "overall_score": round(overall_score, 1),
+            "overallScore": round(overall_score, 1),
             "mode": "quality_coach",
             "breakdown": {
                 "role_keywords": {
                     "score": round(role_keyword_score, 1),
-                    "max_score": 25,
-                    "details": role_keyword_result["details"]
+                    "maxScore": 25,
+                    "issues": role_keyword_issues
                 },
                 "content_quality": {
                     "score": round(content_score, 1),
-                    "max_score": 30,
-                    "details": content_result["details"]
+                    "maxScore": 30,
+                    "issues": content_issues
                 },
                 "format": {
                     "score": round(format_score, 1),
-                    "max_score": 25,
-                    "details": format_result["details"]
+                    "maxScore": 25,
+                    "issues": format_issues
                 },
                 "professional_polish": {
                     "score": round(polish_score, 1),
-                    "max_score": 20,
-                    "details": polish_result["details"]
+                    "maxScore": 20,
+                    "issues": polish_issues
                 }
             },
+            "issues": {
+                "critical": critical_issues,
+                "warnings": warnings,
+                "suggestions": suggestions,
+                "info": info_issues
+            },
+            "strengths": strengths,
             "keyword_details": role_keyword_result["keyword_details"],
             "cta": self._generate_cta(overall_score)
         }
@@ -644,3 +707,53 @@ class AdaptiveScorer:
             return "Your resume needs improvement. Review the feedback."
         else:
             return "Your resume needs significant work. Focus on key areas."
+
+    def _details_to_issues(self, details, score: float, max_score: float) -> List:
+        """
+        Convert details string or list to issues list with severity tuples.
+
+        Args:
+            details: Details string, list, or dict from scoring methods
+            score: Actual score achieved
+            max_score: Maximum possible score
+
+        Returns:
+            List of (severity, message) tuples
+        """
+        issues = []
+
+        # Handle string details
+        if isinstance(details, str):
+            if details:
+                # Determine severity based on score percentage
+                score_pct = (score / max_score * 100) if max_score > 0 else 0
+                if score_pct >= 80:
+                    severity = "info"
+                elif score_pct >= 60:
+                    severity = "suggestion"
+                elif score_pct >= 40:
+                    severity = "warning"
+                else:
+                    severity = "critical"
+                issues.append((severity, details))
+
+        # Handle list details
+        elif isinstance(details, list):
+            for item in details:
+                # If already a tuple, use as-is
+                if isinstance(item, tuple) and len(item) == 2:
+                    issues.append(item)
+                # Otherwise convert string to info tuple
+                elif isinstance(item, str):
+                    score_pct = (score / max_score * 100) if max_score > 0 else 0
+                    if score_pct >= 80:
+                        severity = "info"
+                    elif score_pct >= 60:
+                        severity = "suggestion"
+                    elif score_pct >= 40:
+                        severity = "warning"
+                    else:
+                        severity = "critical"
+                    issues.append((severity, item))
+
+        return issues
