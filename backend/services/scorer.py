@@ -190,9 +190,13 @@ def score_content(resume: ResumeData, role_id: str = "", level: str = "") -> Dic
     experience_bullets = []
     for exp in resume.experience:
         if isinstance(exp, dict) and 'description' in exp:
-            # Split description into bullet points
+            # Split description into bullet points - detect multiple bullet formats
             desc = exp.get('description', '')
-            bullets = [line.strip() for line in desc.split('\n') if line.strip() and line.strip().startswith('-')]
+            bullets = []
+            for line in desc.split('\n'):
+                line = line.strip()
+                if line and any(line.startswith(b) for b in ['-', '•', '*', '◦', '▪', '▫', '–', '—', '→']):
+                    bullets.append(line)
             experience_bullets.extend(bullets)
 
     all_experience_text = " ".join([str(exp) for exp in resume.experience])
