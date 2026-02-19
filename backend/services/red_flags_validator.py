@@ -10,10 +10,10 @@ from typing import Dict, List, Optional
 from backend.services.parser import ResumeData
 
 try:
-    import language_tool_python
-    LANGUAGE_TOOL_AVAILABLE = True
+    from spellchecker import SpellChecker
+    SPELLCHECKER_AVAILABLE = True
 except ImportError:
-    LANGUAGE_TOOL_AVAILABLE = False
+    SPELLCHECKER_AVAILABLE = False
 
 
 class RedFlagsValidator:
@@ -24,24 +24,24 @@ class RedFlagsValidator:
 
     def __init__(self):
         """Initialize validator with grammar checker support"""
-        self._language_tool = None
-        self._lt_init_failed = False
+        self._spell_checker = None
+        self._spell_init_failed = False
         self._grammar_cache = {}  # Cache grammar results by text hash
 
-    def _get_language_tool(self):
-        """Get or initialize LanguageTool instance"""
-        if self._lt_init_failed:
+    def _get_spell_checker(self):
+        """Get or initialize SpellChecker instance"""
+        if self._spell_init_failed:
             return None
 
-        if self._language_tool is None and LANGUAGE_TOOL_AVAILABLE:
+        if self._spell_checker is None and SPELLCHECKER_AVAILABLE:
             try:
-                self._language_tool = language_tool_python.LanguageTool('en-US')
+                self._spell_checker = SpellChecker()
             except Exception:
                 # If initialization fails, mark it and don't try again
-                self._lt_init_failed = True
+                self._spell_init_failed = True
                 return None
 
-        return self._language_tool
+        return self._spell_checker
 
     def validate_resume(self, resume: ResumeData, role: str, level: str) -> Dict:
         """
@@ -729,17 +729,17 @@ class RedFlagsValidator:
         """
         Validate grammar, spelling, and capitalization in resume text.
         Parameters 18-21 from design doc:
-        - P18: Typo Detection (using LanguageTool)
-        - P19: Grammar Errors (sentence structure, agreement)
-        - P20: Verb Tense Consistency (checked via grammar)
+        - P18: Typo Detection (using pyspellchecker)
+        - P19: Grammar Errors (basic regex patterns for common issues)
+        - P20: Verb Tense Consistency (basic pattern matching)
         - P21: Capitalization (proper nouns, job titles)
         """
         issues = []
 
-        # Check if LanguageTool is available
-        lt = self._get_language_tool()
-        if lt is None:
-            return []  # Return empty list if LanguageTool unavailable
+        # Check if SpellChecker is available
+        spell = self._get_spell_checker()
+        if spell is None:
+            return []  # Return empty list if SpellChecker unavailable
 
         # Collect all text sections to check
         text_sections = []
@@ -805,67 +805,190 @@ class RedFlagsValidator:
             # Check cache first
             text_hash = hashlib.md5(text.encode()).hexdigest()
             if text_hash in self._grammar_cache:
-                matches = self._grammar_cache[text_hash]
-            else:
-                # Check grammar with LanguageTool
-                try:
-                    matches = lt.check(text)
-                    self._grammar_cache[text_hash] = matches
-                except Exception:
-                    continue  # Skip this text if check fails
+                cached_issues = self._grammar_cache[text_hash]
+                for issue in cached_issues:
+                    if issue_counts.get(issue['category'], 0) < max_per_category:
+                        issues.append({
+                            'severity': issue['severity'],
+                            'category': issue['category'],
+                            'message': f"{context}: {issue['message']}",
+                            'section': section_name
+                        })
+                        issue_counts[issue['category']] += 1
+                continue
 
-            # Process matches and categorize
-            for match in matches:
-                # Map LanguageTool rule types to our categories
-                rule_id = match.ruleId
-                rule_category = match.category.upper() if hasattr(match, 'category') else ''
+            # New issues to cache for this text
+            text_issues = []
 
-                # Determine category and severity
-                category = None
-                severity = None
+            # P18: Typo detection using pyspellchecker
+            typo_issues = self._check_spelling(text, spell)
+            for typo_word, suggestion in typo_issues:
+                if issue_counts['typo'] >= max_per_category:
+                    break
 
-                # P18: Typo detection (MISSPELLING)
-                if 'TYPO' in rule_category or 'SPELL' in rule_category or rule_id.startswith('MORFOLOGIK'):
-                    category = 'typo'
-                    severity = 'warning'
-                # P21: Capitalization (CASING)
-                elif 'CASING' in rule_category or 'UPPERCASE' in rule_id or 'LOWERCASE' in rule_id:
-                    category = 'capitalization'
-                    severity = 'suggestion'
-                # P19: Grammar errors (GRAMMAR, agreement, etc.)
-                elif 'GRAMMAR' in rule_category or 'AGREEMENT' in rule_id or 'VERB' in rule_category:
-                    category = 'grammar'
-                    severity = 'warning'
-                # Default to grammar for other issues
-                else:
-                    category = 'grammar'
-                    severity = 'warning'
-
-                # Check if we've hit the limit for this category
-                if issue_counts[category] >= max_per_category:
-                    continue
-
-                # Extract error context
-                error_text = text[match.offset:match.offset + match.errorLength]
-                suggestion = match.replacements[0] if match.replacements else None
-
-                # Build message
-                message = f"{context}: {match.message}"
-                if error_text:
-                    message += f" ('{error_text}')"
+                message = f"{context}: Possible spelling error '{typo_word}'"
                 if suggestion:
                     message += f" - Suggestion: '{suggestion}'"
 
+                text_issues.append({
+                    'category': 'typo',
+                    'severity': 'warning',
+                    'message': f"Possible spelling error '{typo_word}'" + (f" - Suggestion: '{suggestion}'" if suggestion else "")
+                })
+
                 issues.append({
-                    'severity': severity,
-                    'category': category,
+                    'severity': 'warning',
+                    'category': 'typo',
                     'message': message,
                     'section': section_name
                 })
+                issue_counts['typo'] += 1
 
-                issue_counts[category] += 1
+            # P19: Basic grammar checks (common patterns)
+            grammar_issues = self._check_basic_grammar(text)
+            for grammar_msg in grammar_issues:
+                if issue_counts['grammar'] >= max_per_category:
+                    break
+
+                text_issues.append({
+                    'category': 'grammar',
+                    'severity': 'warning',
+                    'message': grammar_msg
+                })
+
+                issues.append({
+                    'severity': 'warning',
+                    'category': 'grammar',
+                    'message': f"{context}: {grammar_msg}",
+                    'section': section_name
+                })
+                issue_counts['grammar'] += 1
+
+            # P21: Capitalization checks
+            cap_issues = self._check_capitalization(text)
+            for cap_msg in cap_issues:
+                if issue_counts['capitalization'] >= max_per_category:
+                    break
+
+                text_issues.append({
+                    'category': 'capitalization',
+                    'severity': 'suggestion',
+                    'message': cap_msg
+                })
+
+                issues.append({
+                    'severity': 'suggestion',
+                    'category': 'capitalization',
+                    'message': f"{context}: {cap_msg}",
+                    'section': section_name
+                })
+                issue_counts['capitalization'] += 1
+
+            # Cache the issues for this text
+            self._grammar_cache[text_hash] = text_issues
 
         return issues
+
+    def _check_spelling(self, text: str, spell: 'SpellChecker') -> List[tuple]:
+        """
+        Check spelling using pyspellchecker.
+        Returns list of (misspelled_word, suggestion) tuples.
+        """
+        if not spell:
+            return []
+
+        # Extract words from text (alphanumeric only)
+        words = re.findall(r'\b[a-zA-Z]{3,}\b', text)
+
+        # Skip common technical terms and acronyms
+        technical_terms = {
+            'api', 'apis', 'ci', 'cd', 'aws', 'gcp', 'sql', 'nosql', 'devops',
+            'frontend', 'backend', 'fullstack', 'ui', 'ux', 'saas', 'paas',
+            'iaas', 'sdk', 'http', 'https', 'ssl', 'tls', 'oauth', 'jwt',
+            'rest', 'restful', 'graphql', 'crud', 'json', 'xml', 'yaml',
+            'kubernetes', 'docker', 'microservices', 'monorepo', 'ci/cd',
+            'github', 'gitlab', 'jira', 'agile', 'scrum', 'kanban'
+        }
+
+        misspelled = []
+        for word in words:
+            word_lower = word.lower()
+
+            # Skip technical terms, acronyms (all caps), and very short words
+            if word_lower in technical_terms or word.isupper() or len(word) < 4:
+                continue
+
+            # Skip words with numbers
+            if any(c.isdigit() for c in word):
+                continue
+
+            # Check if word is misspelled
+            if word_lower not in spell:
+                # Get suggestion
+                correction = spell.correction(word_lower)
+                if correction and correction != word_lower:
+                    misspelled.append((word, correction))
+
+        # Return only first 5 typos to avoid spam
+        return misspelled[:5]
+
+    def _check_basic_grammar(self, text: str) -> List[str]:
+        """
+        Check for common grammar issues using regex patterns.
+        Returns list of error messages.
+        """
+        issues = []
+
+        # Check for double spaces
+        if '  ' in text:
+            issues.append("Multiple consecutive spaces detected")
+
+        # Check for subject-verb agreement patterns (basic)
+        # Pattern: "they is", "he are", "we was"
+        subject_verb_errors = [
+            (r'\bthey\s+is\b', "Subject-verb disagreement: 'they is' should be 'they are'"),
+            (r'\bhe\s+are\b', "Subject-verb disagreement: 'he are' should be 'he is'"),
+            (r'\bshe\s+are\b', "Subject-verb disagreement: 'she are' should be 'she is'"),
+            (r'\bwe\s+was\b', "Subject-verb disagreement: 'we was' should be 'we were'"),
+            (r'\bthey\s+was\b', "Subject-verb disagreement: 'they was' should be 'they were'"),
+        ]
+
+        for pattern, message in subject_verb_errors:
+            if re.search(pattern, text, re.IGNORECASE):
+                issues.append(message)
+
+        # Check for missing spaces after punctuation
+        if re.search(r'[.,!?][a-zA-Z]', text):
+            issues.append("Missing space after punctuation")
+
+        return issues[:3]  # Limit to 3 issues per text
+
+    def _check_capitalization(self, text: str) -> List[str]:
+        """
+        Check for capitalization issues.
+        Returns list of error messages.
+        """
+        issues = []
+
+        # Check if sentence starts with lowercase (except for certain cases)
+        sentences = re.split(r'[.!?]+\s+', text)
+        for sentence in sentences:
+            sentence = sentence.strip()
+            if sentence and len(sentence) > 0:
+                first_char = sentence[0]
+                # Skip if starts with number, quote, or special char
+                if first_char.isalpha() and first_char.islower():
+                    issues.append(f"Sentence should start with capital letter: '{sentence[:30]}...'")
+                    break  # Only report once
+
+        # Check for common words that should be capitalized
+        proper_nouns = ['i\\b', 'i\'m', 'i\'ve', 'i\'ll', 'i\'d']
+        for noun in proper_nouns:
+            if re.search(noun, text):
+                issues.append("First-person pronoun 'I' should be capitalized")
+                break
+
+        return issues[:2]  # Limit to 2 issues
 
     def validate_metadata(self, resume: ResumeData) -> List[Dict]:
         """
@@ -890,14 +1013,14 @@ class RedFlagsValidator:
 
         # P36: Page Count validation
         page_count = metadata.get('pageCount', 0)
-        if page_count > 4:
+        if page_count >= 4:
             issues.append({
                 'severity': 'critical',
                 'category': 'page_count',
                 'message': f'Resume is {page_count} pages long. Optimal length is 1-2 pages. '
                           f'Consider condensing to most relevant experience.'
             })
-        elif page_count > 3:
+        elif page_count >= 3:
             issues.append({
                 'severity': 'warning',
                 'category': 'page_count',

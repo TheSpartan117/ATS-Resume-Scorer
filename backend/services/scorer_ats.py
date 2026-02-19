@@ -45,12 +45,51 @@ class ATSScorer:
         Returns:
             Dict with score and detailed breakdown
         """
-        # Run all scoring components
-        keywords_result = self._score_keywords(resume, role, level, job_description)
-        red_flags_result = self._score_red_flags(resume, role, level)
-        experience_result = self._score_experience(resume, level)
-        formatting_result = self._score_formatting(resume)
-        contact_result = self._score_contact_info(resume)
+        # Run all scoring components with error handling
+        try:
+            keywords_result = self._score_keywords(resume, role, level, job_description)
+        except Exception as e:
+            keywords_result = {
+                'score': 0,
+                'maxScore': 35,
+                'details': {'error': f"Keyword scoring failed: {str(e)}", 'percentage': 0, 'matched': [], 'missing': [], 'message': 'Error in keyword matching'}
+            }
+
+        try:
+            red_flags_result = self._score_red_flags(resume, role, level)
+        except Exception as e:
+            red_flags_result = {
+                'score': 0,
+                'maxScore': 20,
+                'details': {'error': f"Red flags validation failed: {str(e)}", 'critical_count': 0, 'warning_count': 0, 'message': 'Error in validation'}
+            }
+
+        try:
+            experience_result = self._score_experience(resume, level)
+        except Exception as e:
+            experience_result = {
+                'score': 0,
+                'maxScore': 20,
+                'details': {'error': f"Experience scoring failed: {str(e)}", 'total_years': 0}
+            }
+
+        try:
+            formatting_result = self._score_formatting(resume)
+        except Exception as e:
+            formatting_result = {
+                'score': 0,
+                'maxScore': 20,
+                'details': {'error': f"Formatting scoring failed: {str(e)}"}
+            }
+
+        try:
+            contact_result = self._score_contact_info(resume)
+        except Exception as e:
+            contact_result = {
+                'score': 0,
+                'maxScore': 5,
+                'details': {'error': f"Contact info scoring failed: {str(e)}", 'missing': []}
+            }
 
         # Calculate total score
         total_score = (
@@ -114,6 +153,22 @@ class ATSScorer:
                 role,
                 level
             )
+
+        # Check for errors in matching
+        if 'error' in match_result:
+            return {
+                'score': 0,
+                'maxScore': 35,
+                'details': {
+                    'percentage': 0,
+                    'matched_count': 0,
+                    'missing_count': 0,
+                    'matched': [],
+                    'missing': [],
+                    'error': match_result['error'],
+                    'message': f"Error: {match_result['error']}"
+                }
+            }
 
         # Get match percentage
         percentage = match_result.get('percentage', 0)
@@ -441,7 +496,7 @@ class ATSScorer:
         """
         score = 0
         contact = resume.contact
-        details = {}
+        details = {'missing': []}  # Initialize missing list once
 
         # Name (1 pt)
         if contact.get('name'):
@@ -449,7 +504,7 @@ class ATSScorer:
             details['has_name'] = True
         else:
             details['has_name'] = False
-            details['missing'] = details.get('missing', []) + ['name']
+            details['missing'].append('name')
 
         # Email (1 pt)
         if contact.get('email'):
@@ -457,7 +512,7 @@ class ATSScorer:
             details['has_email'] = True
         else:
             details['has_email'] = False
-            details['missing'] = details.get('missing', []) + ['email']
+            details['missing'].append('email')
 
         # Phone (1 pt)
         if contact.get('phone'):
@@ -465,7 +520,7 @@ class ATSScorer:
             details['has_phone'] = True
         else:
             details['has_phone'] = False
-            details['missing'] = details.get('missing', []) + ['phone']
+            details['missing'].append('phone')
 
         # Location (1 pt)
         if contact.get('location'):
@@ -473,7 +528,7 @@ class ATSScorer:
             details['has_location'] = True
         else:
             details['has_location'] = False
-            details['missing'] = details.get('missing', []) + ['location']
+            details['missing'].append('location')
 
         # LinkedIn (1 pt)
         if contact.get('linkedin'):
@@ -481,13 +536,13 @@ class ATSScorer:
             details['has_linkedin'] = True
         else:
             details['has_linkedin'] = False
-            details['missing'] = details.get('missing', []) + ['linkedin']
+            details['missing'].append('linkedin')
 
         # Build message
         if score == 5:
             message = "Complete contact information"
         else:
-            missing_fields = details.get('missing', [])
+            missing_fields = details['missing']
             message = f"Missing: {', '.join(missing_fields)}"
 
         details['message'] = message
