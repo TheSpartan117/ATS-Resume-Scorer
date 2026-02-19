@@ -17,7 +17,7 @@ export default function ResultsPage() {
   useEffect(() => {
     // Redirect if no result data
     if (!result) {
-      navigate('/')
+      navigate('/', { replace: true })
     }
   }, [result, navigate])
 
@@ -132,15 +132,6 @@ export default function ResultsPage() {
                 level={result.level || 'mid'}
               />
               <button
-                onClick={() => navigate('/split-view', { state: { result } })}
-                className="px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-semibold flex items-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                Edit in Split View
-              </button>
-              <button
                 onClick={() => navigate('/editor', { state: { result } })}
                 className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-semibold"
               >
@@ -212,7 +203,7 @@ export default function ResultsPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Issues List */}
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <IssuesList issues={result.score.issues} />
+              <IssuesList issues={result.score.issues} overallScore={result.score.overallScore} />
             </div>
 
             {/* Strengths */}

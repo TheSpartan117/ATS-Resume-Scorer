@@ -8,9 +8,9 @@ import LoadingSpinner from './LoadingSpinner'
 import UserMenu from './UserMenu'
 import AdDisplay from './AdDisplay'
 import { DownloadMenu } from './DownloadMenu'
-import { useDebounce } from '../hooks/useDebounce'
 import { useAuth } from '../hooks/useAuth'
 import { rescoreResume, shouldShowAd, saveResume, updateResume, type ScoreRequest } from '../api/client'
+import { ERROR_AUTO_DISMISS_MS } from '../config/timeouts'
 import type { UploadResponse, ScoreResult } from '../types/resume'
 
 // Helper function to escape HTML entities to prevent XSS
@@ -24,13 +24,13 @@ function escapeHtml(unsafe: string): string {
 }
 
 /**
- * Convert resume data to editable HTML
+ * Convert resume data to editable HTML with proper styling
  */
 function convertResumeToHTML(result: UploadResponse): string {
   const parts: string[] = []
 
   // Contact Info Section
-  parts.push('<h1>Contact Information</h1>')
+  parts.push('<h1 style="color: #1e3a8a; font-size: 2rem; font-weight: bold; margin-top: 1.5rem; margin-bottom: 1rem; border-bottom: 2px solid #bfdbfe; padding-bottom: 0.5rem;">Contact Information</h1>')
   if (result.contact.name) {
     parts.push(`<p><strong>Name:</strong> ${escapeHtml(result.contact.name)}</p>`)
   }
@@ -51,11 +51,11 @@ function convertResumeToHTML(result: UploadResponse): string {
   }
 
   // Professional Summary Section
-  parts.push('<h2>Professional Summary</h2>')
+  parts.push('<h2 style="color: #3730a3; font-size: 1.5rem; font-weight: bold; margin-top: 1.25rem; margin-bottom: 0.75rem;">Professional Summary</h2>')
   parts.push('<p>Edit this section to add your professional summary...</p>')
 
   // Experience Section - Display parsed experience
-  parts.push('<h2>Experience</h2>')
+  parts.push('<h2 style="color: #3730a3; font-size: 1.5rem; font-weight: bold; margin-top: 1.25rem; margin-bottom: 0.75rem;">Experience</h2>')
   if (result.experience && result.experience.length > 0) {
     result.experience.forEach((exp: any) => {
       if (exp.title) {
@@ -83,7 +83,7 @@ function convertResumeToHTML(result: UploadResponse): string {
   }
 
   // Education Section - Display parsed education
-  parts.push('<h2>Education</h2>')
+  parts.push('<h2 style="color: #3730a3; font-size: 1.5rem; font-weight: bold; margin-top: 1.25rem; margin-bottom: 0.75rem;">Education</h2>')
   if (result.education && result.education.length > 0) {
     result.education.forEach((edu: any) => {
       if (edu.degree) {
@@ -106,7 +106,7 @@ function convertResumeToHTML(result: UploadResponse): string {
   }
 
   // Skills Section - Display parsed skills
-  parts.push('<h2>Skills</h2>')
+  parts.push('<h2 style="color: #3730a3; font-size: 1.5rem; font-weight: bold; margin-top: 1.25rem; margin-bottom: 0.75rem;">Skills</h2>')
   if (result.skills && result.skills.length > 0) {
     parts.push(`<p>${result.skills.map(skill => escapeHtml(skill)).join(', ')}</p>`)
   } else {
@@ -127,7 +127,7 @@ export default function EditorPage() {
   // Redirect if no result data
   useEffect(() => {
     if (!result) {
-      navigate('/')
+      navigate('/', { replace: true })
     }
   }, [result, navigate])
 
@@ -149,24 +149,51 @@ export default function EditorPage() {
   const [adCheckPending, setAdCheckPending] = useState(false)
   const [currentSavedResumeId, setCurrentSavedResumeId] = useState<string | undefined>(savedResumeId)
   const [isSaving, setIsSaving] = useState(false)
-  const isInitialMount = useRef(true)
+  const [originalDocxFile, setOriginalDocxFile] = useState<File | null>(null)
+
+  // Retrieve original DOCX file from localStorage
+  useEffect(() => {
+    const base64Data = localStorage.getItem('uploaded-cv-file')
+    const filename = localStorage.getItem('uploaded-cv-filename')
+    const filetype = localStorage.getItem('uploaded-cv-type')
+
+    if (base64Data && filename) {
+      try {
+        const binaryString = atob(base64Data)
+        const bytes = new Uint8Array(binaryString.length)
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i)
+        }
+        const file = new File([bytes], filename, {
+          type: filetype || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        })
+        setOriginalDocxFile(file)
+        if (import.meta.env.DEV) {
+          console.log('Original DOCX file loaded:', filename)
+        }
+      } catch (err) {
+        if (import.meta.env.DEV) {
+          console.error('Failed to load original file:', err)
+        }
+      }
+    }
+  }, [])
 
   // Initialize editor with editable HTML from backend
   useEffect(() => {
-    if (result) {
+    if (result && !editorContent) {
       // Use rich HTML from backend if available, otherwise fallback to converted text
       const html = result.editableHtml || convertResumeToHTML(result)
       setEditorContent(html)
       setCurrentScore(result.score)
       setWordCount(result.metadata.wordCount)
     }
-  }, [result])
-
-  // Debounce editor content changes (500ms delay)
-  const debouncedContent = useDebounce(editorContent, 500)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Manual re-score function
-  const performRescore = useCallback(async (content: string = editorContent) => {
+  const performRescore = useCallback(async () => {
+    const content = editorContent;
     if (!result || !isMountedRef.current) return
 
     // Check if ad should be shown before re-scoring
@@ -179,7 +206,9 @@ export default function EditorPage() {
         return // Exit early to prevent re-scoring
       }
     } catch (err) {
-      console.error('Ad check failed:', err)
+      if (import.meta.env.DEV) {
+        console.error('Ad check failed:', err)
+      }
     } finally {
       setAdCheckPending(false)
     }
@@ -226,18 +255,8 @@ export default function EditorPage() {
     }
   }, [result, editorContent])
 
-  // Re-score when debounced content changes
-  useEffect(() => {
-    if (!result || !debouncedContent) return
-
-    // Skip the initial mount
-    if (isInitialMount.current) {
-      isInitialMount.current = false
-      return
-    }
-
-    performRescore(debouncedContent)
-  }, [debouncedContent, result, performRescore])
+  // Note: Auto re-scoring on content changes is disabled for the simple ResumeEditor
+  // Users can manually trigger re-scoring if needed
 
   // Handle ad viewed callback
   const handleAdViewed = useCallback(() => {
@@ -249,7 +268,7 @@ export default function EditorPage() {
   const handleSave = async () => {
     if (!result || !currentScore || !isAuthenticated) {
       setRescoreError('You must be logged in to save resumes')
-      setTimeout(() => setRescoreError(null), 3000)
+      setTimeout(() => setRescoreError(null), ERROR_AUTO_DISMISS_MS)
       return
     }
 
@@ -278,13 +297,13 @@ export default function EditorPage() {
         // Update existing
         await updateResume(currentSavedResumeId, scoreRequest)
         setRescoreError('Resume updated successfully!')
-        setTimeout(() => setRescoreError(null), 3000)
+        setTimeout(() => setRescoreError(null), ERROR_AUTO_DISMISS_MS)
       } else {
         // Save new
         const saved = await saveResume(scoreRequest)
         setCurrentSavedResumeId(saved.id)
         setRescoreError('Resume saved successfully!')
-        setTimeout(() => setRescoreError(null), 3000)
+        setTimeout(() => setRescoreError(null), ERROR_AUTO_DISMISS_MS)
       }
     } catch (err) {
       setRescoreError(err instanceof Error ? err.message : 'Failed to save resume')
@@ -303,34 +322,40 @@ export default function EditorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="h-screen w-screen flex flex-col overflow-hidden bg-white">
       {/* Ad Display Overlay */}
       {showAd && <AdDisplay onAdViewed={handleAdViewed} />}
 
-      <div className="container mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-3">
+      {/* Compact Header Bar */}
+      <div className="flex-none">
+        <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between shadow-sm">
+          {/* Left: Back button and filename */}
+          <div className="flex items-center space-x-4">
             <button
               onClick={() => navigate('/results', { state: { result } })}
-              className="text-blue-600 hover:text-blue-800 font-semibold flex items-center transition-colors"
+              className="text-blue-600 hover:text-blue-800 font-semibold flex items-center transition-colors text-sm"
             >
-              <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              Back to Results
+              Back
             </button>
-            <div className="flex items-center space-x-3">
-              {adCheckPending && (
+            <div className="flex items-center text-sm text-gray-600">
+              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+              </svg>
+              {result.fileName}
+            </div>
+          </div>
+
+          {/* Right: Actions */}
+          <div className="flex items-center space-x-3">
+              {(adCheckPending || isRescoring) && (
                 <div className="flex items-center text-blue-600">
                   <LoadingSpinner size="sm" />
-                  <span className="ml-2 text-sm">Checking...</span>
-                </div>
-              )}
-              {isRescoring && (
-                <div className="flex items-center text-blue-600">
-                  <LoadingSpinner size="sm" />
-                  <span className="ml-2 text-sm">Re-scoring...</span>
+                  <span className="ml-2 text-xs">
+                    {adCheckPending ? 'Checking...' : 'Re-scoring...'}
+                  </span>
                 </div>
               )}
               <DownloadMenu
@@ -362,72 +387,29 @@ export default function EditorPage() {
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  className="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-medium text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSaving ? 'Saving...' : currentSavedResumeId ? 'Update Resume' : 'Save Resume'}
+                  {isSaving ? 'Saving...' : currentSavedResumeId ? 'Update' : 'Save'}
                 </button>
               )}
               <UserMenu />
             </div>
           </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-1">
-                Resume Editor
-              </h1>
-              <p className="text-sm text-gray-600 flex items-center">
-                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                </svg>
-                {result.fileName}
-              </p>
-            </div>
-          </div>
-        </div>
 
-        {/* Status Message */}
+        {/* Toast Status Message (if needed) */}
         {rescoreError && (
-          <div className={`mb-4 p-4 rounded-xl shadow-sm ${
+          <div className={`absolute top-16 right-4 z-50 p-3 rounded-lg shadow-lg text-sm ${
             rescoreError.includes('successfully')
-              ? 'bg-green-50 border-2 border-green-200'
-              : 'bg-red-50 border-2 border-red-200'
+              ? 'bg-green-600 text-white'
+              : 'bg-red-600 text-white'
           }`}>
-            <div className="flex items-start justify-between">
-              <div className="flex items-start">
-                <div className={`flex-shrink-0 ${
-                  rescoreError.includes('successfully') ? 'text-green-500' : 'text-red-500'
-                }`}>
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    {rescoreError.includes('successfully') ? (
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    ) : (
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    )}
-                  </svg>
-                </div>
-                <p className={`ml-3 text-sm font-medium ${
-                  rescoreError.includes('successfully')
-                    ? 'text-green-800'
-                    : 'text-red-800'
-                }`}>{rescoreError}</p>
-              </div>
-              <button
-                onClick={() => setRescoreError(null)}
-                className={`flex-shrink-0 ml-4 inline-flex ${
-                  rescoreError.includes('successfully')
-                    ? 'text-green-500 hover:text-green-700'
-                    : 'text-red-500 hover:text-red-700'
-                }`}
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
+            {rescoreError}
           </div>
         )}
+      </div>
 
-        {/* Main Split-View Editor */}
+      {/* Main Split-View Editor - Full Screen */}
+      <div className="flex-1 overflow-hidden">
         <ResumeEditor
           value={editorContent}
           onChange={handleEditorChange}
@@ -435,6 +417,7 @@ export default function EditorPage() {
           isRescoring={isRescoring}
           wordCount={wordCount}
           onRescore={performRescore}
+          originalDocxFile={originalDocxFile}
         />
       </div>
     </div>

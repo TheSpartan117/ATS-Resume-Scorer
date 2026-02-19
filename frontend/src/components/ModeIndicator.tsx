@@ -84,8 +84,8 @@ export const ModeIndicator: React.FC<ModeIndicatorProps> = ({
         <div className="mb-6 space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-gray-700">Required Keywords:</span>
-            <span className={`font-semibold ${keywordDetails.required_match_pct >= 60 ? 'text-green-600' : 'text-red-600'}`}>
-              {keywordDetails.required_match_pct?.toFixed(0)}% ✅
+            <span className={`font-semibold ${(keywordDetails.required_match_pct ?? 0) >= 60 ? 'text-green-600' : 'text-red-600'}`}>
+              {keywordDetails.required_match_pct?.toFixed(0) ?? '0'}% ✅
             </span>
           </div>
           <div className="flex justify-between text-sm">

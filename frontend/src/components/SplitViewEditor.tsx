@@ -5,6 +5,7 @@ import SectionEditor from './SectionEditor';
 import OfficeViewer from './OfficeViewer';
 import UserMenu from './UserMenu';
 import { updateSection } from '../api/client';
+import { ERROR_AUTO_DISMISS_MS } from '../config/timeouts';
 import type { UploadResponse, ScoreResult } from '../types/resume';
 import type { DetailedSuggestion } from '../types/suggestion';
 
@@ -13,8 +14,8 @@ export default function SplitViewEditor() {
   const navigate = useNavigate();
   const result = location.state?.result as UploadResponse | undefined;
 
-  const [sections, setSections] = useState(result?.sections || []);
-  const [previewUrl, setPreviewUrl] = useState(result?.previewUrl || '');
+  const [sections, setSections] = useState<any[]>([]);
+  const [previewUrl, setPreviewUrl] = useState(result?.previewPdfUrl || '');
   const [currentScore, setCurrentScore] = useState<ScoreResult | null>(result?.score || null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [highlightedSection, setHighlightedSection] = useState<string | undefined>();
@@ -22,8 +23,8 @@ export default function SplitViewEditor() {
 
   // Redirect if no result
   useEffect(() => {
-    if (!result || !result.sessionId) {
-      navigate('/');
+    if (!result || !result.resumeId) {
+      navigate('/', { replace: true });
     }
   }, [result, navigate]);
 
@@ -70,13 +71,13 @@ export default function SplitViewEditor() {
     startIdx: number,
     endIdx: number
   ) => {
-    if (!result?.sessionId) return;
+    if (!result?.resumeId) return;
 
     setIsUpdating(true);
     setErrorMessage(null);
     try {
       const response = await updateSection({
-        session_id: result.sessionId,
+        session_id: result.resumeId,
         start_para_idx: startIdx,
         end_para_idx: endIdx,
         new_content: content
@@ -86,12 +87,14 @@ export default function SplitViewEditor() {
         setPreviewUrl(response.preview_url);
       }
     } catch (err) {
-      console.error('Failed to update section:', err);
+      if (import.meta.env.DEV) {
+        console.error('Failed to update section:', err);
+      }
       const errorMsg = err instanceof Error ? err.message : 'Failed to update section';
       setErrorMessage(errorMsg);
 
-      // Auto-dismiss after 5 seconds
-      setTimeout(() => setErrorMessage(null), 5000);
+      // Auto-dismiss after configured timeout
+      setTimeout(() => setErrorMessage(null), ERROR_AUTO_DISMISS_MS);
     } finally {
       setIsUpdating(false);
     }
@@ -99,15 +102,17 @@ export default function SplitViewEditor() {
 
   const handleRescore = useCallback(() => {
     // TODO: Implement re-scoring logic
-    console.log('Re-score triggered');
+    if (import.meta.env.DEV) {
+      console.log('Re-score triggered');
+    }
   }, []);
 
   const handleSuggestionClick = useCallback((sectionId?: string) => {
     setHighlightedSection(sectionId);
 
-    // Clear highlight after 3 seconds
+    // Clear highlight after configured timeout
     if (sectionId) {
-      setTimeout(() => setHighlightedSection(undefined), 3000);
+      setTimeout(() => setHighlightedSection(undefined), ERROR_AUTO_DISMISS_MS);
     }
   }, []);
 

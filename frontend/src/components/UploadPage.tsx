@@ -25,7 +25,9 @@ export default function UploadPage() {
         const data = await getRoles()
         setRolesData(data)
       } catch (err) {
-        console.error('Failed to fetch roles:', err)
+        if (import.meta.env.DEV) {
+          console.error('Failed to fetch roles:', err)
+        }
       }
     }
 
@@ -49,6 +51,23 @@ export default function UploadPage() {
     setError(null)
 
     try {
+      // Store original file in localStorage (PDF or DOCX)
+      const fileData = await selectedFile.arrayBuffer()
+      const bytes = new Uint8Array(fileData)
+
+      // Convert to base64 in chunks to avoid stack overflow with large files
+      let base64 = ''
+      const chunkSize = 8192 // Process 8KB at a time
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length))
+        base64 += String.fromCharCode(...chunk)
+      }
+      base64 = btoa(base64)
+
+      localStorage.setItem('uploaded-cv-file', base64)
+      localStorage.setItem('uploaded-cv-filename', selectedFile.name)
+      localStorage.setItem('uploaded-cv-type', selectedFile.type)
+
       const result: UploadResponse = await uploadResume(
         selectedFile,
         jobDescription || undefined,
