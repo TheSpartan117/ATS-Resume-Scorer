@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from backend.services.docx_template_manager import DocxTemplateManager
 import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,12 @@ async def get_preview_docx(session_id: str):
     Returns:
         DOCX file response
     """
+    # Validate session_id is a valid UUID to prevent path traversal attacks
+    try:
+        uuid.UUID(session_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid session ID format")
+
     working_path = template_manager.get_working_path(session_id)
 
     if not working_path.exists():
@@ -57,6 +64,12 @@ async def update_section(request: UpdateSectionRequest):
     Returns:
         Success status and new preview URL
     """
+    # Validate session_id is a valid UUID to prevent path traversal attacks
+    try:
+        uuid.UUID(request.session_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid session ID format")
+
     result = template_manager.update_section(
         session_id=request.session_id,
         start_para_idx=request.start_para_idx,
