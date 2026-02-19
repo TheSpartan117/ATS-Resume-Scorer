@@ -14,6 +14,10 @@ from backend.services.scorer_v2 import AdaptiveScorer
 from backend.services.format_checker import ATSFormatChecker
 from backend.services.docx_to_pdf import convert_docx_to_pdf
 from backend.services.document_to_html import docx_to_html, pdf_to_html
+from backend.services.pdf_to_docx import convert_pdf_to_docx
+from backend.services.docx_to_html_advanced import docx_to_html_advanced
+from backend.services.section_detector import SectionDetector
+from backend.services.docx_template_manager import DocxTemplateManager
 from backend.schemas.resume import UploadResponse, ContactInfoResponse, MetadataResponse, ScoreResponse, CategoryBreakdown, FormatCheckResponse
 
 logger = logging.getLogger(__name__)
@@ -74,6 +78,19 @@ async def upload_resume(
 
     # Now read file content
     file_content = await file.read()
+    original_content_type = file.content_type
+
+    # Convert PDF to DOCX for better formatting preservation
+    docx_content = None
+    if file.content_type == "application/pdf":
+        try:
+            logger.info("Converting PDF to DOCX for better formatting preservation...")
+            docx_content = convert_pdf_to_docx(file_content)
+            logger.info(f"PDF converted to DOCX successfully ({len(docx_content)} bytes)")
+        except Exception as e:
+            logger.warning(f"PDF to DOCX conversion failed, will process as PDF: {str(e)}")
+            # Continue with PDF if conversion fails
+            docx_content = None
 
     # Save original file for preview
     file_id = str(uuid.uuid4())
@@ -84,6 +101,14 @@ async def upload_resume(
         f.write(file_content)
 
     logger.info(f"Saved original file: {file_path}")
+
+    # If we converted to DOCX, also save the converted version
+    docx_file_path = None
+    if docx_content:
+        docx_file_path = UPLOAD_DIR / f"{file_id}_converted.docx"
+        with open(docx_file_path, "wb") as f:
+            f.write(docx_content)
+        logger.info(f"Saved converted DOCX: {docx_file_path}")
 
     # For DOCX files, also convert to PDF for preview
     preview_pdf_url = None
@@ -101,23 +126,47 @@ async def upload_resume(
             # Continue without preview - not critical
 
     # Convert to editable HTML with formatting preserved
+    # Use converted DOCX if available for better formatting
     editable_html = None
     try:
-        logger.info("Converting document to editable HTML...")
-        if file.content_type == "application/pdf":
+        logger.info("Converting document to editable HTML with advanced converter...")
+        if docx_content:
+            # Use converted DOCX for HTML generation with advanced converter
+            editable_html = docx_to_html_advanced(docx_content)
+            logger.info("Generated editable HTML from converted DOCX (advanced)")
+        elif original_content_type == "application/pdf":
             editable_html = pdf_to_html(file_content)
-        else:  # DOCX
-            editable_html = docx_to_html(file_content)
-        logger.info(f"Generated editable HTML ({len(editable_html)} chars)")
+            logger.info("Generated editable HTML from PDF")
+        else:  # Original DOCX
+            editable_html = docx_to_html_advanced(file_content)
+            logger.info("Generated editable HTML from DOCX (advanced)")
+        logger.info(f"Editable HTML length: {len(editable_html)} chars")
     except Exception as e:
-        logger.error(f"Failed to convert to HTML: {str(e)}")
-        # Continue without editable HTML - not critical
+        logger.error(f"Failed to convert to HTML with advanced converter: {str(e)}")
+        logger.info("Falling back to basic converter...")
+        try:
+            if docx_content:
+                editable_html = docx_to_html(docx_content)
+            elif original_content_type == "application/pdf":
+                editable_html = pdf_to_html(file_content)
+            else:
+                editable_html = docx_to_html(file_content)
+            logger.info("Fallback conversion successful")
+        except Exception as e2:
+            logger.error(f"Fallback conversion also failed: {str(e2)}")
+            # Continue without editable HTML - not critical
 
     # Parse resume based on file type
+    # Use converted DOCX if available for better parsing
     try:
-        if file.content_type == "application/pdf":
+        if docx_content:
+            logger.info("Parsing converted DOCX (from PDF)")
+            resume_data = parse_docx(docx_content, file.filename)
+        elif original_content_type == "application/pdf":
+            logger.info("Parsing original PDF")
             resume_data = parse_pdf(file_content, file.filename)
-        else:  # DOCX
+        else:  # Original DOCX
+            logger.info("Parsing original DOCX")
             resume_data = parse_docx(file_content, file.filename)
 
         # Debug logging
@@ -139,6 +188,40 @@ async def upload_resume(
             status_code=400,
             detail="Resume appears empty or unreadable"
         )
+
+    # Save template and detect sections
+    session_id = None
+    sections = []
+    preview_url = None
+
+    # Only save template if we have DOCX content (either original or converted)
+    if docx_content or original_content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        try:
+            # Generate session ID
+            session_id = str(uuid.uuid4())
+
+            # Save template (use converted DOCX if available, else original DOCX)
+            template_manager = DocxTemplateManager()
+            template_bytes = docx_content if docx_content else file_content
+            template_manager.save_template(session_id, template_bytes)
+
+            logger.info(f"Saved template for session: {session_id}")
+
+            # Detect sections
+            section_detector = SectionDetector()
+            sections = section_detector.detect(template_bytes)
+
+            logger.info(f"Detected {len(sections)} sections")
+
+            # Generate preview URL
+            preview_url = f"/api/preview/{session_id}.docx"
+
+        except Exception as e:
+            logger.error(f"Failed to save template or detect sections: {e}")
+            # Continue without template (graceful degradation)
+            session_id = None
+            sections = []
+            preview_url = None
 
     # Run format compatibility check
     try:
@@ -252,7 +335,10 @@ async def upload_resume(
         level=level,
         jobDescription=jobDescription,
         uploadedAt=datetime.now(timezone.utc),
-        industry=industry
+        industry=industry,
+        sessionId=session_id,
+        sections=sections,
+        previewUrl=preview_url
     )
 
 

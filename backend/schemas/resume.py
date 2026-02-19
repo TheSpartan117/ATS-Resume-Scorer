@@ -4,6 +4,17 @@ from pydantic import BaseModel
 from datetime import datetime
 
 
+class SectionInfo(BaseModel):
+    """Detected resume section"""
+    title: str
+    content: str
+    section_id: str
+    start_para_idx: int
+    end_para_idx: int
+    is_in_table: bool
+    table_cell_ref: Optional[str] = None
+
+
 class ContactInfoResponse(BaseModel):
     """Contact information in response"""
     name: Optional[str] = None
@@ -71,3 +82,6 @@ class UploadResponse(BaseModel):
     jobDescription: Optional[str] = None
     uploadedAt: datetime
     industry: Optional[str] = None
+    sessionId: Optional[str] = None  # Session ID for template editing
+    sections: Optional[List[SectionInfo]] = None  # Detected sections
+    previewUrl: Optional[str] = None  # Preview URL for Office viewer
