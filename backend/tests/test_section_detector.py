@@ -1,7 +1,6 @@
 import pytest
 from docx import Document
-from docx.shared import Pt, RGBColor
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
 from io import BytesIO
 from backend.services.section_detector import SectionDetector
 
@@ -63,3 +62,71 @@ def test_detect_sections_by_bold_text():
     assert sections[0]['title'] == 'WORK EXPERIENCE'
     assert 'Senior Developer' in sections[0]['content']
     assert sections[1]['title'] == 'SKILLS'
+
+def test_detect_sections_by_all_caps():
+    """Test detecting sections using ALL CAPS text"""
+    doc = Document()
+    doc.add_paragraph('PROFESSIONAL SUMMARY')
+    doc.add_paragraph('Experienced software engineer with 5 years of experience')
+    doc.add_paragraph('TECHNICAL SKILLS')
+    doc.add_paragraph('Python, Java, React, Node.js')
+
+    docx_bytes = BytesIO()
+    doc.save(docx_bytes)
+    docx_bytes.seek(0)
+
+    detector = SectionDetector()
+    sections = detector.detect(docx_bytes.read())
+
+    assert len(sections) == 2
+    assert sections[0]['title'] == 'PROFESSIONAL SUMMARY'
+    assert sections[1]['title'] == 'TECHNICAL SKILLS'
+    assert 'Experienced software engineer' in sections[0]['content']
+
+def test_empty_document():
+    """Test handling of empty document"""
+    doc = Document()
+
+    docx_bytes = BytesIO()
+    doc.save(docx_bytes)
+    docx_bytes.seek(0)
+
+    detector = SectionDetector()
+    sections = detector.detect(docx_bytes.read())
+
+    assert len(sections) == 0
+
+def test_only_headings_no_content():
+    """Test document with only headings and no content"""
+    doc = Document()
+    doc.add_heading('Experience', level=2)
+    doc.add_heading('Education', level=2)
+    doc.add_heading('Skills', level=2)
+
+    docx_bytes = BytesIO()
+    doc.save(docx_bytes)
+    docx_bytes.seek(0)
+
+    detector = SectionDetector()
+    sections = detector.detect(docx_bytes.read())
+
+    # Should detect sections even with no content
+    assert len(sections) == 3
+    assert sections[0]['title'] == 'Experience'
+    assert sections[0]['content'] == ''
+    assert sections[1]['title'] == 'Education'
+    assert sections[1]['content'] == ''
+
+def test_invalid_docx_bytes():
+    """Test handling of invalid DOCX bytes"""
+    detector = SectionDetector()
+
+    with pytest.raises(ValueError, match="Invalid DOCX format"):
+        detector.detect(b'invalid docx data')
+
+def test_empty_bytes():
+    """Test handling of empty bytes"""
+    detector = SectionDetector()
+
+    with pytest.raises(ValueError, match="docx_bytes cannot be empty"):
+        detector.detect(b'')

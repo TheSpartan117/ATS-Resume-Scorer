@@ -3,7 +3,7 @@ Dynamically detect sections from DOCX resumes.
 Supports various formats: heading styles, bold text, ALL CAPS, tables.
 """
 from docx import Document
-from docx.oxml.shared import qn
+from docx.text.paragraph import Paragraph
 from io import BytesIO
 import logging
 
@@ -12,17 +12,49 @@ logger = logging.getLogger(__name__)
 class SectionDetector:
     """Detect resume sections dynamically without hardcoded section names"""
 
+    # Constants for heading detection
+    MIN_HEADING_FONT_SIZE = 12  # Minimum font size (in points) for bold text headings
+    MIN_HEADING_LENGTH = 2      # Minimum length for ALL CAPS headings
+
     def detect(self, docx_bytes: bytes) -> list[dict]:
         """
         Detect sections from DOCX bytes.
 
+        Args:
+            docx_bytes: DOCX file content as bytes
+
         Returns:
-            List of section dictionaries with title, content, indices
+            List of section dictionaries, each containing:
+                - title (str): Section heading text
+                - content (str): Section body content
+                - section_id (str): Unique identifier (e.g., 'section_0')
+                - start_para_idx (int): Starting paragraph index
+                - end_para_idx (int): Ending paragraph index (exclusive)
+                - is_in_table (bool): Whether section is in a table
+                - table_cell_ref (str|None): Table cell reference if applicable
+
+        Raises:
+            ValueError: If docx_bytes is invalid or empty
         """
-        doc = Document(BytesIO(docx_bytes))
+        if not docx_bytes:
+            raise ValueError("docx_bytes cannot be empty")
+
+        try:
+            doc = Document(BytesIO(docx_bytes))
+        except Exception as e:
+            logger.error(f"Failed to parse DOCX: {e}")
+            raise ValueError(f"Invalid DOCX format: {e}")
+
         sections = []
         current_section = None
         section_counter = 0
+
+        # Handle empty document
+        if not doc.paragraphs:
+            logger.warning("Document has no paragraphs")
+            return sections
+
+        logger.info(f"Processing document with {len(doc.paragraphs)} paragraphs")
 
         for idx, para in enumerate(doc.paragraphs):
             text = para.text.strip()
@@ -60,24 +92,41 @@ class SectionDetector:
         if current_section:
             sections.append(current_section)
 
+        logger.info(f"Detected {len(sections)} sections")
         return sections
 
-    def _is_section_heading(self, paragraph) -> bool:
-        """Determine if paragraph is a section heading"""
+    def _is_section_heading(self, paragraph: Paragraph) -> bool:
+        """
+        Determine if paragraph is a section heading.
+
+        Args:
+            paragraph: DOCX paragraph object
+
+        Returns:
+            True if paragraph appears to be a section heading, False otherwise
+        """
         # Check style name
         if 'Heading' in paragraph.style.name:
+            logger.debug(f"Heading detected by style: {paragraph.text[:50]}")
             return True
 
         # Check if text is bold and larger font
         if paragraph.runs:
             first_run = paragraph.runs[0]
-            if first_run.bold and first_run.font.size:
-                if first_run.font.size.pt >= 12:
-                    return True
+            try:
+                # Safely check font size with proper error handling
+                if first_run.bold and first_run.font.size and hasattr(first_run.font.size, 'pt'):
+                    if first_run.font.size.pt >= self.MIN_HEADING_FONT_SIZE:
+                        logger.debug(f"Heading detected by bold+size: {paragraph.text[:50]}")
+                        return True
+            except (AttributeError, TypeError) as e:
+                # Font size may not be available for all runs
+                logger.debug(f"Could not check font size: {e}")
 
         # Check for ALL CAPS (likely a heading)
         text = paragraph.text.strip()
-        if text and text.isupper() and len(text) > 2:
+        if text and text.isupper() and len(text) > self.MIN_HEADING_LENGTH:
+            logger.debug(f"Heading detected by ALL CAPS: {text[:50]}")
             return True
 
         return False
