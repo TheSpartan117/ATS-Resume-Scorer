@@ -47,3 +47,32 @@ This frontend connects to the FastAPI backend at `http://localhost:8000` (config
 - Tailwind CSS for styling (utility-first approach)
 - Vite for fast HMR and builds
 - ESLint for code quality enforcement
+
+## Split-View Editor Components
+
+### SuggestionCarousel
+- Navigate through suggestions with prev/next buttons
+- Show score and issue counts
+- Display actionable items for each suggestion
+- Click to highlight affected section
+
+### SectionEditor
+- Dynamic section list based on detected sections
+- Collapsible sections with icons
+- Debounced updates (500ms delay)
+- Character count per section
+
+### OfficeViewer
+- Embed DOCX via Microsoft Office Online
+- Auto-refresh on preview URL change
+- Loading overlay during updates
+- Error handling with download fallback
+
+### Usage
+
+```tsx
+import SplitViewEditor from './components/SplitViewEditor';
+
+// Route to editor after upload
+<Route path="/editor" element={<SplitViewEditor />} />
+```

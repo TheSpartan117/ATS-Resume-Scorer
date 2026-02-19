@@ -228,6 +228,40 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Split-View Resume Editor
+
+### Architecture
+
+The split-view editor preserves original resume formatting while allowing section-based editing:
+
+1. **Template Storage:** Original DOCX saved as template, working copy for edits
+2. **Section Detection:** Dynamic detection of resume sections (no hardcoded names)
+3. **Live Preview:** Microsoft Office Online viewer shows pixel-perfect preview
+4. **Debounced Updates:** 500ms delay after typing before preview updates
+
+### Components
+
+- `services/section_detector.py` - Detect sections by heading styles, bold text, ALL CAPS
+- `services/docx_template_manager.py` - Update sections while preserving formatting
+- `api/preview.py` - Serve DOCX files and handle section updates
+
+### Usage
+
+```python
+# Detect sections
+detector = SectionDetector()
+sections = detector.detect(docx_bytes)
+
+# Update section
+manager = DocxTemplateManager()
+result = manager.update_section(
+    session_id="abc123",
+    start_para_idx=5,
+    end_para_idx=8,
+    new_content="Updated text"
+)
+```
+
 ## Contributing
 
 1. Follow the existing code structure
