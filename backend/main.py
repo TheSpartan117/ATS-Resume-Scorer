@@ -51,6 +51,7 @@ from backend.api.roles import router as roles_router
 from backend.api.export import router as export_router
 from backend.api.preview import router as preview_router
 from backend.api.editor import router as editor_router
+from backend.api.files import router as files_router
 
 # Include routers
 app.include_router(upload_router)
@@ -62,6 +63,7 @@ app.include_router(roles_router)
 app.include_router(export_router)
 app.include_router(preview_router)
 app.include_router(editor_router)
+app.include_router(files_router)
 
 # Global exception handler
 @app.exception_handler(Exception)
