@@ -49,6 +49,7 @@ from backend.api.resumes import router as resumes_router
 from backend.api.ads import router as ads_router
 from backend.api.roles import router as roles_router
 from backend.api.export import router as export_router
+from backend.api.preview import router as preview_router
 
 # Include routers
 app.include_router(upload_router)
@@ -58,6 +59,7 @@ app.include_router(resumes_router)
 app.include_router(ads_router)
 app.include_router(roles_router)
 app.include_router(export_router)
+app.include_router(preview_router)
 
 # Global exception handler
 @app.exception_handler(Exception)
