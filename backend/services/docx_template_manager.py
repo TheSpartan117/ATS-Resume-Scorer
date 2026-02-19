@@ -7,6 +7,7 @@ from docx import Document
 import shutil
 import logging
 from datetime import datetime
+from backend.services.section_detector import SectionDetector
 
 logger = logging.getLogger(__name__)
 
@@ -129,3 +130,40 @@ class DocxTemplateManager:
         except Exception as e:
             logger.error(f"Failed to update section: {e}")
             return {'success': False, 'error': str(e)}
+
+    def get_sections(self, session_id: str) -> list:
+        """
+        Get detected sections from working DOCX.
+
+        Args:
+            session_id: Session identifier
+
+        Returns:
+            List of sections with name, start_para, end_para
+        """
+        working_path = self.get_working_path(session_id)
+
+        if not working_path.exists():
+            return []
+
+        doc = Document(working_path)
+        detector = SectionDetector()
+        return detector.detect_sections(doc)
+
+    def get_office_online_url(self, session_id: str, public_base_url: str) -> str:
+        """
+        Generate Office Online viewer URL for working DOCX.
+
+        Args:
+            session_id: Session identifier
+            public_base_url: Public base URL (e.g., https://abc123.ngrok.io)
+
+        Returns:
+            Office Online embed URL
+        """
+        from urllib.parse import quote
+
+        docx_url = f"{public_base_url}/api/files/{session_id}_working.docx"
+        encoded_url = quote(docx_url, safe='')
+
+        return f"https://view.officeapps.live.com/op/embed.aspx?src={encoded_url}"

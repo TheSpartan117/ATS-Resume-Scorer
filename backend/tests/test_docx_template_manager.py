@@ -112,3 +112,26 @@ def test_update_section_out_of_bounds(test_docx, template_manager):
 
     assert result['success'] is False
     assert 'invalid' in result['error'].lower()
+
+def test_get_sections(test_docx, template_manager):
+    """Test getting sections from working DOCX"""
+    session_id = "test_session_sections"
+    template_manager.save_template(session_id, test_docx)
+
+    sections = template_manager.get_sections(session_id)
+
+    assert len(sections) > 0
+    assert any(s['name'] == 'Contact' for s in sections)
+    assert any(s['name'] == 'Experience' for s in sections)
+
+def test_get_office_online_url(test_docx, template_manager):
+    """Test generating Office Online URL"""
+    session_id = "test_session_office"
+    template_manager.save_template(session_id, test_docx)
+
+    public_url = "https://abc123.ngrok.io"
+    office_url = template_manager.get_office_online_url(session_id, public_url)
+
+    assert "view.officeapps.live.com" in office_url
+    assert session_id in office_url
+    assert "_working.docx" in office_url
