@@ -15,7 +15,8 @@ function App() {
         <Routes>
           <Route path="/" element={<UploadPage />} />
           <Route path="/results" element={<ResultsPage />} />
-          <Route path="/editor" element={<SplitViewEditor />} />
+          <Route path="/editor" element={<EditorPage />} />
+          <Route path="/split-view" element={<SplitViewEditor />} />
           <Route path="/my-resumes" element={<SavedResumesPage />} />
         </Routes>
       </AuthProvider>
