@@ -373,7 +373,7 @@ export interface UpdateSectionResponse {
  * Update section in DOCX template
  */
 export async function updateSection(request: UpdateSectionRequest): Promise<UpdateSectionResponse> {
-  const response = await fetch(`${API_BASE_URL}/preview/update`, {
+  const response = await fetch(`${API_BASE_URL}/api/preview/update`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
