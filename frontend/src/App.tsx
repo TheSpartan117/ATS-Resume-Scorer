@@ -5,6 +5,7 @@ import UploadPage from './components/UploadPage'
 import ResultsPage from './components/ResultsPage'
 import EditorPage from './components/EditorPage'
 import SavedResumesPage from './components/SavedResumesPage'
+import NewEditorPage from './pages/EditorPage'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/" element={<UploadPage />} />
           <Route path="/results" element={<ResultsPage />} />
           <Route path="/editor" element={<EditorPage />} />
+          <Route path="/editor/:sessionId" element={<NewEditorPage />} />
           <Route path="/my-resumes" element={<SavedResumesPage />} />
         </Routes>
       </AuthProvider>
