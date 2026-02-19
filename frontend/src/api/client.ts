@@ -357,4 +357,35 @@ export async function getRoleDetails(roleId: string): Promise<RoleDetails> {
   }
 }
 
+export interface UpdateSectionRequest {
+  session_id: string;
+  start_para_idx: number;
+  end_para_idx: number;
+  new_content: string;
+}
+
+export interface UpdateSectionResponse {
+  success: boolean;
+  preview_url: string;
+}
+
+/**
+ * Update section in DOCX template
+ */
+export async function updateSection(request: UpdateSectionRequest): Promise<UpdateSectionResponse> {
+  const response = await fetch(`${API_BASE_URL}/preview/update`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update section');
+  }
+
+  return response.json();
+}
+
 export default apiClient
