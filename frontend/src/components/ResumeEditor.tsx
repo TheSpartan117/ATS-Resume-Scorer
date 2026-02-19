@@ -24,9 +24,14 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const [selectedIssue, setSelectedIssue] = useState<string | null>(null);
 
+  // Set editor content whenever value changes
   useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== value) {
-      editorRef.current.innerHTML = value;
+    if (editorRef.current && value) {
+      // Only update if content is different to avoid cursor jumping
+      const currentContent = editorRef.current.innerHTML;
+      if (currentContent !== value) {
+        editorRef.current.innerHTML = value;
+      }
     }
   }, [value]);
 
@@ -419,6 +424,7 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
                 minHeight: '1000px',
                 maxHeight: '1000px',
               }}
+              data-placeholder="Loading resume content..."
             />
           </div>
         </div>

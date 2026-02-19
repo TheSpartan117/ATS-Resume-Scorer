@@ -24,7 +24,7 @@ app = FastAPI(
 
 # Environment-aware CORS configuration
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
-cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175").split(",")
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176").split(",")
 
 if ENVIRONMENT == "production":
     allow_methods = ["GET", "POST", "PUT", "DELETE"]
