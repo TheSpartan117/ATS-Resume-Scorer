@@ -67,3 +67,48 @@ def test_update_section_content(test_docx, template_manager):
     all_text = '\n'.join([p.text for p in doc.paragraphs])
     assert 'Senior Software Engineer at XYZ Corp' in all_text
     assert 'Led team of 5 developers' in all_text
+
+def test_update_section_negative_index(test_docx, template_manager):
+    """Test that negative indices are rejected"""
+    session_id = "test_session_negative"
+    template_manager.save_template(session_id, test_docx)
+
+    result = template_manager.update_section(
+        session_id=session_id,
+        start_para_idx=-1,
+        end_para_idx=2,
+        new_content="test"
+    )
+
+    assert result['success'] is False
+    assert 'negative' in result['error'].lower()
+
+def test_update_section_start_greater_than_end(test_docx, template_manager):
+    """Test that start > end is rejected"""
+    session_id = "test_session_order"
+    template_manager.save_template(session_id, test_docx)
+
+    result = template_manager.update_section(
+        session_id=session_id,
+        start_para_idx=5,
+        end_para_idx=2,
+        new_content="test"
+    )
+
+    assert result['success'] is False
+    assert 'start index' in result['error'].lower()
+
+def test_update_section_out_of_bounds(test_docx, template_manager):
+    """Test that out of bounds indices are rejected"""
+    session_id = "test_session_bounds"
+    template_manager.save_template(session_id, test_docx)
+
+    result = template_manager.update_section(
+        session_id=session_id,
+        start_para_idx=0,
+        end_para_idx=999,
+        new_content="test"
+    )
+
+    assert result['success'] is False
+    assert 'invalid' in result['error'].lower()

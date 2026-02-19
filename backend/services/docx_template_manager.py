@@ -81,7 +81,13 @@ class DocxTemplateManager:
             doc = Document(working_path)
             paragraphs = doc.paragraphs
 
-            # Validate indices
+            # Validate indices - check order and bounds
+            if start_para_idx < 0 or end_para_idx < 0:
+                return {'success': False, 'error': 'Paragraph indices cannot be negative'}
+
+            if start_para_idx > end_para_idx:
+                return {'success': False, 'error': 'Start index must be less than or equal to end index'}
+
             if start_para_idx >= len(paragraphs) or end_para_idx >= len(paragraphs):
                 return {'success': False, 'error': 'Invalid paragraph indices'}
 
