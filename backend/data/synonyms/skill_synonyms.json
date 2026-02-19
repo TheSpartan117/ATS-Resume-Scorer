@@ -437,5 +437,28 @@
     "scikit-learn",
     "sklearn",
     "scikit learn"
+  ],
+  "machine learning": [
+    "machine learning",
+    "ml",
+    "machine-learning",
+    "machinelearning"
+  ],
+  "artificial intelligence": [
+    "artificial intelligence",
+    "ai",
+    "artificial-intelligence",
+    "artificialintelligence"
+  ],
+  "deep learning": [
+    "deep learning",
+    "dl",
+    "deep-learning",
+    "deeplearning"
+  ],
+  "natural language processing": [
+    "natural language processing",
+    "nlp",
+    "natural-language-processing"
   ]
 }

@@ -41,7 +41,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setUser(userData)
         } catch (error) {
           // Token is invalid or expired
-          console.error('Failed to load user:', error)
+          if (import.meta.env.DEV) {
+            console.error('Failed to load user:', error)
+          }
           localStorage.removeItem(TOKEN_KEY)
           setAuthToken(null)
           setToken(null)

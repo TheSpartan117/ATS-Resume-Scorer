@@ -11,6 +11,32 @@ export interface ContactInfo {
   website?: string
 }
 
+export interface Experience {
+  title: string
+  company: string
+  startDate?: string
+  endDate?: string
+  description?: string
+  location?: string
+}
+
+export interface Education {
+  degree: string
+  institution: string
+  graduationDate?: string
+  gpa?: string
+  location?: string
+  description?: string
+}
+
+export interface Certification {
+  name: string
+  issuer?: string
+  date?: string
+  expirationDate?: string
+  credentialId?: string
+}
+
 export interface ResumeMetadata {
   pageCount: number
   wordCount: number
@@ -31,6 +57,20 @@ export interface ScoreBreakdown {
   content: CategoryBreakdown
   lengthDensity: CategoryBreakdown
   roleSpecific: CategoryBreakdown
+}
+
+export interface EnhancedSuggestion {
+  id: string
+  type: string // missing_content, keyword, formatting, writing
+  severity: string // high, medium, low
+  title: string
+  description: string
+  template?: string
+  quickFix?: {
+    before: string
+    after: string
+  }
+  keywords?: string[]
 }
 
 export interface ScoreResult {
@@ -54,6 +94,7 @@ export interface ScoreResult {
     match_percentage?: number
   }
   autoReject?: boolean
+  enhancedSuggestions?: EnhancedSuggestion[] // New detailed suggestions
 }
 
 export interface FormatCheckResult {

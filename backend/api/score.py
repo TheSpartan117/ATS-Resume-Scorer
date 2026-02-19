@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field
 from backend.services.parser import ResumeData
 from backend.services.scorer_v2 import AdaptiveScorer
 from backend.services.role_taxonomy import get_role_scoring_data, ExperienceLevel
+from backend.services.suggestion_integrator import SuggestionIntegrator
+from backend.services.scoring_utils import normalize_scoring_mode
 from backend.schemas.resume import ScoreResponse, CategoryBreakdown
 
 
@@ -59,16 +61,8 @@ async def score_resume(request: ScoreRequest):
         metadata=request.metadata
     )
 
-    # Normalize mode parameter (support both "ats" and "ats_simulation", etc.)
-    mode = request.mode or "auto"
-    if mode == "ats":
-        mode = "ats_simulation"
-    elif mode == "quality":
-        mode = "quality_coach"
-
-    # Auto-detect mode if mode="auto"
-    if mode == "auto":
-        mode = "ats_simulation" if request.jobDescription else "quality_coach"
+    # Normalize mode parameter using utility function
+    mode = normalize_scoring_mode(request.mode or "auto", request.jobDescription or "")
 
     # Calculate score using AdaptiveScorer
     scorer = AdaptiveScorer()
@@ -78,6 +72,15 @@ async def score_resume(request: ScoreRequest):
         level=request.level or "mid",
         job_description=request.jobDescription,
         mode=mode
+    )
+
+    # Enrich with enhanced suggestions
+    score_result = SuggestionIntegrator.enrich_score_result(
+        score_result=score_result,
+        resume_data=resume_data,
+        role=request.role or "software_engineer",
+        level=request.level or "mid",
+        job_description=request.jobDescription or ""
     )
 
     # Convert breakdown to response format
@@ -103,6 +106,9 @@ async def score_resume(request: ScoreRequest):
         "suggestions": len(issues_response.get("suggestions", []))
     }
 
+    # Extract enhanced suggestions
+    enhanced_suggestions = score_result.get("enhanced_suggestions", [])
+
     return ScoreResponse(
         overallScore=score_result["overallScore"],
         breakdown=breakdown_response,
@@ -111,5 +117,6 @@ async def score_resume(request: ScoreRequest):
         mode=score_result.get("mode", mode),
         keywordDetails=score_result.get("keyword_details"),
         autoReject=score_result.get("auto_reject"),
-        issueCounts=issue_counts
+        issueCounts=issue_counts,
+        enhancedSuggestions=enhanced_suggestions
     )

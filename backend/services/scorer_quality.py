@@ -46,6 +46,14 @@ class QualityScorer:
         Returns:
             Dictionary with score, breakdown, and detailed feedback
         """
+        # Validate inputs
+        if not resume_data:
+            raise ValueError("Resume data is required")
+        if not role_id:
+            raise ValueError("Role ID is required")
+        if not level:
+            raise ValueError("Level is required")
+
         # Get role-specific scoring data
         role_data = get_role_scoring_data(role_id, level)
         if not role_data:
@@ -392,8 +400,9 @@ class QualityScorer:
         else:
             structure_score += 1
 
-        # Has proper formatting (2 points)
-        if resume_data.metadata.get('pageCount', 0) <= 2:
+        # Has proper formatting (2 points) - handle None metadata
+        metadata = resume_data.metadata if resume_data.metadata else {}
+        if metadata.get('pageCount', 0) <= 2:
             structure_score += 2
 
         score += min(structure_score, 8)
@@ -401,8 +410,8 @@ class QualityScorer:
         details['structure_feedback'] = self._get_structure_feedback(has_sections, bullet_count)
 
         # 2. Length appropriateness (7 points)
-        word_count = resume_data.metadata.get('wordCount', 0)
-        page_count = resume_data.metadata.get('pageCount', 0)
+        word_count = metadata.get('wordCount', 0)
+        page_count = metadata.get('pageCount', 0)
 
         length_score = 0
         if 400 <= word_count <= 800 and page_count <= 2:
@@ -441,7 +450,8 @@ class QualityScorer:
         Returns:
             Dictionary with count, total, and percentage
         """
-        if not resume_data.experience:
+        # Handle None or empty experience
+        if not resume_data.experience or not action_verbs:
             return {'count': 0, 'total': 0, 'percentage': 0}
 
         # Parse all bullets from experience
@@ -486,6 +496,7 @@ class QualityScorer:
         Returns:
             Dictionary with quantified count, total bullets, and percentage
         """
+        # Handle None or empty experience
         if not resume_data.experience:
             return {'quantified_count': 0, 'total_bullets': 0, 'percentage': 0}
 
@@ -621,35 +632,42 @@ class QualityScorer:
         """
         text_parts = []
 
-        # Contact info
+        # Contact info - handle None
         if resume_data.contact:
             for value in resume_data.contact.values():
                 if value:
                     text_parts.append(str(value))
 
-        # Experience
-        for exp in resume_data.experience:
-            if exp.get('title'):
-                text_parts.append(exp['title'])
-            if exp.get('company'):
-                text_parts.append(exp['company'])
-            if exp.get('description'):
-                text_parts.append(exp['description'])
+        # Experience - handle None and missing fields
+        if resume_data.experience:
+            for exp in resume_data.experience:
+                if exp:  # Handle None entries
+                    if exp.get('title'):
+                        text_parts.append(exp['title'])
+                    if exp.get('company'):
+                        text_parts.append(exp['company'])
+                    if exp.get('description'):
+                        text_parts.append(exp['description'])
 
-        # Education
-        for edu in resume_data.education:
-            if edu.get('degree'):
-                text_parts.append(edu['degree'])
-            if edu.get('institution'):
-                text_parts.append(edu['institution'])
+        # Education - handle None and missing fields
+        if resume_data.education:
+            for edu in resume_data.education:
+                if edu:  # Handle None entries
+                    if edu.get('degree'):
+                        text_parts.append(edu['degree'])
+                    if edu.get('institution'):
+                        text_parts.append(edu['institution'])
 
-        # Skills
-        text_parts.extend(resume_data.skills)
+        # Skills - handle None
+        if resume_data.skills:
+            text_parts.extend(resume_data.skills)
 
-        # Certifications
-        for cert in resume_data.certifications:
-            if cert.get('name'):
-                text_parts.append(cert['name'])
+        # Certifications - handle None and missing fields
+        if resume_data.certifications:
+            for cert in resume_data.certifications:
+                if cert:  # Handle None entries
+                    if cert.get('name'):
+                        text_parts.append(cert['name'])
 
         return " ".join(text_parts).lower()
 

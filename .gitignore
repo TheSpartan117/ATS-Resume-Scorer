@@ -1,1 +1,9 @@
 .worktrees/
+# Ignore uploaded test files
+backend/storage/uploads/
+backend/storage/templates/
+backend.log
+*.log
+
+# Backup files
+*.backup

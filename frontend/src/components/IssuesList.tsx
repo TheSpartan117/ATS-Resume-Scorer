@@ -1,7 +1,22 @@
 /**
- * Issues list component with severity badges
+ * Enhanced Issues List Component with Tabbed Panel and Smart Actions
+ * Implements Approach C: Click to Edit + Smart Templates
  */
-import type { JSX } from 'react'
+import { useState, useEffect } from 'react'
+
+interface EnhancedSuggestionFromBackend {
+  id: string
+  type: string
+  severity: string
+  title: string
+  description: string
+  template?: string
+  quickFix?: {
+    before: string
+    after: string
+  }
+  keywords?: string[]
+}
 
 interface IssuesListProps {
   issues: {
@@ -10,75 +25,278 @@ interface IssuesListProps {
     suggestions: string[]
     info: string[]
   }
+  overallScore: number
+  enhancedSuggestions?: EnhancedSuggestionFromBackend[] // New prop for detailed suggestions
+  onApplySuggestion?: (suggestion: AppliedSuggestion) => void
 }
 
-interface IssueCategory {
-  key: keyof IssuesListProps['issues']
-  label: string
-  icon: JSX.Element
-  bgGradient: string
-  iconBg: string
-  iconColor: string
-  badgeColor: string
+export interface AppliedSuggestion {
+  id: string
+  type: SuggestionType
+  category: IssueCategory
+  description: string
+  action: 'insert' | 'replace' | 'format'
+  content?: string
+  searchText?: string
+  replaceText?: string
 }
 
-const issueCategories: IssueCategory[] = [
+type SuggestionType = 'missing_content' | 'formatting' | 'keyword' | 'writing'
+type IssueCategory = 'critical' | 'warnings' | 'suggestions' | 'info'
+
+interface ProcessedSuggestion {
+  id: string
+  type: SuggestionType
+  category: IssueCategory
+  description: string
+  template?: string
+  quickFix?: QuickFix
+}
+
+interface QuickFix {
+  before: string
+  after: string
+  action: 'replace' | 'insert' | 'format'
+}
+
+// Smart Templates for Missing Content
+const SMART_TEMPLATES: Record<string, string> = {
+  'professional_summary': `<h2>Professional Summary</h2>
+<p>Results-driven professional with [X] years of experience in [Your Field]. Proven track record of [Key Achievement]. Skilled in [Core Competencies]. Seeking to leverage expertise in [Target Role] to drive [Company Goal].</p>`,
+
+  'contact_email': 'your.email@example.com',
+  'contact_phone': '(555) 123-4567',
+  'contact_linkedin': 'linkedin.com/in/yourprofile',
+
+  'skills_section': `<h2>Skills</h2>
+<p><strong>Technical Skills:</strong> List your technical skills here</p>
+<p><strong>Soft Skills:</strong> Communication, Leadership, Problem-solving</p>`,
+
+  'achievements': `<p><strong>Key Achievement:</strong> Increased efficiency by 30% through implementation of automated processes</p>`,
+}
+
+// Pattern matching for suggestion types
+function categorizeSuggestion(description: string, category: IssueCategory): ProcessedSuggestion {
+  const id = `${category}-${Math.random().toString(36).substr(2, 9)}`
+  const lowerDesc = description.toLowerCase()
+
+  // Missing Content (Red Badge)
+  if (lowerDesc.includes('missing') || lowerDesc.includes('add') || lowerDesc.includes('include')) {
+    if (lowerDesc.includes('email')) {
+      return {
+        id,
+        type: 'missing_content',
+        category,
+        description,
+        template: SMART_TEMPLATES.contact_email,
+      }
+    }
+    if (lowerDesc.includes('phone')) {
+      return {
+        id,
+        type: 'missing_content',
+        category,
+        description,
+        template: SMART_TEMPLATES.contact_phone,
+      }
+    }
+    if (lowerDesc.includes('linkedin')) {
+      return {
+        id,
+        type: 'missing_content',
+        category,
+        description,
+        template: SMART_TEMPLATES.contact_linkedin,
+      }
+    }
+    if (lowerDesc.includes('summary') || lowerDesc.includes('objective')) {
+      return {
+        id,
+        type: 'missing_content',
+        category,
+        description,
+        template: SMART_TEMPLATES.professional_summary,
+      }
+    }
+    if (lowerDesc.includes('skill')) {
+      return {
+        id,
+        type: 'missing_content',
+        category,
+        description,
+        template: SMART_TEMPLATES.skills_section,
+      }
+    }
+    return {
+      id,
+      type: 'missing_content',
+      category,
+      description,
+    }
+  }
+
+  // Formatting Issues (Yellow Badge)
+  if (lowerDesc.includes('format') || lowerDesc.includes('capital') ||
+      lowerDesc.includes('bullet') || lowerDesc.includes('spacing') ||
+      lowerDesc.includes('consistent') || lowerDesc.includes('style')) {
+    return {
+      id,
+      type: 'formatting',
+      category,
+      description,
+      quickFix: {
+        before: 'Inconsistent formatting detected',
+        after: 'Apply consistent formatting',
+        action: 'format'
+      }
+    }
+  }
+
+  // Keyword Issues (Blue Badge)
+  if (lowerDesc.includes('keyword') || lowerDesc.includes('term') ||
+      lowerDesc.includes('include the phrase')) {
+    const keywordMatch = description.match(/"([^"]+)"|'([^']+)'/)
+    const keyword = keywordMatch ? (keywordMatch[1] || keywordMatch[2]) : ''
+
+    return {
+      id,
+      type: 'keyword',
+      category,
+      description,
+      quickFix: keyword ? {
+        before: 'Missing keyword',
+        after: `Add "${keyword}" to relevant section`,
+        action: 'insert'
+      } : undefined
+    }
+  }
+
+  // Writing Improvements (Green Badge)
+  return {
+    id,
+    type: 'writing',
+    category,
+    description,
+  }
+}
+
+// Tab configuration
+const TABS = [
   {
-    key: 'critical',
-    label: 'Critical Issues',
-    icon: (
-      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-      </svg>
-    ),
-    bgGradient: 'from-red-50 to-rose-50',
-    iconBg: 'bg-red-100',
-    iconColor: 'text-red-600',
-    badgeColor: 'bg-red-500 text-white'
+    id: 'missing_content' as SuggestionType,
+    label: 'Missing Content',
+    icon: '🔴',
+    color: 'red'
   },
   {
-    key: 'warnings',
-    label: 'Warnings',
-    icon: (
-      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-      </svg>
-    ),
-    bgGradient: 'from-yellow-50 to-amber-50',
-    iconBg: 'bg-yellow-100',
-    iconColor: 'text-yellow-600',
-    badgeColor: 'bg-yellow-500 text-white'
+    id: 'formatting' as SuggestionType,
+    label: 'Formatting',
+    icon: '🟡',
+    color: 'yellow'
   },
   {
-    key: 'suggestions',
-    label: 'Suggestions',
-    icon: (
-      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z" />
-      </svg>
-    ),
-    bgGradient: 'from-blue-50 to-indigo-50',
-    iconBg: 'bg-blue-100',
-    iconColor: 'text-blue-600',
-    badgeColor: 'bg-blue-500 text-white'
+    id: 'keyword' as SuggestionType,
+    label: 'Keywords',
+    icon: '🔵',
+    color: 'blue'
   },
   {
-    key: 'info',
-    label: 'Info',
-    icon: (
-      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-      </svg>
-    ),
-    bgGradient: 'from-gray-50 to-slate-50',
-    iconBg: 'bg-gray-100',
-    iconColor: 'text-gray-600',
-    badgeColor: 'bg-gray-500 text-white'
+    id: 'writing' as SuggestionType,
+    label: 'Writing',
+    icon: '🟢',
+    color: 'green'
   }
 ]
 
-export default function IssuesList({ issues }: IssuesListProps) {
-  const totalIssues = Object.values(issues).reduce((sum, arr) => sum + arr.length, 0)
+export default function IssuesList({ issues, overallScore, enhancedSuggestions, onApplySuggestion }: IssuesListProps) {
+  const [activeTab, setActiveTab] = useState<SuggestionType>('missing_content')
+  const [processedSuggestions, setProcessedSuggestions] = useState<ProcessedSuggestion[]>([])
+  const [appliedSuggestions, setAppliedSuggestions] = useState<Set<string>>(new Set())
+
+  // Process all issues into categorized suggestions
+  useEffect(() => {
+    const all: ProcessedSuggestion[] = []
+
+    // Use enhanced suggestions from backend if available
+    if (enhancedSuggestions && enhancedSuggestions.length > 0) {
+      if (import.meta.env.DEV) {
+        console.log('Using enhanced suggestions from backend:', enhancedSuggestions.length)
+      }
+      enhancedSuggestions.forEach(enhanced => {
+        all.push({
+          id: enhanced.id,
+          type: enhanced.type as SuggestionType,
+          category: (enhanced.severity === 'high' ? 'critical' : enhanced.severity === 'medium' ? 'warnings' : 'suggestions') as IssueCategory,
+          description: enhanced.title + (enhanced.description ? ': ' + enhanced.description : ''),
+          template: enhanced.template,
+          quickFix: enhanced.quickFix
+        })
+      })
+    } else {
+      // Fallback to old issue processing
+      if (import.meta.env.DEV) {
+        console.log('Using old issue format (no enhanced suggestions)')
+      }
+      Object.entries(issues).forEach(([category, items]) => {
+        items.forEach(description => {
+          all.push(categorizeSuggestion(description, category as IssueCategory))
+        })
+      })
+    }
+
+    setProcessedSuggestions(all)
+  }, [issues, enhancedSuggestions])
+
+  const totalIssues = processedSuggestions.length
+  const appliedCount = appliedSuggestions.size
+  const pendingCount = totalIssues - appliedCount
+  const progressPercent = totalIssues > 0 ? Math.round((appliedCount / totalIssues) * 100) : 100
+
+  // Filter suggestions by active tab
+  const filteredSuggestions = processedSuggestions.filter(s => s.type === activeTab)
+
+  // Get count for each tab
+  const getTabCount = (type: SuggestionType) => {
+    return processedSuggestions.filter(s => s.type === type && !appliedSuggestions.has(s.id)).length
+  }
+
+  const handleApply = (suggestion: ProcessedSuggestion) => {
+    if (appliedSuggestions.has(suggestion.id)) return
+
+    // Determine the action to take
+    let action: 'insert' | 'replace' | 'format' = 'insert'
+    let content = ''
+    let searchText = ''
+    let replaceText = ''
+
+    if (suggestion.template) {
+      action = 'insert'
+      content = suggestion.template
+    } else if (suggestion.quickFix) {
+      action = suggestion.quickFix.action as 'insert' | 'replace' | 'format'
+      searchText = suggestion.quickFix.before
+      replaceText = suggestion.quickFix.after
+    }
+
+    const appliedSuggestion: AppliedSuggestion = {
+      id: suggestion.id,
+      type: suggestion.type,
+      category: suggestion.category,
+      description: suggestion.description,
+      action,
+      content,
+      searchText,
+      replaceText,
+    }
+
+    // Mark as applied
+    setAppliedSuggestions(prev => new Set([...prev, suggestion.id]))
+
+    // Notify parent component
+    if (onApplySuggestion) {
+      onApplySuggestion(appliedSuggestion)
+    }
+  }
 
   if (totalIssues === 0) {
     return (
@@ -95,61 +313,190 @@ export default function IssuesList({ issues }: IssuesListProps) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    <div className="flex flex-col h-full space-y-4">
+      {/* Component 1: Top Section with Score & Progress */}
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 p-4 shadow-sm">
+        <div className="flex items-center justify-center mb-3">
+          <div className="relative">
+            <svg className="w-20 h-20 transform -rotate-90">
+              <circle
+                cx="40"
+                cy="40"
+                r="36"
+                stroke="#e5e7eb"
+                strokeWidth="8"
+                fill="none"
+              />
+              <circle
+                cx="40"
+                cy="40"
+                r="36"
+                stroke={overallScore >= 80 ? '#10b981' : overallScore >= 60 ? '#f59e0b' : '#ef4444'}
+                strokeWidth="8"
+                fill="none"
+                strokeDasharray={`${(overallScore / 100) * 226} 226`}
+                strokeLinecap="round"
+              />
             </svg>
-          </div>
-          <h3 className="text-2xl font-bold text-gray-900">
-            Issues & Recommendations
-          </h3>
-        </div>
-        <span className="px-4 py-2 bg-gray-100 rounded-full text-sm font-bold text-gray-700">
-          {totalIssues} {totalIssues === 1 ? 'Item' : 'Items'}
-        </span>
-      </div>
-
-      {issueCategories.map((category) => {
-        const categoryIssues = issues[category.key]
-
-        if (categoryIssues.length === 0) {
-          return null
-        }
-
-        return (
-          <div key={category.key} className={`bg-gradient-to-r ${category.bgGradient} rounded-xl border-2 border-gray-200 overflow-hidden`}>
-            <div className="p-6">
-              <div className="flex items-center mb-4">
-                <div className={`w-10 h-10 rounded-lg ${category.iconBg} ${category.iconColor} flex items-center justify-center flex-shrink-0 mr-3`}>
-                  {category.icon}
-                </div>
-                <h4 className="font-bold text-gray-900 text-lg flex-1">
-                  {category.label}
-                </h4>
-                <span className={`px-3 py-1 text-sm font-bold rounded-full ${category.badgeColor} shadow-sm`}>
-                  {categoryIssues.length}
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                {categoryIssues.map((issue, idx) => (
-                  <div key={idx} className="flex items-start space-x-3 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
-                        <span className="text-xs font-bold text-gray-600">{idx + 1}</span>
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-700 leading-relaxed flex-1">{issue}</p>
-                  </div>
-                ))}
-              </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-2xl font-bold text-gray-900">{overallScore}</span>
             </div>
           </div>
-        )
-      })}
+        </div>
+
+        <div className="space-y-2 mb-3">
+          <div className="flex justify-between text-xs text-gray-600 mb-1">
+            <span>Progress</span>
+            <span className="font-semibold">{progressPercent}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-500"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-gray-700 font-medium">
+            {totalIssues} suggestion{totalIssues !== 1 ? 's' : ''} remaining
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between text-xs text-gray-600 mt-2">
+          <div className="flex items-center space-x-1">
+            <span className="text-green-600 font-semibold">✓</span>
+            <span>{appliedCount} applied</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <span className="text-orange-500 font-semibold">⏳</span>
+            <span>{pendingCount} pending</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Component 2: Tab Navigation */}
+      <div className="flex border-b border-gray-200">
+        {TABS.map(tab => {
+          const count = getTabCount(tab.id)
+          const isActive = activeTab === tab.id
+
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 py-2 px-3 text-xs font-medium transition-colors relative ${
+                isActive
+                  ? 'text-blue-700 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <div className="flex items-center justify-center space-x-1">
+                <span>{tab.icon}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
+              </div>
+              {count > 0 && (
+                <span className={`absolute -top-1 -right-1 w-5 h-5 rounded-full text-xs flex items-center justify-center text-white font-bold ${
+                  tab.color === 'red' ? 'bg-red-500' :
+                  tab.color === 'yellow' ? 'bg-yellow-500' :
+                  tab.color === 'blue' ? 'bg-blue-500' :
+                  'bg-green-500'
+                }`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Component 3 & 4: Suggestion Cards with Apply Actions */}
+      <div className="flex-1 overflow-y-auto space-y-3 px-1 suggestions-scroll">
+        {filteredSuggestions.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 text-sm">
+            <svg className="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p>All suggestions in this category have been applied!</p>
+          </div>
+        ) : (
+          filteredSuggestions.map(suggestion => {
+            const isApplied = appliedSuggestions.has(suggestion.id)
+
+            return (
+              <div
+                key={suggestion.id}
+                className={`bg-white rounded-lg border-2 p-3 shadow-sm transition-all ${
+                  isApplied
+                    ? 'border-green-300 bg-green-50 opacity-60'
+                    : 'border-gray-200 hover:border-blue-300 hover:shadow-md'
+                }`}
+              >
+                {/* Issue Description */}
+                <div className="flex items-start space-x-2 mb-3">
+                  <div className="flex-shrink-0 mt-0.5">
+                    {isApplied ? (
+                      <span className="text-green-600 font-bold text-lg">✓</span>
+                    ) : (
+                      <div className={`w-2 h-2 rounded-full ${
+                        suggestion.category === 'critical' ? 'bg-red-500' :
+                        suggestion.category === 'warnings' ? 'bg-yellow-500' :
+                        suggestion.category === 'suggestions' ? 'bg-blue-500' :
+                        'bg-gray-400'
+                      }`} />
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-700 leading-relaxed flex-1">
+                    {suggestion.description}
+                  </p>
+                </div>
+
+                {/* Before/After Preview */}
+                {(suggestion.template || suggestion.quickFix) && !isApplied && (
+                  <div className="mb-3 space-y-2">
+                    {suggestion.quickFix && (
+                      <>
+                        <div className="bg-red-50 border border-red-200 rounded p-2">
+                          <div className="text-xs text-red-700 font-semibold mb-1">Before:</div>
+                          <div className="text-xs text-red-900">{suggestion.quickFix.before}</div>
+                        </div>
+                        <div className="bg-green-50 border border-green-200 rounded p-2">
+                          <div className="text-xs text-green-700 font-semibold mb-1">After:</div>
+                          <div className="text-xs text-green-900">{suggestion.quickFix.after}</div>
+                        </div>
+                      </>
+                    )}
+                    {suggestion.template && (
+                      <div className="bg-blue-50 border border-blue-200 rounded p-2">
+                        <div className="text-xs text-blue-700 font-semibold mb-1">Template Preview:</div>
+                        <div className="text-xs text-blue-900 line-clamp-3"
+                             dangerouslySetInnerHTML={{ __html: suggestion.template.replace(/<[^>]+>/g, ' ').trim() }} />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Apply Change Button - Disabled for manual editing */}
+                {!isApplied && (
+                  <button
+                    disabled
+                    className="w-full py-2 px-3 bg-gray-300 text-gray-600 rounded-lg font-medium text-xs cursor-not-allowed"
+                    title="Please edit manually in the editor - automatic application temporarily disabled"
+                  >
+                    Manual Edit Recommended
+                  </button>
+                )}
+
+                {isApplied && (
+                  <div className="text-center text-xs text-green-700 font-medium">
+                    ✓ Applied successfully
+                  </div>
+                )}
+              </div>
+            )
+          })
+        )}
+      </div>
     </div>
   )
 }

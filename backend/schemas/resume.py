@@ -40,6 +40,18 @@ class CategoryBreakdown(BaseModel):
     issues: List[str]
 
 
+class EnhancedSuggestion(BaseModel):
+    """Enhanced suggestion with template and examples"""
+    id: str
+    type: str  # missing_content, keyword, formatting, writing
+    severity: str  # high, medium, low
+    title: str
+    description: str
+    template: Optional[str] = None
+    quickFix: Optional[Dict] = None
+    keywords: Optional[List[str]] = None
+
+
 class ScoreResponse(BaseModel):
     """Complete scoring response"""
     overallScore: float
@@ -50,6 +62,7 @@ class ScoreResponse(BaseModel):
     keywordDetails: Optional[Dict] = None  # Keyword matching details for ATS mode
     autoReject: Optional[bool] = None  # Auto-reject flag for ATS mode
     issueCounts: Optional[Dict[str, int]] = None  # Count of critical, warnings, suggestions
+    enhancedSuggestions: Optional[List[EnhancedSuggestion]] = None  # Detailed actionable suggestions
 
 
 class FormatCheckResponse(BaseModel):

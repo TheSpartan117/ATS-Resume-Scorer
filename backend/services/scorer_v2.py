@@ -341,18 +341,26 @@ class AdaptiveScorer:
         typical_keywords = role_data.get("typical_keywords", [])
         action_verbs = role_data.get("action_verbs", [])
 
-        # Count keyword matches
-        keyword_matched = 0
+        # Track matched and missing keywords
+        matched_keywords = []
+        missing_keywords = []
         for keyword in typical_keywords:
             if match_with_synonyms(keyword, resume_text):
-                keyword_matched += 1
+                matched_keywords.append(keyword)
+            else:
+                missing_keywords.append(keyword)
 
-        # Count action verb matches
-        verb_matched = 0
+        # Track matched and missing verbs
+        matched_verbs = []
+        missing_verbs = []
         for verb in action_verbs:
             if match_with_synonyms(verb, resume_text):
-                verb_matched += 1
+                matched_verbs.append(verb)
+            else:
+                missing_verbs.append(verb)
 
+        keyword_matched = len(matched_keywords)
+        verb_matched = len(matched_verbs)
         total_keywords = len(typical_keywords) + len(action_verbs)
         total_matched = keyword_matched + verb_matched
         match_pct = (total_matched / total_keywords * 100) if total_keywords > 0 else 0
@@ -381,7 +389,11 @@ class AdaptiveScorer:
                 "keywords_total": len(typical_keywords),
                 "verbs_matched": verb_matched,
                 "verbs_total": len(action_verbs),
-                "overall_match_pct": round(match_pct, 1)
+                "overall_match_pct": round(match_pct, 1),
+                "matched_keywords": matched_keywords,
+                "missing_keywords": missing_keywords,
+                "matched_verbs": matched_verbs,
+                "missing_verbs": missing_verbs
             },
             "details": f"Keywords: {keyword_matched}/{len(typical_keywords)}, "
                       f"Action Verbs: {verb_matched}/{len(action_verbs)} "
@@ -961,12 +973,36 @@ class ResumeScorer:
                 )
 
         else:  # quality mode
-            # Role keywords recommendations
+            # Role keywords recommendations with specific details
             role_kw_data = breakdown.get('role_keywords', {})
+            kw_details = role_kw_data.get('keyword_details', {})
+
             if role_kw_data.get('score', 0) < 18:
-                recommendations.append(
-                    "Add more role-specific keywords and action verbs to demonstrate expertise"
-                )
+                missing_kw = kw_details.get('missing_keywords', [])
+                missing_verbs = kw_details.get('missing_verbs', [])
+                matched_kw = kw_details.get('matched_keywords', [])
+                matched_verbs = kw_details.get('matched_verbs', [])
+
+                # Build detailed recommendation
+                if missing_kw:
+                    top_missing = missing_kw[:5]  # Show top 5 missing
+                    recommendations.append(
+                        f"Missing role keywords: {', '.join(top_missing)}" +
+                        (f" +{len(missing_kw)-5} more" if len(missing_kw) > 5 else "")
+                    )
+
+                if missing_verbs:
+                    top_missing_verbs = missing_verbs[:5]
+                    recommendations.append(
+                        f"Missing action verbs: {', '.join(top_missing_verbs)}" +
+                        (f" +{len(missing_verbs)-5} more" if len(missing_verbs) > 5 else "")
+                    )
+
+                if matched_kw:
+                    recommendations.append(
+                        f"✓ Present: {', '.join(matched_kw[:3])}" +
+                        (f" +{len(matched_kw)-3} more" if len(matched_kw) > 3 else "")
+                    )
 
             # Content quality recommendations
             content_data = breakdown.get('content_quality', {})

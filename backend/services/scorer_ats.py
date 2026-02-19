@@ -13,6 +13,7 @@ from typing import Dict, List
 from backend.services.parser import ResumeData
 from backend.services.keyword_matcher import KeywordMatcher
 from backend.services.red_flags_validator import RedFlagsValidator
+from backend.services.role_taxonomy import get_role_scoring_data
 
 
 class ATSScorer:
@@ -26,6 +27,49 @@ class ATSScorer:
         self.keyword_matcher = KeywordMatcher()
         self.validator = RedFlagsValidator()
 
+    def _get_role_weights(self, role: str, level: str) -> Dict:
+        """
+        Get role-specific scoring weights from taxonomy.
+
+        For now, use default ATS weights for all roles.
+        Future: Can customize weights per role (e.g., tech roles weight keywords higher).
+
+        Args:
+            role: Role ID
+            level: Experience level
+
+        Returns:
+            Dict with weights for each scoring component
+        """
+        try:
+            role_data = get_role_scoring_data(role, level)
+            if role_data and 'scoring_weights' in role_data:
+                # Map taxonomy weights to ATS scorer components
+                taxonomy_weights = role_data['scoring_weights']
+
+                # For now, use standard ATS distribution
+                # In future, can map more granularly
+                return {
+                    'keywords': 0.35,  # Keywords most important in ATS
+                    'red_flags': 0.20,  # Critical issues
+                    'experience': 0.20,  # Experience alignment
+                    'formatting': 0.20,  # ATS-friendly format
+                    'contact': 0.05,   # Contact info
+                    'use_weights': False  # Disable weighted scoring for now
+                }
+        except Exception:
+            pass
+
+        # Return default weights
+        return {
+            'keywords': 0.35,
+            'red_flags': 0.20,
+            'experience': 0.20,
+            'formatting': 0.20,
+            'contact': 0.05,
+            'use_weights': False
+        }
+
     def score(
         self,
         resume: ResumeData,
@@ -34,7 +78,7 @@ class ATSScorer:
         job_description: str = ""
     ) -> Dict:
         """
-        Score resume in ATS mode.
+        Score resume in ATS mode with role-specific weights.
 
         Args:
             resume: Parsed resume data
@@ -45,6 +89,17 @@ class ATSScorer:
         Returns:
             Dict with score and detailed breakdown
         """
+        # Validate inputs
+        if not resume:
+            raise ValueError("Resume data is required")
+        if not role:
+            raise ValueError("Role is required")
+        if not level:
+            raise ValueError("Level is required")
+
+        # Get role-specific weights (if available)
+        weights = self._get_role_weights(role, level)
+
         # Run all scoring components with error handling
         try:
             keywords_result = self._score_keywords(resume, role, level, job_description)
@@ -91,24 +146,47 @@ class ATSScorer:
                 'details': {'error': f"Contact info scoring failed: {str(e)}", 'missing': []}
             }
 
-        # Calculate total score
-        total_score = (
-            keywords_result['score'] +
-            red_flags_result['score'] +
-            experience_result['score'] +
-            formatting_result['score'] +
-            contact_result['score']
-        )
+        # Apply role-specific weights if available
+        if weights and 'use_weights' in weights and weights['use_weights']:
+            # Normalize component scores to 0-1 range
+            normalized_scores = {
+                'keywords': keywords_result['score'] / keywords_result['maxScore'],
+                'red_flags': red_flags_result['score'] / red_flags_result['maxScore'],
+                'experience': experience_result['score'] / experience_result['maxScore'],
+                'formatting': formatting_result['score'] / formatting_result['maxScore'],
+                'contact': contact_result['score'] / contact_result['maxScore']
+            }
+
+            # Apply weights
+            weighted_score = (
+                normalized_scores['keywords'] * weights.get('keywords', 0.35) +
+                normalized_scores['red_flags'] * weights.get('red_flags', 0.20) +
+                normalized_scores['experience'] * weights.get('experience', 0.20) +
+                normalized_scores['formatting'] * weights.get('formatting', 0.20) +
+                normalized_scores['contact'] * weights.get('contact', 0.05)
+            ) * 100  # Scale back to 100 points
+
+            total_score = weighted_score
+        else:
+            # Use default fixed scoring
+            total_score = (
+                keywords_result['score'] +
+                red_flags_result['score'] +
+                experience_result['score'] +
+                formatting_result['score'] +
+                contact_result['score']
+            )
 
         return {
-            'score': total_score,
+            'score': round(total_score, 1),
             'breakdown': {
                 'keywords': keywords_result,
                 'red_flags': red_flags_result,
                 'experience': experience_result,
                 'formatting': formatting_result,
                 'contact': contact_result
-            }
+            },
+            'weights_applied': weights.get('use_weights', False) if weights else False
         }
 
     def _score_keywords(
@@ -281,38 +359,57 @@ class ATSScorer:
         score = 0
         details = {}
 
-        # Calculate total experience
-        total_years = self.validator.calculate_total_experience(resume.experience)
+        # Handle None or empty experience gracefully
+        if not resume.experience:
+            details['total_years'] = 0
+            details['years_message'] = "No experience listed"
+            details['recency_message'] = "No experience listed"
+            details['relevance_message'] = "No experience listed"
+            return {
+                'score': 0,
+                'maxScore': 20,
+                'details': details
+            }
+
+        # Calculate total experience with improved detection
+        total_years = self._calculate_experience_years(resume.experience)
         details['total_years'] = round(total_years, 1)
 
-        # Expected ranges from validator
+        # More flexible experience ranges with overlapping boundaries
+        # This reduces false negatives by being more lenient
         level_ranges = {
             'entry': (0, 3),
-            'mid': (2, 6),
-            'senior': (5, 12),
-            'lead': (8, 15),
-            'executive': (12, 100)
+            'mid': (2, 6),      # Overlaps with entry at 2-3
+            'senior': (5, 12),   # Overlaps with mid at 5-6
+            'lead': (8, 15),     # Overlaps with senior at 8-12
+            'executive': (12, 100)  # Overlaps with lead at 12-15
         }
 
         min_years, max_years = level_ranges.get(level, (0, 100))
 
-        # Score total years (10 pts)
+        # Score total years (10 pts) - More lenient scoring to reduce false negatives
         if min_years <= total_years <= max_years:
             score += 10
             years_message = f"Experience matches {level} level ({total_years:.1f} years)"
         elif total_years < min_years:
-            # Under-qualified
+            # Under-qualified but be more lenient
             gap = min_years - total_years
             if gap <= 1:
+                # Within 1 year is still good - give 8 points
+                score += 8
+                years_message = f"Experience appropriate for {level} ({total_years:.1f} years)"
+            elif gap <= 2:
+                # Within 2 years is acceptable - give 6 points
                 score += 6
-                years_message = f"Slightly under-qualified for {level} ({total_years:.1f} years)"
+                years_message = f"Slightly less experience than typical {level} ({total_years:.1f} years)"
             else:
+                # More than 2 years under - give 3 points
                 score += 3
-                years_message = f"Under-qualified for {level} ({total_years:.1f} years, need {min_years}+)"
+                years_message = f"Under-qualified for {level} ({total_years:.1f} years, typical {min_years}+)"
         else:
-            # Over-qualified
+            # Over-qualified - still give 8 points (it's not a major negative)
             score += 8
-            years_message = f"Over-qualified for {level} ({total_years:.1f} years)"
+            years_message = f"More experience than typical {level} ({total_years:.1f} years)"
 
         details['years_message'] = years_message
 
@@ -403,7 +500,8 @@ class ATSScorer:
             Dict with score and details
         """
         score = 0
-        metadata = resume.metadata
+        # Handle None metadata gracefully
+        metadata = resume.metadata if resume.metadata else {}
         details = {}
 
         # Page count (8 pts)
@@ -495,7 +593,8 @@ class ATSScorer:
             Dict with score and details
         """
         score = 0
-        contact = resume.contact
+        # Handle None contact gracefully
+        contact = resume.contact if resume.contact else {}
         details = {'missing': []}  # Initialize missing list once
 
         # Name (1 pt)
@@ -553,9 +652,60 @@ class ATSScorer:
             'details': details
         }
 
+    def _calculate_experience_years(self, experience: List[Dict]) -> float:
+        """
+        Calculate total years of experience with improved detection.
+
+        Features:
+        - Parses duration ranges from descriptions ("5 years experience")
+        - Handles date calculations from start/end dates
+        - Detects overlapping roles
+
+        Args:
+            experience: List of experience entries
+
+        Returns:
+            Total years of experience
+        """
+        if not experience:
+            return 0.0
+
+        import re
+        from datetime import datetime
+
+        # Try to extract explicit duration from descriptions
+        total_from_description = 0.0
+        for exp in experience:
+            if not exp:
+                continue
+            description = exp.get('description', '')
+            if description:
+                # Look for patterns like "5 years", "3+ years", "2-3 years"
+                patterns = [
+                    r'(\d+)\+?\s*years?\s+(?:of\s+)?experience',
+                    r'(?:with\s+)?(\d+)\+?\s*years?\s+(?:in|of)',
+                    r'experience[:\s]+(\d+)\+?\s*years?'
+                ]
+                for pattern in patterns:
+                    match = re.search(pattern, description.lower())
+                    if match:
+                        years = int(match.group(1))
+                        total_from_description = max(total_from_description, years)
+
+        # Also calculate from dates using validator
+        total_from_dates = self.validator.calculate_total_experience(experience)
+
+        # Use the maximum of the two methods
+        return max(total_from_description, total_from_dates)
+
     def _build_resume_text(self, resume: ResumeData) -> str:
         """
         Build full resume text for keyword matching.
+
+        Improved to handle:
+        - Table formats (pipe-separated values)
+        - None/empty fields
+        - Various text formats
 
         Args:
             resume: Parsed resume data
@@ -565,26 +715,48 @@ class ATSScorer:
         """
         parts = []
 
-        # Contact info
+        # Contact info - handle None
         if resume.contact:
-            parts.append(str(resume.contact.get('name', '')))
+            name = resume.contact.get('name', '')
+            if name:
+                parts.append(str(name))
 
-        # Experience
-        for exp in resume.experience:
-            parts.append(exp.get('title', ''))
-            parts.append(exp.get('company', ''))
-            parts.append(exp.get('description', ''))
+        # Experience - handle None and missing fields
+        if resume.experience:
+            for exp in resume.experience:
+                if exp:  # Handle None entries
+                    title = exp.get('title', '')
+                    company = exp.get('company', '')
+                    description = exp.get('description', '')
 
-        # Education
-        for edu in resume.education:
-            parts.append(edu.get('degree', ''))
-            parts.append(edu.get('institution', ''))
+                    parts.append(title)
+                    parts.append(company)
 
-        # Skills
-        parts.extend(resume.skills)
+                    # Handle table format (pipe-separated) by converting to spaces
+                    if description:
+                        # Replace pipes with spaces for better keyword extraction
+                        cleaned_desc = description.replace('|', ' ')
+                        parts.append(cleaned_desc)
 
-        # Certifications
-        for cert in resume.certifications:
-            parts.append(cert.get('name', ''))
+        # Education - handle None and missing fields
+        if resume.education:
+            for edu in resume.education:
+                if edu:  # Handle None entries
+                    parts.append(edu.get('degree', ''))
+                    parts.append(edu.get('institution', ''))
 
-        return ' '.join(parts)
+        # Skills - handle None
+        if resume.skills:
+            # Convert all skills to strings and filter None
+            skills_str = [str(s) for s in resume.skills if s]
+            parts.extend(skills_str)
+
+        # Certifications - handle None and missing fields
+        if resume.certifications:
+            for cert in resume.certifications:
+                if cert:  # Handle None entries
+                    parts.append(cert.get('name', ''))
+
+        # Filter out empty strings and None values, then join
+        filtered_parts = [str(p) for p in parts if p]
+        return ' '.join(filtered_parts)

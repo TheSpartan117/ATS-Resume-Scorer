@@ -55,9 +55,17 @@ class KeywordMatcher:
         keyword_lower = keyword.lower()
         variations = {keyword_lower}
 
-        # Check if this keyword has synonyms
+        # Check if this keyword has synonyms (primary key)
         if keyword_lower in self.synonyms:
             variations.update([v.lower() for v in self.synonyms[keyword_lower]])
+
+        # Check if this keyword is a synonym of another term (reverse lookup)
+        if keyword_lower in self.reverse_synonyms:
+            primary = self.reverse_synonyms[keyword_lower]
+            variations.add(primary)
+            # Also add all other synonyms of the primary term
+            if primary in self.synonyms:
+                variations.update([v.lower() for v in self.synonyms[primary]])
 
         return variations
 

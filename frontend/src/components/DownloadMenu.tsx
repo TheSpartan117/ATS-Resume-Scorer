@@ -45,7 +45,9 @@ export const DownloadMenu: React.FC<DownloadMenuProps> = ({
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error(`Failed to download ${format}:`, error);
+      if (import.meta.env.DEV) {
+        console.error(`Failed to download ${format}:`, error);
+      }
       alert(`Failed to download resume as ${format.toUpperCase()}`);
     } finally {
       setDownloading(null);
@@ -76,7 +78,9 @@ export const DownloadMenu: React.FC<DownloadMenuProps> = ({
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Failed to download report:', error);
+      if (import.meta.env.DEV) {
+        console.error('Failed to download report:', error);
+      }
       alert('Failed to download report');
     } finally {
       setDownloading(null);

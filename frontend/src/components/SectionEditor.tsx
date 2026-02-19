@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
+import { DEBOUNCE_DELAY_MS } from '../config/timeouts';
 
 interface Section {
   title: string;
@@ -44,7 +45,7 @@ export default function SectionEditor({
     (sectionId: string, content: string, startIdx: number, endIdx: number) => {
       onSectionUpdate(sectionId, content, startIdx, endIdx);
     },
-    500
+    DEBOUNCE_DELAY_MS
   );
 
   const getIcon = (title: string) => {

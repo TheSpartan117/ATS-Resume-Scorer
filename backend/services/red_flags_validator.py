@@ -910,12 +910,153 @@ class RedFlagsValidator:
             'github', 'gitlab', 'jira', 'agile', 'scrum', 'kanban'
         }
 
+        # SOLUTION 1: Comprehensive Resume-Specific Vocabulary (500+ terms)
+        RESUME_VOCABULARY = {
+            # Programming Languages
+            'python', 'javascript', 'typescript', 'java', 'csharp', 'golang', 'rust',
+            'kotlin', 'swift', 'scala', 'ruby', 'php', 'perl', 'lua', 'bash', 'powershell',
+            'cplusplus', 'objectivec', 'dart', 'elixir', 'haskell', 'clojure', 'erlang',
+
+            # Frameworks & Libraries
+            'react', 'reactjs', 'angular', 'vue', 'vuejs', 'svelte', 'nextjs', 'nuxtjs',
+            'nodejs', 'express', 'fastapi', 'django', 'flask', 'spring', 'springboot',
+            'rails', 'laravel', 'symfony', 'dotnet', 'aspnet', 'blazor', 'xamarin',
+            'jquery', 'bootstrap', 'tailwind', 'redux', 'mobx', 'webpack', 'vite',
+            'babel', 'typescript', 'nestjs', 'meteor', 'ember', 'backbone', 'polymer',
+
+            # Databases
+            'postgresql', 'postgres', 'mysql', 'mongodb', 'redis', 'elasticsearch',
+            'cassandra', 'dynamodb', 'couchdb', 'neo4j', 'mariadb', 'sqlite', 'mssql',
+            'oracle', 'firestore', 'cosmos', 'aurora', 'redshift', 'bigquery', 'snowflake',
+            'clickhouse', 'influxdb', 'timescaledb', 'cockroachdb', 'supabase', 'fauna',
+
+            # Cloud & DevOps
+            'aws', 'azure', 'gcp', 'kubernetes', 'docker', 'terraform', 'ansible',
+            'jenkins', 'gitlab', 'github', 'bitbucket', 'circleci', 'travisci', 'heroku',
+            'netlify', 'vercel', 'cloudflare', 'digitalocean', 'linode', 'cloudformation',
+            'helm', 'istio', 'linkerd', 'consul', 'vault', 'prometheus', 'grafana',
+            'datadog', 'newrelic', 'splunk', 'nagios', 'zabbix', 'pagerduty',
+
+            # Certifications
+            'cissp', 'cism', 'comptia', 'ccna', 'ccnp', 'ccie', 'mcsa', 'mcse',
+            'rhcsa', 'rhce', 'cka', 'ckad', 'cksa', 'pmp', 'csm', 'psm',
+            'togaf', 'itil', 'prince', 'safe', 'cspo', 'capm',
+
+            # Methodologies
+            'agile', 'scrum', 'kanban', 'devops', 'mlops', 'devsecops', 'gitops',
+            'cicd', 'tdd', 'bdd', 'ddd', 'microservices', 'serverless', 'jamstack',
+            'waterfall', 'lean', 'sixsigma', 'kaizen', 'prince2',
+
+            # Tools
+            'jira', 'confluence', 'slack', 'teams', 'zoom', 'notion', 'trello',
+            'asana', 'monday', 'figma', 'sketch', 'invision', 'zeplin', 'postman',
+            'insomnia', 'swagger', 'openapi', 'graphql', 'grpc', 'protobuf',
+            'kafka', 'rabbitmq', 'activemq', 'nginx', 'apache', 'haproxy',
+            'vscode', 'intellij', 'pycharm', 'webstorm', 'sublime', 'atom',
+
+            # Companies (common)
+            'google', 'microsoft', 'amazon', 'meta', 'facebook', 'apple', 'netflix',
+            'uber', 'airbnb', 'spotify', 'linkedin', 'twitter', 'instagram', 'tiktok',
+            'salesforce', 'oracle', 'ibm', 'intel', 'nvidia', 'amd', 'cisco', 'adobe',
+            'stripe', 'shopify', 'zendesk', 'atlassian', 'slack', 'zoom', 'twilio',
+
+            # Testing
+            'jest', 'mocha', 'chai', 'jasmine', 'karma', 'pytest', 'unittest',
+            'selenium', 'cypress', 'playwright', 'puppeteer', 'testcafe', 'cucumber',
+            'junit', 'testng', 'rspec', 'phpunit', 'nunit', 'xunit',
+
+            # Data Science & ML
+            'tensorflow', 'pytorch', 'keras', 'scikit', 'sklearn', 'pandas', 'numpy',
+            'scipy', 'matplotlib', 'seaborn', 'plotly', 'jupyter', 'anaconda', 'hadoop',
+            'spark', 'airflow', 'mlflow', 'kubeflow', 'sagemaker', 'databricks',
+            'tableau', 'powerbi', 'looker', 'qlik', 'domo', 'superset',
+
+            # Mobile
+            'ios', 'android', 'reactnative', 'flutter', 'ionic', 'cordova', 'xamarin',
+            'swift', 'kotlin', 'objectivec', 'swiftui', 'jetpack',
+
+            # Version Control
+            'git', 'svn', 'mercurial', 'perforce', 'cvs', 'gitlab', 'github', 'bitbucket',
+
+            # Operating Systems
+            'linux', 'unix', 'ubuntu', 'debian', 'centos', 'redhat', 'fedora',
+            'macos', 'windows', 'freebsd', 'openbsd',
+
+            # Networking
+            'tcp', 'udp', 'dns', 'dhcp', 'vpn', 'vlan', 'bgp', 'ospf', 'mpls',
+            'ipsec', 'nat', 'firewall', 'loadbalancer', 'cdn',
+
+            # Security
+            'owasp', 'penetration', 'vulnerability', 'encryption', 'authentication',
+            'authorization', 'oauth', 'saml', 'ldap', 'kerberos', 'ssl', 'tls',
+
+            # Architecture
+            'microservices', 'monolith', 'soa', 'restful', 'graphql', 'grpc',
+            'eventdriven', 'cqrs', 'saga', 'api', 'webhook', 'websocket',
+
+            # Project Management
+            'jira', 'trello', 'asana', 'monday', 'basecamp', 'wrike', 'clickup',
+
+            # Business Intelligence
+            'tableau', 'powerbi', 'qlik', 'looker', 'metabase', 'redash',
+
+            # E-commerce
+            'shopify', 'magento', 'woocommerce', 'prestashop', 'bigcommerce',
+
+            # CMS
+            'wordpress', 'drupal', 'joomla', 'contentful', 'strapi', 'sanity',
+
+            # Payment
+            'stripe', 'paypal', 'square', 'braintree', 'adyen',
+
+            # Analytics
+            'googleanalytics', 'mixpanel', 'amplitude', 'segment', 'heap',
+
+            # Communication
+            'twilio', 'sendgrid', 'mailchimp', 'mailgun',
+
+            # Containers & Orchestration
+            'docker', 'kubernetes', 'openshift', 'rancher', 'nomad', 'mesos',
+
+            # Message Queues
+            'kafka', 'rabbitmq', 'activemq', 'redis', 'sqs', 'pubsub',
+
+            # Search
+            'elasticsearch', 'solr', 'algolia', 'meilisearch', 'typesense',
+
+            # Caching
+            'redis', 'memcached', 'varnish', 'cloudflare',
+
+            # Monitoring
+            'prometheus', 'grafana', 'datadog', 'newrelic', 'dynatrace',
+            'appinsights', 'cloudwatch', 'stackdriver',
+
+            # Logging
+            'elasticsearch', 'logstash', 'kibana', 'fluentd', 'splunk',
+            'papertrail', 'loggly', 'sumologic',
+
+            # API Management
+            'apigee', 'kong', 'tyk', 'mulesoft', 'swagger',
+
+            # Blockchain
+            'ethereum', 'bitcoin', 'solidity', 'hyperledger', 'solana',
+
+            # Game Development
+            'unity', 'unreal', 'godot', 'pygame', 'phaser',
+
+            # Misc Tech Terms
+            'api', 'sdk', 'cli', 'gui', 'crud', 'orm', 'mvc', 'mvvm',
+            'spa', 'pwa', 'ssr', 'ssg', 'cdn', 'dns', 'ssl', 'https',
+            'oauth', 'jwt', 'cors', 'csrf', 'xss', 'sql', 'nosql',
+            'etl', 'olap', 'oltp', 'acid', 'base', 'cap',
+        }
+
         misspelled = []
         for word in words:
             word_lower = word.lower()
 
-            # Skip technical terms, acronyms (all caps), and very short words
-            if word_lower in technical_terms or word.isupper() or len(word) < 4:
+            # Skip technical terms, resume vocabulary, acronyms (all caps), and very short words
+            if word_lower in technical_terms or word_lower in RESUME_VOCABULARY or word.isupper() or len(word) < 4:
                 continue
 
             # Skip words with numbers
@@ -961,7 +1102,52 @@ class RedFlagsValidator:
         if re.search(r'[.,!?][a-zA-Z]', text):
             issues.append("Missing space after punctuation")
 
-        return issues[:3]  # Limit to 3 issues per text
+        # SOLUTION 1: Enhanced Grammar Patterns (10-15 new patterns)
+
+        # Check for verb tense consistency
+        tense_patterns = [
+            (r'\b(managed|led|developed|created|built|designed|implemented)\b.*\b(managing|leading|developing|creating|building|designing|implementing)\b',
+             "Mixed verb tenses detected - use consistent past or present tense throughout experience"),
+        ]
+
+        for pattern, message in tense_patterns:
+            if re.search(pattern, text, re.IGNORECASE):
+                issues.append(message)
+                break  # Only report once per text
+
+        # Check for plural/singular with numbers
+        if re.search(r'\b\d+\s+year\s+(of\s+)?experience\b', text, re.IGNORECASE):
+            issues.append("Should be 'years' (plural) after a number: e.g., '5 years of experience'")
+
+        # Check for passive voice overuse (just warn, don't correct)
+        passive_count = len(re.findall(r'\bwas\s+\w+ed\s+by\b|\bwere\s+\w+ed\s+by\b', text, re.IGNORECASE))
+        if passive_count >= 2:
+            issues.append(f"Consider using active voice instead of passive voice ({passive_count} instances found)")
+
+        # Check for article errors with professions
+        if re.search(r'\b(am|is|are)\s+(engineer|developer|manager|designer|analyst|architect|consultant)\b', text, re.IGNORECASE):
+            issues.append("Missing article: add 'a' or 'an' before profession (e.g., 'I am an engineer')")
+
+        # Check for preposition errors with companies
+        if re.search(r'\bworked\s+in\s+(google|microsoft|amazon|apple|meta|facebook|ibm|oracle|netflix|uber|airbnb|linkedin|twitter|tesla|spotify)\b', text, re.IGNORECASE):
+            issues.append("Use 'at' instead of 'in' when referring to working at a company")
+
+        # Check for sentence fragments (no verb)
+        sentences = re.split(r'[.!?]+', text)
+        for sentence in sentences:
+            sentence = sentence.strip()
+            # Skip very short sentences and check for verbs
+            if len(sentence) > 10 and not re.search(r'\b(am|is|are|was|were|have|has|had|do|does|did|will|would|can|could|should|managed|led|developed|created|built|designed|implemented|achieved|improved|increased|reduced|streamlined|optimized|engineered|architected|delivered|launched|drove|spearheaded)\b', sentence, re.IGNORECASE):
+                issues.append(f"Possible sentence fragment detected: '{sentence[:50]}...'")
+                break  # Only report first one
+
+        # Check for run-on sentences (very long sentences)
+        for sentence in sentences:
+            if len(sentence.split()) > 40:
+                issues.append(f"Very long sentence detected ({len(sentence.split())} words) - consider breaking it up")
+                break  # Only report first one
+
+        return issues[:5]  # Limit to 5 issues per text (increased from 3)
 
     def _check_capitalization(self, text: str) -> List[str]:
         """

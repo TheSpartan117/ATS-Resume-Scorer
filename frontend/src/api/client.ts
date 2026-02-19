@@ -2,7 +2,8 @@
  * API client for backend communication
  */
 import axios, { AxiosError } from 'axios'
-import type { UploadResponse, ApiError, ScoreResult } from '../types/resume'
+import type { UploadResponse, ApiError, ScoreResult, Experience, Education, Certification } from '../types/resume'
+import { API_TIMEOUT } from '../config/timeouts'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
@@ -11,7 +12,7 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 seconds
+  timeout: API_TIMEOUT,
 })
 
 /**
@@ -75,10 +76,10 @@ export interface ScoreRequest {
     linkedin?: string
     website?: string
   }
-  experience: any[]
-  education: any[]
+  experience: Experience[]
+  education: Education[]
   skills: string[]
-  certifications: any[]
+  certifications: Certification[]
   metadata: {
     pageCount: number
     wordCount: number
@@ -164,7 +165,9 @@ export function setAuthToken(token: string | null) {
 
       apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`
     } catch (error) {
-      console.error('Failed to validate token:', error)
+      if (import.meta.env.DEV) {
+        console.error('Failed to validate token:', error)
+      }
     }
   } else {
     delete apiClient.defaults.headers.common['Authorization']
@@ -294,7 +297,9 @@ export async function trackAdView(): Promise<void> {
   try {
     await apiClient.post('/api/ad-view')
   } catch (error) {
-    console.error('Failed to track ad view:', error)
+    if (import.meta.env.DEV) {
+      console.error('Failed to track ad view:', error)
+    }
   }
 }
 
@@ -373,19 +378,8 @@ export interface UpdateSectionResponse {
  * Update section in DOCX template
  */
 export async function updateSection(request: UpdateSectionRequest): Promise<UpdateSectionResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/preview/update`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(request),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to update section');
-  }
-
-  return response.json();
+  const response = await apiClient.post<UpdateSectionResponse>('/api/preview/update', request);
+  return response.data;
 }
 
 export default apiClient

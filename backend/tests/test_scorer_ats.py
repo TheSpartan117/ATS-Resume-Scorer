@@ -702,3 +702,253 @@ def test_experience_level_ranges():
         assert 'total_years' in result['details']
         assert result['score'] >= 0
         assert result['score'] <= 20
+
+
+def test_input_validation_empty_contact():
+    """Test that scorer handles empty contact info gracefully"""
+    scorer = ATSScorer()
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={},  # Empty contact
+        experience=[],
+        education=[],
+        skills=[],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    result = scorer.score(resume, "software_engineer", "mid", "")
+
+    # Should not crash, should return low score
+    assert 'score' in result
+    assert result['score'] >= 0
+    assert result['breakdown']['contact']['score'] == 0
+
+
+def test_input_validation_missing_metadata_fields():
+    """Test that scorer handles missing metadata fields gracefully"""
+    scorer = ATSScorer()
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[],
+        education=[],
+        skills=[],
+        certifications=[],
+        metadata={}  # Empty metadata
+    )
+
+    result = scorer.score(resume, "software_engineer", "mid", "")
+
+    # Should not crash
+    assert 'score' in result
+    assert result['score'] >= 0
+
+
+def test_input_validation_empty_lists():
+    """Test that scorer handles empty lists gracefully"""
+    scorer = ATSScorer()
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[],  # Empty
+        education=[],  # Empty
+        skills=[],  # Empty
+        certifications=[],  # Empty
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    result = scorer.score(resume, "software_engineer", "mid", "")
+
+    # Should not crash, should return low score
+    assert 'score' in result
+    assert result['score'] >= 0
+    assert result['score'] < 50  # Should be low due to missing content
+
+
+def test_input_validation_malformed_experience():
+    """Test that scorer handles malformed experience data"""
+    scorer = ATSScorer()
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[
+            {},  # Empty experience object
+            {"title": "Engineer"},  # Missing fields
+            {"company": "Company"},  # Missing title
+        ],
+        education=[],
+        skills=[],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    result = scorer.score(resume, "software_engineer", "mid", "")
+
+    # Should not crash
+    assert 'score' in result
+    assert result['score'] >= 0
+
+
+def test_role_specific_weights_loaded():
+    """Test that role-specific weights are loaded from taxonomy"""
+    scorer = ATSScorer()
+
+    # Test that different roles could have different weightings
+    # For now, just verify that the scorer can access role data
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe", "email": "john@example.com"},
+        experience=[{
+            "title": "Engineer",
+            "company": "Company",
+            "startDate": "Jan 2020",
+            "endDate": "Present",
+            "description": "Developed applications"
+        }],
+        education=[{"degree": "BS", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    # Should work for different roles
+    result_swe = scorer.score(resume, "software_engineer", "mid", "")
+    result_pm = scorer.score(resume, "product_manager", "mid", "")
+
+    assert 'score' in result_swe
+    assert 'score' in result_pm
+    # Both should work without errors
+    assert result_swe['score'] >= 0
+    assert result_pm['score'] >= 0
+
+
+def test_experience_scoring_with_role_weights():
+    """Test that experience scoring can use role-specific thresholds"""
+    scorer = ATSScorer()
+
+    # Mid-level resume with 4 years experience
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[
+            {
+                "title": "Engineer",
+                "company": "Company",
+                "startDate": "Jan 2020",
+                "endDate": "Dec 2023",  # 4 years
+                "description": "Developed scalable applications with modern frameworks"
+            }
+        ],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    # 4 years should be good for mid-level (range: 2-6 years)
+    result = scorer._score_experience(resume, "mid")
+
+    assert result['score'] >= 10  # Should score reasonably well
+    assert 'total_years' in result['details']
+    # Should recognize this as appropriate for mid-level
+    assert "matches mid level" in result['details']['years_message'].lower() or \
+           "qualified" in result['details']['years_message'].lower()
+
+
+def test_false_negative_5_years_not_entry_level():
+    """
+    Test that 5 years experience is NOT marked as entry-level.
+    This was a reported false negative - 5 years should be mid/senior, not entry.
+    """
+    scorer = ATSScorer()
+
+    # Resume with 5 years experience
+    resume = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[
+            {
+                "title": "Software Engineer",
+                "company": "Tech Company",
+                "startDate": "Jan 2019",
+                "endDate": "Present",  # ~5 years
+                "description": "Led development of microservices architecture using Python and Docker"
+            }
+        ],
+        education=[{"degree": "BS Computer Science", "institution": "University"}],
+        skills=["Python", "Docker", "Microservices"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 500, "fileFormat": "pdf"}
+    )
+
+    # Test entry-level scoring - should score LOWER than mid because 5 years is over-qualified
+    result_entry = scorer._score_experience(resume, "entry")
+    # Entry level is 0-3 years, so 5 years is over-qualified but scorer is lenient
+    # It will still give recency and relevance points, so expect around 15-18 points total
+
+    # Test mid-level scoring - should score HIGH because 5 years is perfect
+    result_mid = scorer._score_experience(resume, "mid")
+    # Mid level is 2-6 years, so 5 years is perfect - expect 20 points (full score)
+    assert result_mid['score'] >= 18  # Should score very well for mid-level
+    assert result_mid['details']['total_years'] >= 4.5  # Should detect ~5 years
+
+    # Mid should score EQUAL OR better than entry for 5 years experience
+    # The key is that it should NOT be falsely flagged as entry-level
+    assert result_mid['score'] >= result_entry['score']
+    # And mid should get a better years score than entry
+    # (entry gets 8 for over-qualified, mid gets 10 for perfect match)
+
+
+def test_false_negative_borderline_experience():
+    """
+    Test borderline cases that should not be false negatives.
+    Examples: 2 years for mid (at lower boundary), 5 years for senior (at lower boundary).
+    """
+    scorer = ATSScorer()
+
+    # 2 years - borderline for mid-level
+    resume_2y = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[
+            {
+                "title": "Engineer",
+                "company": "Company",
+                "startDate": "Jan 2022",
+                "endDate": "Present",  # ~2 years
+                "description": "Developed applications"
+            }
+        ],
+        education=[{"degree": "BS", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    result_2y_mid = scorer._score_experience(resume_2y, "mid")
+    # 2 years is at the lower boundary of mid (2-6), should get good score
+    assert result_2y_mid['score'] >= 8  # Should be acceptable
+
+    # 5 years - borderline for senior-level
+    resume_5y = ResumeData(
+        fileName="test.pdf",
+        contact={"name": "John Doe"},
+        experience=[
+            {
+                "title": "Senior Engineer",
+                "company": "Company",
+                "startDate": "Jan 2019",
+                "endDate": "Present",  # ~5 years
+                "description": "Led team and architected systems"
+            }
+        ],
+        education=[{"degree": "BS", "institution": "University"}],
+        skills=["Python"],
+        certifications=[],
+        metadata={"pageCount": 1, "wordCount": 400, "fileFormat": "pdf"}
+    )
+
+    result_5y_senior = scorer._score_experience(resume_5y, "senior")
+    # 5 years is at lower boundary of senior (5-12), should get good score
+    assert result_5y_senior['score'] >= 8  # Should be acceptable

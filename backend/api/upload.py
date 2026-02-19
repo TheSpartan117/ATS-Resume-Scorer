@@ -18,6 +18,7 @@ from backend.services.pdf_to_docx import convert_pdf_to_docx
 from backend.services.docx_to_html_advanced import docx_to_html_advanced
 from backend.services.section_detector import SectionDetector
 from backend.services.docx_template_manager import DocxTemplateManager
+from backend.services.scoring_utils import normalize_scoring_mode
 from backend.schemas.resume import UploadResponse, ContactInfoResponse, MetadataResponse, ScoreResponse, CategoryBreakdown, FormatCheckResponse
 
 logger = logging.getLogger(__name__)
@@ -239,17 +240,8 @@ async def upload_resume(
         logger.error(f"Format check failed: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Format check failed: {str(e)}")
 
-    # Normalize mode parameter (support both "ats" and "ats_simulation", etc.)
-    scoring_mode = mode or "auto"
-    if scoring_mode == "ats":
-        scoring_mode = "ats_simulation"
-    elif scoring_mode == "quality":
-        scoring_mode = "quality_coach"
-
-    # Auto-detect mode if mode="auto"
-    if scoring_mode == "auto":
-        scoring_mode = "ats_simulation" if jobDescription else "quality_coach"
-
+    # Normalize mode parameter using utility function
+    scoring_mode = normalize_scoring_mode(mode or "auto", jobDescription or "")
     logger.info(f"Scoring mode: {scoring_mode}")
 
     # Use adaptive scorer
@@ -265,6 +257,17 @@ async def upload_resume(
             mode=scoring_mode
         )
         logger.info(f"Score calculated: {score_result.get('overallScore', 0)}")
+
+        # Enrich with enhanced suggestions
+        from backend.services.suggestion_integrator import SuggestionIntegrator
+        score_result = SuggestionIntegrator.enrich_score_result(
+            score_result=score_result,
+            resume_data=resume_data,
+            role=role,
+            level=level,
+            job_description=jobDescription or ""
+        )
+        logger.info(f"Enhanced suggestions added: {len(score_result.get('enhanced_suggestions', []))}")
     except Exception as e:
         logger.error(f"Scoring failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to score resume: {str(e)}")
@@ -296,6 +299,9 @@ async def upload_resume(
         "suggestions": len(issues_response.get("suggestions", []))
     }
 
+    # Extract enhanced suggestions
+    enhanced_suggestions = score_result.get("enhanced_suggestions", [])
+
     score_response = ScoreResponse(
         overallScore=score_result["overallScore"],
         breakdown=breakdown_response,
@@ -304,7 +310,8 @@ async def upload_resume(
         mode=score_result.get("mode", scoring_mode),
         keywordDetails=score_result.get("keyword_details"),
         autoReject=score_result.get("auto_reject"),
-        issueCounts=issue_counts
+        issueCounts=issue_counts,
+        enhancedSuggestions=enhanced_suggestions
     )
 
     # Format check response

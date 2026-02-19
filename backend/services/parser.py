@@ -65,12 +65,12 @@ class ResumeMetadata(BaseModel):
 class ResumeData(BaseModel):
     """Complete structured resume data"""
     fileName: str
-    contact: Dict[str, Optional[str]]
-    experience: List[Dict] = Field(default_factory=list)
-    education: List[Dict] = Field(default_factory=list)
-    skills: List[str] = Field(default_factory=list)
-    certifications: List[Dict] = Field(default_factory=list)
-    metadata: Dict
+    contact: Optional[Dict[str, Optional[str]]] = Field(default_factory=dict)
+    experience: Optional[List[Dict]] = Field(default_factory=list)
+    education: Optional[List[Dict]] = Field(default_factory=list)
+    skills: Optional[List[str]] = Field(default_factory=list)
+    certifications: Optional[List[Dict]] = Field(default_factory=list)
+    metadata: Optional[Dict] = Field(default_factory=dict)
 
 
 # Helper functions for text extraction

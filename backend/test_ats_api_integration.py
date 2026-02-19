@@ -12,7 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from fastapi.testclient import TestClient
-from main import app
+from backend.main import app
 
 # Create test client
 client = TestClient(app)
