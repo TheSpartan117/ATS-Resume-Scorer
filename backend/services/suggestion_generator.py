@@ -671,3 +671,304 @@ Technical Skills<br/>
                       'Track record of delivering results and driving impact. '
                       'Seeking to contribute expertise in target role.'
         })
+
+
+class SuggestionGenerator:
+    """
+    Generates actionable suggestions mapped to document locations for editor UX.
+
+    This class creates suggestions with 4 action types:
+    1. missing_content - Quick add with modal (phone, email, linkedin)
+    2. content_change - Navigate & highlight OR replace text (weak verbs, grammar)
+    3. missing_section - Template insert (Projects, Skills)
+    4. formatting - Navigate only (date formats, bullet styles)
+
+    Each suggestion includes location mapping to paragraph indices for navigation.
+    """
+
+    # Weak action verbs to detect
+    WEAK_VERBS = [
+        'responsible for', 'worked on', 'helped with', 'assisted with',
+        'involved in', 'participated in', 'handled', 'dealt with'
+    ]
+
+    # Strong replacement verbs by category
+    STRONG_VERBS = {
+        'leadership': ['Led', 'Managed', 'Directed', 'Coordinated', 'Supervised', 'Guided'],
+        'achievement': ['Achieved', 'Delivered', 'Exceeded', 'Accelerated', 'Improved', 'Increased'],
+        'technical': ['Developed', 'Architected', 'Implemented', 'Optimized', 'Automated', 'Engineered'],
+        'collaboration': ['Collaborated', 'Partnered', 'Facilitated', 'Consulted', 'Engaged']
+    }
+
+    # Tech roles that should have Projects section
+    TECH_ROLES = ['software_engineer', 'data_scientist', 'devops_engineer', 'qa_engineer', 'frontend_developer', 'backend_developer']
+
+    def __init__(self, role: str, level: str):
+        """
+        Initialize suggestion generator.
+
+        Args:
+            role: Role ID (e.g., "software_engineer")
+            level: Experience level (e.g., "mid", "senior")
+        """
+        self.role = role
+        self.level = level
+
+    def generate_suggestions(
+        self,
+        resume_data: Dict,
+        sections: List[Dict]
+    ) -> List[Dict]:
+        """
+        Generate actionable suggestions with document locations.
+
+        Args:
+            resume_data: Parsed resume data with contact, experience, skills, education
+            sections: Section mappings from section_detector with start_para/end_para
+
+        Returns:
+            List of suggestion dictionaries sorted by priority (critical > high > medium > low)
+        """
+        suggestions = []
+
+        # Create section lookup for easy access
+        section_map = {s['name']: s for s in sections}
+
+        # 1. Missing content suggestions (critical/high priority)
+        suggestions.extend(self._detect_missing_contact(resume_data, section_map))
+
+        # 2. Content change suggestions (medium priority)
+        suggestions.extend(self._detect_weak_action_verbs(resume_data, section_map))
+
+        # 3. Missing section suggestions (high/medium priority)
+        suggestions.extend(self._detect_missing_sections(resume_data, section_map))
+
+        # 4. Formatting suggestions (low priority)
+        suggestions.extend(self._detect_formatting_issues(resume_data, section_map))
+
+        # Sort by priority
+        suggestions = self._sort_by_priority(suggestions)
+
+        return suggestions
+
+    def _detect_missing_contact(
+        self,
+        resume_data: Dict,
+        section_map: Dict
+    ) -> List[Dict]:
+        """Detect missing contact information (phone, linkedin)."""
+        suggestions = []
+        contact = resume_data.get('contact', {})
+        contact_section = section_map.get('Contact', {})
+
+        # Missing phone number
+        if not contact.get('phone'):
+            suggestions.append({
+                'id': 'missing-phone',
+                'type': 'missing_content',
+                'severity': 'critical',
+                'title': 'Missing phone number',
+                'description': 'ATS systems expect phone number in contact information',
+                'location': {
+                    'section': 'Contact',
+                    'line': None
+                },
+                'action': 'add_phone',
+                'example': '(555) 123-4567'
+            })
+
+        # Missing LinkedIn
+        if not contact.get('linkedin'):
+            suggestions.append({
+                'id': 'missing-linkedin',
+                'type': 'missing_content',
+                'severity': 'high',
+                'title': 'Missing LinkedIn profile',
+                'description': 'LinkedIn profile increases ATS score and recruiter confidence',
+                'location': {
+                    'section': 'Contact',
+                    'line': None
+                },
+                'action': 'add_linkedin',
+                'example': 'linkedin.com/in/yourprofile'
+            })
+
+        return suggestions
+
+    def _detect_weak_action_verbs(
+        self,
+        resume_data: Dict,
+        section_map: Dict
+    ) -> List[Dict]:
+        """Detect weak action verbs in experience descriptions."""
+        suggestions = []
+        experience = resume_data.get('experience', [])
+        experience_section = section_map.get('Experience', {})
+
+        for exp in experience:
+            description = exp.get('description', '')
+            para_idx = exp.get('para_idx')
+
+            # Check for weak verbs
+            for weak_verb in self.WEAK_VERBS:
+                if weak_verb.lower() in description.lower():
+                    # Find appropriate strong replacement
+                    strong_verb = self._get_strong_verb_replacement(weak_verb)
+
+                    # Create improved version
+                    improved_text = description.replace(
+                        weak_verb.title(),
+                        strong_verb
+                    ).replace(
+                        weak_verb.lower(),
+                        strong_verb.lower()
+                    )
+
+                    suggestions.append({
+                        'id': f'weak-verb-{para_idx}',
+                        'type': 'content_change',
+                        'severity': 'medium',
+                        'title': 'Weak action verb detected',
+                        'description': f'Replace "{weak_verb}" with stronger action verb',
+                        'location': {
+                            'section': 'Experience',
+                            'line': None,
+                            'para_idx': para_idx
+                        },
+                        'current_text': description,
+                        'suggested_text': improved_text,
+                        'action': 'replace_text'
+                    })
+                    break  # Only one suggestion per bullet
+
+        return suggestions
+
+    def _get_strong_verb_replacement(self, weak_verb: str) -> str:
+        """Get strong verb replacement for weak verb."""
+        weak_lower = weak_verb.lower()
+
+        if 'responsible' in weak_lower or 'managed' in weak_lower:
+            return 'Led'
+        elif 'worked' in weak_lower or 'helped' in weak_lower:
+            return 'Developed'
+        elif 'assisted' in weak_lower or 'involved' in weak_lower:
+            return 'Collaborated with'
+        else:
+            return 'Achieved'
+
+    def _detect_missing_sections(
+        self,
+        resume_data: Dict,
+        section_map: Dict
+    ) -> List[Dict]:
+        """Detect missing sections (Skills, Projects, etc.)."""
+        suggestions = []
+
+        # Check for missing Skills section
+        if 'Skills' not in section_map or not resume_data.get('skills'):
+            suggestions.append({
+                'id': 'missing-skills',
+                'type': 'missing_section',
+                'severity': 'high',
+                'title': 'Missing Skills section',
+                'description': 'Skills section is crucial for ATS keyword matching',
+                'location': {
+                    'section': 'After Experience',
+                    'line': None
+                },
+                'action': 'add_section',
+                'template': 'Technical Skills\n• Category 1: Skill1, Skill2, Skill3\n• Category 2: Skill1, Skill2, Skill3'
+            })
+
+        # Check for missing Projects section (tech roles only)
+        if self.role in self.TECH_ROLES and 'Projects' not in section_map:
+            suggestions.append({
+                'id': 'missing-projects',
+                'type': 'missing_section',
+                'severity': 'medium',
+                'title': 'Missing Projects section',
+                'description': 'Projects section recommended for technical roles to showcase hands-on experience',
+                'location': {
+                    'section': 'After Experience',
+                    'line': None
+                },
+                'action': 'add_section',
+                'template': 'Projects\n\nProject Name | Technologies Used\n• Brief description of project\n• Key achievements and impact'
+            })
+
+        # Check for missing Professional Summary
+        if not resume_data.get('summary') and 'Summary' not in section_map:
+            suggestions.append({
+                'id': 'missing-summary',
+                'type': 'missing_section',
+                'severity': 'high',
+                'title': 'Missing Professional Summary',
+                'description': 'Professional summary is the first thing recruiters and ATS systems read',
+                'location': {
+                    'section': 'After Contact',
+                    'line': None
+                },
+                'action': 'add_section',
+                'template': f'{self._get_summary_template()}'
+            })
+
+        return suggestions
+
+    def _get_summary_template(self) -> str:
+        """Get role and level-specific summary template."""
+        role_name = self.role.replace('_', ' ').title()
+
+        templates = {
+            'entry': f"Entry-level {role_name} with [X months/years] of experience. Strong foundation in [key skills]. Seeking to contribute to [target role].",
+            'mid': f"Results-driven {role_name} with [X years] of experience. Proven track record in [key achievements]. Proficient in [tech stack].",
+            'senior': f"Senior {role_name} with [X+ years] of experience. Led [teams/projects] delivering [impact]. Expert in [technologies].",
+            'lead': f"Accomplished {role_name} leader with [X+ years]. Directed [scale]. Proven expertise in [areas].",
+            'executive': f"Visionary {role_name} executive with [X+ years]. Transformed [organizations] achieving [outcomes]."
+        }
+
+        return templates.get(self.level, templates['mid'])
+
+    def _detect_formatting_issues(
+        self,
+        resume_data: Dict,
+        section_map: Dict
+    ) -> List[Dict]:
+        """Detect formatting issues (inconsistent dates, etc.)."""
+        suggestions = []
+        experience = resume_data.get('experience', [])
+
+        # Check for inconsistent date formats
+        date_formats = []
+        for exp in experience:
+            dates = exp.get('dates', '')
+            if dates:
+                date_formats.append(dates)
+
+        # Simple check: if dates vary widely in format
+        if len(date_formats) > 1:
+            has_inconsistent = any('/' in d for d in date_formats) and any('/' not in d for d in date_formats)
+
+            if has_inconsistent:
+                suggestions.append({
+                    'id': 'inconsistent-dates',
+                    'type': 'formatting',
+                    'severity': 'low',
+                    'title': 'Inconsistent date format',
+                    'description': 'Use consistent date format throughout (e.g., "MM/YYYY" or "Month YYYY")',
+                    'location': {
+                        'section': 'Experience',
+                        'line': None
+                    },
+                    'action': 'navigate'
+                })
+
+        return suggestions
+
+    def _sort_by_priority(self, suggestions: List[Dict]) -> List[Dict]:
+        """Sort suggestions by severity (critical > high > medium > low)."""
+        severity_order = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
+
+        return sorted(
+            suggestions,
+            key=lambda s: severity_order.get(s['severity'], 4)
+        )
