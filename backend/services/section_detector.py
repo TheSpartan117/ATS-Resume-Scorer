@@ -130,3 +130,101 @@ class SectionDetector:
             return True
 
         return False
+
+    # Common section headers for keyword-based detection
+    SECTION_KEYWORDS = {
+        'Contact': ['contact', 'personal', 'profile'],
+        'Summary': ['summary', 'objective', 'about'],
+        'Experience': ['experience', 'employment', 'work history', 'professional experience'],
+        'Education': ['education', 'academic', 'qualifications'],
+        'Skills': ['skills', 'technical skills', 'competencies'],
+        'Projects': ['projects', 'portfolio'],
+        'Certifications': ['certifications', 'certificates', 'licenses'],
+        'Awards': ['awards', 'honors', 'achievements']
+    }
+
+    def detect_sections(self, doc: Document) -> list[dict]:
+        """
+        Detect sections in resume DOCX.
+
+        Args:
+            doc: python-docx Document object
+
+        Returns:
+            List of sections with name, start_para, end_para
+        """
+        sections = []
+        paragraphs = doc.paragraphs
+
+        # First section is usually contact (before first header)
+        first_header_idx = None
+        for i, para in enumerate(paragraphs):
+            if self._is_section_header_keyword(para.text):
+                first_header_idx = i
+                break
+
+        if first_header_idx is not None and first_header_idx > 0:
+            sections.append({
+                'name': 'Contact',
+                'start_para': 0,
+                'end_para': first_header_idx - 1
+            })
+
+        # Detect other sections by headers
+        current_section = None
+        start_idx = None
+
+        for i, para in enumerate(paragraphs):
+            section_name = self._identify_section(para.text)
+
+            if section_name:
+                # Save previous section
+                if current_section and start_idx is not None:
+                    sections.append({
+                        'name': current_section,
+                        'start_para': start_idx,
+                        'end_para': i - 1
+                    })
+
+                # Start new section
+                current_section = section_name
+                start_idx = i
+
+        # Save last section
+        if current_section and start_idx is not None:
+            sections.append({
+                'name': current_section,
+                'start_para': start_idx,
+                'end_para': len(paragraphs) - 1
+            })
+
+        return sections
+
+    def _is_section_header_keyword(self, text: str) -> bool:
+        """Check if text looks like a section header"""
+        if not text or len(text) > 50:
+            return False
+
+        text_lower = text.lower().strip()
+
+        # Check against known section keywords
+        for keywords in self.SECTION_KEYWORDS.values():
+            for keyword in keywords:
+                if keyword in text_lower:
+                    return True
+
+        return False
+
+    def _identify_section(self, text: str) -> str:
+        """Identify which section a header belongs to"""
+        if not text:
+            return None
+
+        text_lower = text.lower().strip()
+
+        for section_name, keywords in self.SECTION_KEYWORDS.items():
+            for keyword in keywords:
+                if keyword in text_lower:
+                    return section_name
+
+        return None

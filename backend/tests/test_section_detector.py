@@ -130,3 +130,21 @@ def test_empty_bytes():
 
     with pytest.raises(ValueError, match="docx_bytes cannot be empty"):
         detector.detect(b'')
+
+def test_detect_contact_section():
+    """Test detecting Contact section"""
+    doc = Document()
+    doc.add_paragraph("John Doe")
+    doc.add_paragraph("john@example.com")
+    doc.add_paragraph("(555) 123-4567")
+    doc.add_paragraph("Experience")
+    doc.add_paragraph("Software Engineer at TechCorp")
+
+    detector = SectionDetector()
+    sections = detector.detect_sections(doc)
+
+    assert len(sections) > 0
+    contact = next((s for s in sections if s['name'] == 'Contact'), None)
+    assert contact is not None
+    assert contact['start_para'] == 0
+    assert contact['end_para'] >= 2
