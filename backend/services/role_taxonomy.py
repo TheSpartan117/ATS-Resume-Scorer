@@ -876,33 +876,35 @@ def get_corpus_keywords(role_id: str, level: str) -> List[str]:
     """
     Get corpus-derived keywords for a specific role and level.
 
-    This function retrieves keywords from the corpus skills database.
-    Currently returns top skills from corpus as role-specific mappings
-    are not yet implemented in the corpus database.
+    This function retrieves keywords from the role_keywords.json file which
+    contains comprehensive keyword lists for each role and level combination.
 
     Args:
-        role_id: The role identifier (e.g., "ml_engineer", "software_engineer")
+        role_id: The role identifier (e.g., "product_manager", "software_engineer")
         level: The experience level (e.g., "entry", "mid", "senior")
 
     Returns:
-        List of corpus-derived keywords, or empty list if corpus unavailable
+        List of corpus-derived keywords, or empty list if unavailable
     """
     try:
-        # Import here to avoid circular dependencies
-        from backend.services.corpus_skills_database import get_corpus_skills_database
+        import json
+        from pathlib import Path
 
-        corpus_service = get_corpus_skills_database()
+        # Load role_keywords.json
+        keywords_file = Path(__file__).parent.parent / "data" / "keywords" / "role_keywords.json"
 
-        if not corpus_service or not corpus_service.is_available():
-            logger.debug("Corpus skills database not available")
+        if not keywords_file.exists():
+            logger.debug(f"role_keywords.json not found at {keywords_file}")
             return []
 
-        # Get top skills from corpus
-        # In future, this could be enhanced to get role-specific skills
-        # For now, return top 20 skills from corpus
-        keywords = corpus_service.get_top_skills(n=20)
+        with open(keywords_file, 'r') as f:
+            all_keywords = json.load(f)
 
-        logger.debug(f"Retrieved {len(keywords)} corpus keywords for {role_id}/{level}")
+        # Build key for role+level (e.g., "product_manager_mid")
+        key = f"{role_id}_{level}"
+
+        keywords = all_keywords.get(key, [])
+        logger.debug(f"Retrieved {len(keywords)} corpus keywords for {key}")
         return keywords
 
     except Exception as e:
