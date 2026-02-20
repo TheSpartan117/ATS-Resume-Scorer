@@ -422,19 +422,39 @@ class AdaptiveScorer:
         total_matched = keyword_matched + verb_matched
         match_pct = (total_matched / total_keywords * 100) if total_keywords > 0 else 0
 
-        # Generous scoring thresholds for Quality Coach mode
-        if match_pct >= 60:
-            score = 25
-        elif match_pct >= 50:
-            score = 22
-        elif match_pct >= 40:
-            score = 18
-        elif match_pct >= 30:
-            score = 15
-        elif match_pct >= 20:
-            score = 12
+        # REALISTIC scoring thresholds for Quality Coach mode
+        # With large keyword lists (100+), even good resumes only match 15-25%
+        # We focus on absolute counts rather than percentages
+        if total_keywords > 100:
+            # Large keyword list (corpus-enhanced) - use absolute count thresholds
+            if total_matched >= 40:  # Exceptional
+                score = 25
+            elif total_matched >= 30:  # Excellent (target for 86+ score)
+                score = 23
+            elif total_matched >= 20:  # Good
+                score = 20
+            elif total_matched >= 15:  # Decent
+                score = 17
+            elif total_matched >= 10:  # Fair
+                score = 14
+            elif total_matched >= 5:  # Minimal
+                score = 10
+            else:
+                score = (total_matched / 5) * 10  # Linear up to 5 matches
         else:
-            score = (match_pct / 20) * 12  # Linear up to 20%
+            # Small keyword list (manual only) - use percentage thresholds
+            if match_pct >= 60:
+                score = 25
+            elif match_pct >= 50:
+                score = 22
+            elif match_pct >= 40:
+                score = 18
+            elif match_pct >= 30:
+                score = 15
+            elif match_pct >= 20:
+                score = 12
+            else:
+                score = (match_pct / 20) * 12
 
         # Cap at maximum score
         score = min(score, 25)
