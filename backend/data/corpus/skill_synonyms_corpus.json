@@ -1,0 +1,49 @@
+{
+  "javascript": [
+    "js"
+  ],
+  "typescript": [
+    "ts"
+  ],
+  "node.js": [
+    "nodejs",
+    "node"
+  ],
+  "react.js": [
+    "react",
+    "reactjs"
+  ],
+  "vue.js": [
+    "vue",
+    "vuejs"
+  ],
+  "angular.js": [
+    "angular",
+    "angularjs"
+  ],
+  "python": [
+    "py"
+  ],
+  "postgresql": [
+    "postgres",
+    "psql"
+  ],
+  "mongodb": [
+    "mongo"
+  ],
+  "kubernetes": [
+    "k8s"
+  ],
+  "docker": [
+    "containerization"
+  ],
+  "aws": [
+    "amazon web services"
+  ],
+  "gcp": [
+    "google cloud platform"
+  ],
+  "azure": [
+    "microsoft azure"
+  ]
+}
