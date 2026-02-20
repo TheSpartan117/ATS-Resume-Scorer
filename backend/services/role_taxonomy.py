@@ -993,5 +993,6 @@ def get_role_scoring_data_enhanced(
 
     # Update base data with merged keywords
     base_data["keywords"] = merged_keywords
+    base_data["typical_keywords"] = merged_keywords  # Also update typical_keywords for backward compatibility
 
     return base_data

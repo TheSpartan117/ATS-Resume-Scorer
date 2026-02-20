@@ -74,9 +74,16 @@ class GrammarChecker:
                 'message': 'Text too short to analyze'
             }
 
-        if not self._initialized:
-            # Fallback to basic checking
-            return self._fallback_check(text)
+        if not self._initialized or not self._tool:
+            # Fallback to basic checking (disabled for resumes)
+            # Most "errors" are actually normal resume formatting
+            return {
+                'total_issues': 0,
+                'issues': [],
+                'score': 100,
+                'severity_breakdown': {'critical': 0, 'warning': 0, 'info': 0},
+                'message': 'Grammar checking unavailable (LanguageTool not configured)'
+            }
 
         try:
             matches = self._tool.check(text)

@@ -455,7 +455,9 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
     ]
     experience_headers = ['experience', 'work history', 'employment', 'professional experience', 'work experience']
     education_headers = ['education', 'academic background', 'qualifications', 'academic']
-    skills_headers = ['skills', 'technical skills', 'core competencies', 'expertise', 'technologies']
+    skills_headers = ['skills', 'technical skills', 'core competencies', 'expertise', 'technologies',
+                      'additional information', 'additional', 'other information', 'technical competencies',
+                      'technical expertise', 'tools', 'tools and technologies', 'key skills']
     cert_headers = ['certifications', 'certificates', 'licenses', 'professional certifications']
 
     # Debug: Log all section headers found

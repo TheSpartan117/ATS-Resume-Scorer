@@ -1,14 +1,17 @@
 INFO:     Will watch for changes in these directories: ['/Users/sabuj.mondal/ats-resume-scorer']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [49864] using WatchFiles
+INFO:     Started reloader process [50171] using WatchFiles
 /Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/pypdf/_crypt_providers/_cryptography.py:32: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from cryptography.hazmat.primitives.ciphers.algorithms in 48.0.0.
   from cryptography.hazmat.primitives.ciphers.algorithms import AES, ARC4
-INFO:     Started server process [49879]
+INFO:     Started server process [50186]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:52563 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52688 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:backend.api.upload:Saved original file: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/78e4daa0-3a28-499d-9538-b76f6c093252.pdf
+INFO:     127.0.0.1:52887 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52910 - "GET /api/roles HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52910 - "GET /api/roles HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52910 - "GET /api/roles HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52910 - "GET /api/roles HTTP/1.1" 200 OK
+INFO:backend.api.upload:Saved original file: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/e123fdb3-a592-4ff4-8d26-715b4c1e3937.pdf
 INFO:backend.api.upload:Converting document to editable HTML with advanced converter...
 INFO:backend.api.upload:Generated editable HTML from PDF
 INFO:backend.api.upload:Editable HTML length: 4975 chars
@@ -52,7 +55,8 @@ INFO:backend.api.upload:Format check passed: True
 INFO:backend.api.upload:Scoring mode: quality_coach
 INFO:backend.api.upload:Using role=product_manager, level=mid (defaults applied if not specified)
 INFO:backend.api.upload:Calculating score with role=product_manager, level=mid, mode=quality_coach
-INFO:backend.api.upload:Score calculated: 69.0
+INFO:backend.services.corpus_skills_database:Loaded 35,557 skills from corpus database
+INFO:backend.api.upload:Score calculated: 73.0
 INFO:backend.api.upload:Enhanced suggestions added: 5
 Grammar checking failed: 'NoneType' object has no attribute 'check'
 Grammar checking failed: 'NoneType' object has no attribute 'check'
@@ -80,14 +84,25 @@ Grammar checking failed: 'NoneType' object has no attribute 'check'
 Grammar checking failed: 'NoneType' object has no attribute 'check'
 Grammar checking failed: 'NoneType' object has no attribute 'check'
 Grammar checking failed: 'NoneType' object has no attribute 'check'
-INFO:     127.0.0.1:52776 - "POST /api/upload HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'backend/services/grammar_checker.py'. Reloading...
+INFO:     127.0.0.1:52915 - "POST /api/upload HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'backend/services/parser.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [49879]
+INFO:     Finished server process [50186]
 /Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/pypdf/_crypt_providers/_cryptography.py:32: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from cryptography.hazmat.primitives.ciphers.algorithms in 48.0.0.
   from cryptography.hazmat.primitives.ciphers.algorithms import AES, ARC4
-INFO:     Started server process [50092]
+INFO:     Started server process [50299]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'backend/services/role_taxonomy.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [50299]
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/pypdf/_crypt_providers/_cryptography.py:32: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from cryptography.hazmat.primitives.ciphers.algorithms in 48.0.0.
+  from cryptography.hazmat.primitives.ciphers.algorithms import AES, ARC4
+INFO:     Started server process [50316]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'backend/services/grammar_checker.py'. Reloading...
