@@ -11,13 +11,11 @@ from backend.services.role_taxonomy import (
 
 
 def test_experience_levels():
-    """Test that all 5 experience levels are defined"""
-    assert ExperienceLevel.ENTRY.value == "entry"
-    assert ExperienceLevel.MID.value == "mid"
+    """Test that all 3 experience levels are defined (3-tier system)"""
+    assert ExperienceLevel.BEGINNER.value == "beginner"
+    assert ExperienceLevel.INTERMEDIARY.value == "intermediary"
     assert ExperienceLevel.SENIOR.value == "senior"
-    assert ExperienceLevel.LEAD.value == "lead"
-    assert ExperienceLevel.EXECUTIVE.value == "executive"
-    assert len(ExperienceLevel) == 5
+    assert len(ExperienceLevel) == 3
 
 
 def test_role_categories():
@@ -55,7 +53,7 @@ def test_required_roles_present():
 
 def test_role_has_action_verbs():
     """Test that roles include level-specific action verbs"""
-    role_data = get_role_scoring_data("software_engineer", ExperienceLevel.MID)
+    role_data = get_role_scoring_data("software_engineer", ExperienceLevel.INTERMEDIARY)
 
     assert "action_verbs" in role_data
     assert len(role_data["action_verbs"]) > 0
@@ -72,7 +70,7 @@ def test_role_has_typical_keywords():
 
 def test_role_has_scoring_weights():
     """Test that roles include scoring weights"""
-    role_data = get_role_scoring_data("product_manager", ExperienceLevel.MID)
+    role_data = get_role_scoring_data("product_manager", ExperienceLevel.INTERMEDIARY)
 
     assert "scoring_weights" in role_data
     assert "keywords" in role_data["scoring_weights"]
@@ -151,7 +149,7 @@ def test_get_roles_by_category():
 
 def test_get_role_scoring_data_valid():
     """Test get_role_scoring_data with valid input"""
-    data = get_role_scoring_data("software_engineer", ExperienceLevel.MID)
+    data = get_role_scoring_data("software_engineer", ExperienceLevel.INTERMEDIARY)
 
     assert data is not None
     assert "name" in data
@@ -171,7 +169,7 @@ def test_get_role_scoring_data_valid():
 
 def test_get_role_scoring_data_invalid():
     """Test get_role_scoring_data with invalid role"""
-    data = get_role_scoring_data("invalid_role", ExperienceLevel.MID)
+    data = get_role_scoring_data("invalid_role", ExperienceLevel.INTERMEDIARY)
     assert data is None
 
 
@@ -189,19 +187,19 @@ def test_new_roles_added():
     assert "project_manager" in ROLE_DEFINITIONS
 
     # Test QA Engineer
-    qa_data = get_role_scoring_data("qa_engineer", ExperienceLevel.MID)
+    qa_data = get_role_scoring_data("qa_engineer", ExperienceLevel.INTERMEDIARY)
     assert qa_data is not None
     assert qa_data["name"] == "QA Engineer"
     assert qa_data["category"] == RoleCategory.TECH
 
     # Test Data Engineer
-    de_data = get_role_scoring_data("data_engineer", ExperienceLevel.MID)
+    de_data = get_role_scoring_data("data_engineer", ExperienceLevel.INTERMEDIARY)
     assert de_data is not None
     assert de_data["name"] == "Data Engineer"
     assert de_data["category"] == RoleCategory.DATA
 
     # Test Project Manager
-    pm_data = get_role_scoring_data("project_manager", ExperienceLevel.MID)
+    pm_data = get_role_scoring_data("project_manager", ExperienceLevel.INTERMEDIARY)
     assert pm_data is not None
     assert pm_data["name"] == "Project Manager"
     assert pm_data["category"] == RoleCategory.OPERATIONS

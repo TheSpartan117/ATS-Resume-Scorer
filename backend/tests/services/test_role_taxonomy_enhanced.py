@@ -25,7 +25,7 @@ class TestCorpusKeywords:
         ]
         mock_get_db.return_value = mock_db
 
-        keywords = get_corpus_keywords('ml_engineer', 'mid')
+        keywords = get_corpus_keywords('ml_engineer', 'intermediary')
 
         assert keywords == ['machine learning', 'python', 'tensorflow']
         mock_db.get_top_skills.assert_called_once_with(n=20)
@@ -36,7 +36,7 @@ class TestCorpusKeywords:
         # Mock corpus service to raise exception
         mock_get_db.side_effect = Exception("Corpus unavailable")
 
-        keywords = get_corpus_keywords('ml_engineer', 'mid')
+        keywords = get_corpus_keywords('ml_engineer', 'intermediary')
 
         assert keywords == []
 
@@ -48,7 +48,7 @@ class TestCorpusKeywords:
         mock_db.is_available.return_value = False
         mock_get_db.return_value = mock_db
 
-        keywords = get_corpus_keywords('ml_engineer', 'mid')
+        keywords = get_corpus_keywords('ml_engineer', 'intermediary')
 
         assert keywords == []
 
@@ -64,7 +64,7 @@ class TestEnhancedRoleScoringData:
         mock_get_corpus.return_value = ['python', 'tensorflow', 'deep learning']
 
         # Execute
-        result = get_role_scoring_data_enhanced('data_scientist', 'mid')
+        result = get_role_scoring_data_enhanced('data_scientist', 'intermediary')
 
         # Verify
         assert result is not None
@@ -79,14 +79,14 @@ class TestEnhancedRoleScoringData:
         # Should also have manual keywords from base taxonomy
         assert len(keywords) > 3  # More than just corpus keywords
 
-        mock_get_corpus.assert_called_once_with('data_scientist', 'mid')
+        mock_get_corpus.assert_called_once_with('data_scientist', 'intermediary')
 
     @patch('backend.config.ENABLE_CORPUS_KEYWORDS', False)
     @patch('backend.services.role_taxonomy.get_corpus_keywords')
     def test_enhanced_data_with_corpus_disabled(self, mock_get_corpus):
         """Test enhanced data returns only manual keywords when corpus is disabled."""
         # Execute
-        result = get_role_scoring_data_enhanced('data_scientist', 'mid')
+        result = get_role_scoring_data_enhanced('data_scientist', 'intermediary')
 
         # Verify
         assert result is not None
@@ -107,7 +107,7 @@ class TestEnhancedRoleScoringData:
         mock_get_corpus.return_value = ['python', 'machine learning', 'pytorch']
 
         # Execute
-        result = get_role_scoring_data_enhanced('data_scientist', 'mid')
+        result = get_role_scoring_data_enhanced('data_scientist', 'intermediary')
 
         # Verify
         keywords = result['keywords']
@@ -124,7 +124,7 @@ class TestEnhancedRoleScoringData:
         mock_get_corpus.return_value = []  # Corpus failed, returns empty
 
         # Execute
-        result = get_role_scoring_data_enhanced('data_scientist', 'mid')
+        result = get_role_scoring_data_enhanced('data_scientist', 'intermediary')
 
         # Verify - should still return manual keywords
         assert result is not None
@@ -136,7 +136,7 @@ class TestEnhancedRoleScoringData:
     def test_enhanced_data_invalid_role(self, mock_get_corpus):
         """Test enhanced data with invalid role returns None."""
         # Execute
-        result = get_role_scoring_data_enhanced('invalid_role', 'mid')
+        result = get_role_scoring_data_enhanced('invalid_role', 'intermediary')
 
         # Verify
         assert result is None
@@ -151,7 +151,7 @@ class TestEnhancedRoleScoringData:
         mock_get_corpus.return_value = ['extra_keyword']
 
         # Execute
-        result = get_role_scoring_data_enhanced('data_scientist', 'mid')
+        result = get_role_scoring_data_enhanced('data_scientist', 'intermediary')
 
         # Verify all expected fields are present
         assert 'role_id' in result
@@ -169,9 +169,9 @@ class TestEnhancedRoleScoringData:
         # Level can be either string or enum
         level_val = result['level']
         if hasattr(level_val, 'value'):
-            assert level_val.value == 'mid'
+            assert level_val.value == 'intermediary'
         else:
-            assert level_val == 'mid'
+            assert level_val == 'intermediary'
 
     @patch('backend.config.ENABLE_CORPUS_KEYWORDS', True)
     @patch('backend.services.role_taxonomy.get_corpus_keywords')
@@ -181,7 +181,7 @@ class TestEnhancedRoleScoringData:
         mock_get_corpus.return_value = ['Python', 'SQL', 'Machine Learning']
 
         # Execute
-        result = get_role_scoring_data_enhanced('data_scientist', 'mid')
+        result = get_role_scoring_data_enhanced('data_scientist', 'intermediary')
 
         # Verify - should deduplicate case-insensitively
         keywords = result['keywords']

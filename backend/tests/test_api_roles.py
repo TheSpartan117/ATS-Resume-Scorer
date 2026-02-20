@@ -29,19 +29,17 @@ def test_get_all_roles():
     assert any(role["id"] == "software_engineer" for role in tech_roles)
     assert any(role["name"] == "Software Engineer" for role in tech_roles)
 
-    # Check levels
+    # Check levels - 3-tier system
     levels = data["levels"]
-    assert len(levels) == 5
+    assert len(levels) == 3
     level_ids = [level["id"] for level in levels]
-    assert "entry" in level_ids
-    assert "mid" in level_ids
+    assert "beginner" in level_ids
+    assert "intermediary" in level_ids
     assert "senior" in level_ids
-    assert "lead" in level_ids
-    assert "executive" in level_ids
 
     # Check level descriptions
-    entry_level = next(l for l in levels if l["id"] == "entry")
-    assert "0-2 years" in entry_level["description"]
+    beginner_level = next(l for l in levels if l["id"] == "beginner")
+    assert "0-3 years" in beginner_level["description"]
 
 
 def test_get_role_details_software_engineer():
@@ -60,19 +58,19 @@ def test_get_role_details_software_engineer():
     assert "required_skills" in data
     assert len(data["required_skills"]) > 0
 
-    # Check sample data for each level
+    # Check sample data for each level - 3-tier system
     assert "sample_data" in data
     sample_data = data["sample_data"]
-    assert "entry" in sample_data
-    assert "mid" in sample_data
+    assert "beginner" in sample_data
+    assert "intermediary" in sample_data
     assert "senior" in sample_data
 
-    # Check entry level sample data
-    entry_data = sample_data["entry"]
-    assert "keywords" in entry_data
-    assert "action_verbs" in entry_data
-    assert len(entry_data["keywords"]) > 0
-    assert len(entry_data["action_verbs"]) > 0
+    # Check beginner level sample data
+    beginner_data = sample_data["beginner"]
+    assert "keywords" in beginner_data
+    assert "action_verbs" in beginner_data
+    assert len(beginner_data["keywords"]) > 0
+    assert len(beginner_data["action_verbs"]) > 0
 
 
 def test_get_role_details_product_manager():

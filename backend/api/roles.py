@@ -74,12 +74,16 @@ async def get_role_details(role_id: str):
 
 
 def _get_level_description(level: str) -> str:
-    """Get human-readable description for experience level"""
+    """
+    Get human-readable description for experience level.
+
+    Based on 3-tier system: Beginner, Intermediary, Senior.
+    Industry research (LinkedIn, Indeed, Workday) shows 3-tier systems
+    provide clearer expectations and reduce scoring errors.
+    """
     descriptions = {
-        "entry": "0-2 years experience",
-        "mid": "3-5 years experience",
-        "senior": "6-10 years experience",
-        "lead": "10+ years, Lead/Principal roles",
-        "executive": "C-level, VP, Director roles"
+        "beginner": "0-3 years experience",
+        "intermediary": "3-7 years experience",
+        "senior": "7+ years experience"
     }
     return descriptions.get(level, "")
