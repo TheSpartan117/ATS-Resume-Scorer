@@ -17,6 +17,11 @@ from typing import Dict, List, Optional, Any
 from backend.services.keyword_extractor import extract_keywords_from_jd, match_with_synonyms
 from backend.services.role_taxonomy import ExperienceLevel, get_role_scoring_data
 from backend.services.parser import ResumeData
+from backend.services.content_impact_analyzer import ContentImpactAnalyzer
+from backend.services.writing_quality_analyzer import WritingQualityAnalyzer
+from backend.services.context_aware_scorer import ContextAwareScorer
+from backend.services.feedback_generator import FeedbackGenerator
+from backend.services.benchmark_tracker import BenchmarkTracker
 
 
 class AdaptiveScorer:
@@ -198,8 +203,8 @@ class AdaptiveScorer:
         role_keyword_result = self._score_role_keywords(resume_text, role_data)
         role_keyword_score = role_keyword_result["score"]
 
-        # 2. Content Quality (30 points) - Simplified
-        content_result = self._score_content_quality(resume_data, resume_text, role_data)
+        # 2. Content Quality (30 points) - Enhanced with ContentImpactAnalyzer
+        content_result = self._score_content_quality(resume_data, resume_text, role_data, level=role_data.get("level", "mid"))
         content_score = content_result["score"]
 
         # 3. Format (25 points)
@@ -240,6 +245,46 @@ class AdaptiveScorer:
         if polish_score >= 16:
             strengths.append("Polished and error-free presentation")
 
+        # Generate enhanced feedback using FeedbackGenerator
+        feedback_generator = FeedbackGenerator()
+        level_str = role_data.get("level", "mid")
+
+        # Prepare analysis data for feedback generation
+        analysis_data = {
+            'overall_score': overall_score,
+            'achievement_strength': content_result.get('achievement_strength', content_score / 2),
+            'sentence_clarity': content_result.get('sentence_clarity', 0),
+            'specificity': content_result.get('specificity', 0),
+            'grammar': polish_score / 2  # Grammar is half of polish score
+        }
+
+        feedback_report = feedback_generator.generate_complete_feedback(
+            analysis_data,
+            level=level_str,
+            section="experience"
+        )
+
+        # Track score for benchmarking
+        benchmark_tracker = BenchmarkTracker()
+        role_id = role_data.get("role_id", "unknown")
+        benchmark_tracker.track_score(
+            score=overall_score,
+            role=role_id,
+            level=level_str,
+            metadata={
+                'content_score': content_score,
+                'polish_score': polish_score,
+                'format_score': format_score
+            }
+        )
+
+        # Get competitive positioning
+        benchmark_comparison = benchmark_tracker.compare_to_benchmark(
+            score=overall_score,
+            role=role_id,
+            level=level_str
+        )
+
         return {
             "overallScore": round(overall_score, 1),
             "mode": "quality_coach",
@@ -273,7 +318,15 @@ class AdaptiveScorer:
             },
             "strengths": strengths,
             "keyword_details": role_keyword_result["keyword_details"],
-            "cta": self._generate_cta(overall_score)
+            "cta": self._generate_cta(overall_score),
+            # Enhanced feedback and benchmarking
+            "enhanced_feedback": {
+                "interpretation": feedback_report['interpretation'],
+                "priority_actions": feedback_report['priority_actions'],
+                "all_suggestions": feedback_report['suggestions'],
+                "identified_strengths": feedback_report['strengths']
+            },
+            "benchmark_data": benchmark_comparison if benchmark_comparison.get('percentile') is not None else None
         }
 
     def _score_ats_keywords(self, resume_text: str, jd_keywords: Dict) -> Dict:
@@ -404,59 +457,117 @@ class AdaptiveScorer:
         self,
         resume_data: ResumeData,
         resume_text: str,
-        role_data: Dict
+        role_data: Dict,
+        level: str = "mid"
     ) -> Dict:
         """
-        Score content quality (simplified for MVP).
+        Score content quality using ContentImpactAnalyzer (enhanced).
 
-        Checks:
-        - Metrics/quantification (numbers with %)
-        - Bullet point format
-        - Action verbs usage
+        Uses:
+        - Achievement strength (CAR pattern, metrics)
+        - Sentence clarity (length, weak phrases, active voice)
+        - Specificity (tech, metrics, actions)
 
         Args:
             resume_data: Parsed resume data
             resume_text: Full resume text
             role_data: Role-specific scoring criteria
+            level: Experience level for context-aware scoring
 
         Returns:
             Dictionary with score and details
         """
-        score = 0
-        details = []
+        # Initialize analyzers
+        impact_analyzer = ContentImpactAnalyzer()
+        context_scorer = ContextAwareScorer()
 
-        # Check for metrics (up to 15 points)
-        metrics_count = len(re.findall(r'\d+%|\d+\+|\d+x', resume_text))
-        metrics_expected = role_data.get("metrics_expected", 3)
+        # Initialize component scores
+        achievement_strength = 0
+        sentence_clarity = 0
+        specificity_score = 0
 
-        if metrics_count >= metrics_expected:
-            metrics_score = 15
-            details.append(f"Excellent quantification ({metrics_count} metrics)")
-        elif metrics_count >= metrics_expected * 0.7:
-            metrics_score = 12
-            details.append(f"Good quantification ({metrics_count} metrics)")
-        elif metrics_count >= metrics_expected * 0.4:
-            metrics_score = 8
-            details.append(f"Some quantification ({metrics_count} metrics)")
+        # Extract experience bullets (primary content for analysis)
+        bullets = []
+        if resume_data.experience:
+            for exp_item in resume_data.experience:
+                # Extract bullets from experience items
+                if isinstance(exp_item, dict):
+                    if "bullets" in exp_item:
+                        bullets.extend(exp_item["bullets"])
+                    elif "description" in exp_item:
+                        # If description is a list, use it
+                        if isinstance(exp_item["description"], list):
+                            bullets.extend(exp_item["description"])
+                        # If description is a string, split by bullets or newlines
+                        elif isinstance(exp_item["description"], str):
+                            desc_bullets = [b.strip() for b in exp_item["description"].split('\n')
+                                          if b.strip() and (b.strip().startswith('•')
+                                                           or b.strip().startswith('-')
+                                                           or b.strip().startswith('*'))]
+                            if desc_bullets:
+                                bullets.extend(desc_bullets)
+                            else:
+                                # Add the whole description as a single bullet if no bullet markers
+                                bullets.append(exp_item["description"])
+
+        # If no structured bullets, fall back to line-by-line from text
+        if not bullets:
+            # Extract lines that look like bullets
+            lines = resume_text.split('\n')
+            bullets = [line.strip() for line in lines
+                      if line.strip() and (line.strip().startswith('•')
+                                          or line.strip().startswith('-')
+                                          or line.strip().startswith('*'))]
+
+        # Score impact quality using ContentImpactAnalyzer
+        if bullets:
+            impact_result = impact_analyzer.score_impact_quality(
+                bullets=bullets,
+                level=level,
+                section="experience"
+            )
+
+            # Apply context-aware adjustments
+            quality_scores = {
+                'achievement_strength': impact_result['achievement_strength'],
+                'sentence_clarity': impact_result['sentence_clarity'],
+                'specificity': impact_result['specificity']
+            }
+
+            adjusted = context_scorer.adjust_quality_score(
+                quality_scores,
+                level=level,
+                section="experience"
+            )
+
+            score = adjusted['total_score']
+            achievement_strength = adjusted['adjusted_scores'].get('achievement_strength', impact_result['achievement_strength'])
+            sentence_clarity = adjusted['adjusted_scores'].get('sentence_clarity', impact_result['sentence_clarity'])
+            specificity_score = adjusted['adjusted_scores'].get('specificity', impact_result['specificity'])
+
+            # Generate detailed feedback
+            details = [
+                f"Achievement strength: {achievement_strength:.1f}/15",
+                f"Sentence clarity: {sentence_clarity:.1f}/10",
+                f"Specificity: {specificity_score:.1f}/5"
+            ]
+
+            if adjusted['adjustments_applied']:
+                details.extend(adjusted['adjustments'])
         else:
-            metrics_score = 5
-            details.append(f"Limited quantification ({metrics_count} metrics)")
+            # Fallback: simple metrics-based scoring
+            score = 10
+            details = ["Limited content structure detected"]
 
-        score += metrics_score
-
-        # Check for bullet points (up to 10 points)
-        bullet_count = resume_text.count('•') + resume_text.count('-')
-        if bullet_count >= 10:
-            bullet_score = 10
-            details.append("Good use of bullet points")
-        elif bullet_count >= 5:
-            bullet_score = 7
-            details.append("Some bullet points")
-        else:
-            bullet_score = 4
-            details.append("Limited bullet points")
-
-        score += bullet_score
+            metrics_count = len(re.findall(r'\d+%|\d+\+|\d+x', resume_text))
+            if metrics_count >= 3:
+                score += 10
+                achievement_strength = 5
+                details.append(f"Good quantification ({metrics_count} metrics)")
+            elif metrics_count >= 1:
+                score += 5
+                achievement_strength = 3
+                details.append(f"Some quantification ({metrics_count} metrics)")
 
         # Check for action verbs (up to 5 points)
         action_verbs = role_data.get("action_verbs", [])
@@ -469,19 +580,24 @@ class AdaptiveScorer:
         # Cap at maximum score
         score = min(score, 30)
 
+        # Return with component scores for feedback generation
         return {
             "score": score,
-            "details": ", ".join(details)
+            "details": ", ".join(details),
+            "achievement_strength": achievement_strength,
+            "sentence_clarity": sentence_clarity,
+            "specificity": specificity_score
         }
 
     def _score_professional_polish(self, resume_data: ResumeData, resume_text: str) -> Dict:
         """
-        Score professional polish (simplified for MVP).
+        Score professional polish using WritingQualityAnalyzer.
 
         Checks:
-        - Word count appropriate
-        - No obvious typos
-        - Professional formatting
+        - Grammar and spelling with severity weighting (10 points)
+        - Word count appropriate (5 points)
+        - Page count appropriate (3 points)
+        - Contact info completeness (2 points)
 
         Args:
             resume_data: Parsed resume data
@@ -493,32 +609,73 @@ class AdaptiveScorer:
         score = 0
         details = []
 
-        # Word count check (up to 10 points)
+        # Grammar and spelling check with severity weighting (up to 10 points)
+        from backend.services.red_flags_validator import RedFlagsValidator
+        validator = RedFlagsValidator()
+        grammar_issues = validator.validate_grammar(resume_data)
+
+        # Use WritingQualityAnalyzer for severity-weighted scoring
+        writing_analyzer = WritingQualityAnalyzer()
+
+        # Convert grammar issues to format expected by analyzer
+        # The validator returns issues with 'type' and 'message'
+        formatted_errors = []
+        for issue in grammar_issues:
+            issue_type = issue.get('type', 'grammar')
+            # Map validator types to analyzer categories
+            category_map = {
+                'spelling': 'spelling',
+                'grammar': 'grammar',
+                'punctuation': 'punctuation',
+                'style': 'style',
+                'typo': 'spelling'
+            }
+            category = category_map.get(issue_type, 'grammar')
+            formatted_errors.append({
+                'category': category,
+                'message': issue.get('message', '')
+            })
+
+        grammar_result = writing_analyzer.score_grammar_with_severity(formatted_errors)
+        grammar_score = grammar_result['score']
+
+        if grammar_result['total_errors'] == 0:
+            details.append("Excellent grammar and spelling")
+        elif grammar_result['total_errors'] <= 3:
+            details.append(f"Minor grammar issues ({grammar_result['total_errors']} found, -{grammar_result['deduction']:.1f} pts)")
+        elif grammar_result['total_errors'] <= 7:
+            details.append(f"Several grammar issues ({grammar_result['total_errors']} found, -{grammar_result['deduction']:.1f} pts)")
+        else:
+            details.append(f"Many grammar issues ({grammar_result['total_errors']} found, -{grammar_result['deduction']:.1f} pts)")
+
+        score += grammar_score
+
+        # Word count check (up to 5 points)
         word_count = resume_data.metadata.get("wordCount", 0)
         if 400 <= word_count <= 800:
-            word_score = 10
+            word_score = 5
             details.append("Optimal word count")
         elif 300 <= word_count <= 1000:
-            word_score = 7
+            word_score = 3
             details.append("Good word count")
         else:
-            word_score = 4
+            word_score = 2
             details.append("Word count could be improved")
 
         score += word_score
 
-        # Page count check (up to 5 points)
+        # Page count check (up to 3 points)
         page_count = resume_data.metadata.get("pageCount", 0)
         if page_count <= 2:
-            page_score = 5
+            page_score = 3
             details.append("Appropriate length")
         else:
-            page_score = 2
+            page_score = 1
             details.append("Resume is long")
 
         score += page_score
 
-        # Contact info completeness (up to 5 points)
+        # Contact info completeness (up to 2 points)
         contact = resume_data.contact
         contact_fields = sum(1 for v in [
             contact.get("name"),
@@ -527,13 +684,13 @@ class AdaptiveScorer:
         ] if v)
 
         if contact_fields >= 3:
-            contact_score = 5
+            contact_score = 2
             details.append("Complete contact info")
         elif contact_fields >= 2:
-            contact_score = 3
+            contact_score = 1
             details.append("Basic contact info")
         else:
-            contact_score = 1
+            contact_score = 0
             details.append("Incomplete contact info")
 
         score += contact_score
