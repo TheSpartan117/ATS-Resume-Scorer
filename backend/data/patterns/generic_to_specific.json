@@ -1,0 +1,8 @@
+{
+  "frameworks": ["React", "Angular", "Vue", "Django", "Flask", "Spring", "Express", "Next.js"],
+  "databases": ["PostgreSQL", "MySQL", "MongoDB", "Redis", "Cassandra", "DynamoDB", "Elasticsearch"],
+  "cloud platforms": ["AWS", "Azure", "GCP", "EC2", "Lambda", "S3", "CloudFormation", "Terraform"],
+  "tools": ["JIRA", "Confluence", "Slack", "Git", "Docker", "Kubernetes", "Jenkins", "GitHub Actions"],
+  "languages": ["Python", "JavaScript", "Java", "Go", "TypeScript", "C++", "Ruby", "Rust"],
+  "methodologies": ["Agile", "Scrum", "Kanban", "Lean", "Six Sigma", "DevOps", "CI/CD"]
+}

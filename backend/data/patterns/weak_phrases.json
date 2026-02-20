@@ -1,0 +1,22 @@
+{
+  "responsibility": [
+    "responsible for", "duties include", "duties included",
+    "in charge of", "tasked with"
+  ],
+  "vague_action": [
+    "worked on", "helped with", "assisted in", "assisted with",
+    "involved in", "participated in", "contributed to"
+  ],
+  "vague_quantifier": [
+    "various", "multiple", "several", "numerous", "many",
+    "different", "range of", "number of"
+  ],
+  "filler": [
+    "etc.", "and more", "among others", "and so on",
+    "things like", "such as"
+  ],
+  "weak_skill": [
+    "familiar with", "exposure to", "knowledge of",
+    "basic understanding", "some experience"
+  ]
+}

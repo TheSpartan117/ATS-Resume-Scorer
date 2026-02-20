@@ -1,0 +1,24 @@
+{
+  "tier_4_transformational": [
+    "transformed", "established", "pioneered", "revolutionized",
+    "scaled", "built", "founded", "created"
+  ],
+  "tier_3_leadership": [
+    "led", "architected", "launched", "delivered", "drove",
+    "spearheaded", "orchestrated", "directed", "championed",
+    "designed", "developed", "implemented"
+  ],
+  "tier_2_execution": [
+    "developed", "designed", "implemented", "created", "built",
+    "optimized", "improved", "enhanced", "streamlined", "automated",
+    "integrated", "migrated", "refactored"
+  ],
+  "tier_1_support": [
+    "managed", "coordinated", "supported", "maintained",
+    "updated", "documented", "monitored", "tracked"
+  ],
+  "tier_0_weak": [
+    "responsible for", "worked on", "helped with", "assisted in",
+    "participated in", "involved in", "tasked with", "duties included"
+  ]
+}

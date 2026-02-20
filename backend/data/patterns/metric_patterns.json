@@ -1,0 +1,22 @@
+{
+  "patterns": {
+    "percentage": "\\d+%",
+    "money": "\\$\\d+[.,]?\\d*[KMB]?",
+    "multiplier": "\\d+x",
+    "plus": "\\d+\\+",
+    "range": "from \\d+ to \\d+",
+    "comparison": "(increased|reduced|improved).+by \\d+",
+    "time": "\\d+ (days|weeks|months|years)",
+    "count": "\\d+ (users|customers|projects|teams|people)"
+  },
+  "quality_weights": {
+    "money": 1.0,
+    "percentage": 1.0,
+    "comparison": 0.9,
+    "range": 0.8,
+    "count": 0.7,
+    "time": 0.7,
+    "multiplier": 0.8,
+    "plus": 0.6
+  }
+}
