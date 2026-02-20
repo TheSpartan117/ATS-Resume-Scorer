@@ -30,14 +30,32 @@ class ContentImpactAnalyzer:
 
     def _load_patterns(self):
         """Load pattern data from JSON files"""
-        # Load action verb tiers
-        with open(self.patterns_dir / "action_verb_tiers.json") as f:
-            verb_data = json.load(f)
-            self.verb_tiers = {}
-            for tier_name, verbs in verb_data.items():
-                tier_num = int(tier_name.split('_')[1])  # Extract tier number
-                for verb in verbs:
-                    self.verb_tiers[verb.lower()] = tier_num
+        try:
+            with open(self.patterns_dir / "action_verb_tiers.json") as f:
+                verb_data = json.load(f)
+                self.verb_tiers = {}
+                for tier_name, verbs in verb_data.items():
+                    # Robust tier number parsing with fallback
+                    try:
+                        tier_num = int(tier_name.split('_')[1])
+                    except (IndexError, ValueError):
+                        # Fallback: extract first digit found
+                        match = re.search(r'\d+', tier_name)
+                        if match:
+                            tier_num = int(match.group())
+                        else:
+                            raise ValueError(f"Cannot extract tier number from: {tier_name}")
+
+                    for verb in verbs:
+                        self.verb_tiers[verb.lower()] = tier_num
+        except FileNotFoundError:
+            raise RuntimeError(
+                f"Pattern file not found: {self.patterns_dir / 'action_verb_tiers.json'}"
+            )
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f"Invalid JSON in pattern file: {e}")
+        except (KeyError, ValueError, IndexError) as e:
+            raise RuntimeError(f"Invalid pattern file format: {e}")
 
     def classify_verb_tier(self, verb: str) -> int:
         """
