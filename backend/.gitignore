@@ -15,3 +15,12 @@ build/
 *.egg-info/
 *.db
 test.db
+
+# Corpus source files (too large)
+data/corpus_source/*.txt
+
+# Generated ML models
+ml/models/*.joblib
+
+# ML training data (too large)
+data/corpus/ml_training_data/
