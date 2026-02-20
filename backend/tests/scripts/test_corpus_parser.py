@@ -47,3 +47,29 @@ def test_stream_resume_samples():
 
     # Cleanup
     test_file.unlink()
+
+
+def test_extract_skills_from_corpus():
+    """Should extract skills with frequencies from corpus"""
+    from backend.scripts.corpus_parser import extract_skills_database
+
+    # Create test file
+    test_file = Path('/tmp/test_skills.txt')
+    test_file.write_text(
+        ":::::::\n"
+        "1:::Software Engineer:::Resume with Python and Java\n"
+        ":::::::\n"
+        ":::::::\n"
+        "2:::Data Scientist:::Resume with Python and SQL\n"
+        ":::::::\n"
+    )
+
+    skills_db = extract_skills_database(test_file)
+
+    assert 'python' in skills_db
+    assert skills_db['python']['frequency'] == 2
+    assert 'java' in skills_db
+    assert skills_db['java']['frequency'] == 1
+
+    # Cleanup
+    test_file.unlink()
