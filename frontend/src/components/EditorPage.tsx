@@ -150,8 +150,9 @@ export default function EditorPage() {
   const [currentSavedResumeId, setCurrentSavedResumeId] = useState<string | undefined>(savedResumeId)
   const [isSaving, setIsSaving] = useState(false)
   const [originalDocxFile, setOriginalDocxFile] = useState<File | null>(null)
+  const [onlyOfficeSessionId, setOnlyOfficeSessionId] = useState<string | null>(null)
 
-  // Retrieve original DOCX file from localStorage
+  // Retrieve original DOCX file from localStorage and upload to OnlyOffice
   useEffect(() => {
     const base64Data = localStorage.getItem('uploaded-cv-file')
     const filename = localStorage.getItem('uploaded-cv-filename')
@@ -171,6 +172,33 @@ export default function EditorPage() {
         if (import.meta.env.DEV) {
           console.log('Original DOCX file loaded:', filename)
         }
+
+        // Upload to OnlyOffice for editing
+        const uploadToOnlyOffice = async () => {
+          try {
+            // Generate session ID from filename and timestamp
+            const sessionId = `${filename.replace(/\.[^/.]+$/, '')}_${Date.now()}`
+            setOnlyOfficeSessionId(sessionId)
+
+            // Upload the file
+            const response = await fetch(`http://localhost:8000/api/onlyoffice/upload/${sessionId}`, {
+              method: 'POST',
+              body: bytes
+            })
+
+            if (response.ok) {
+              if (import.meta.env.DEV) {
+                console.log('Document uploaded to OnlyOffice:', sessionId)
+              }
+            }
+          } catch (err) {
+            if (import.meta.env.DEV) {
+              console.error('Failed to upload to OnlyOffice:', err)
+            }
+          }
+        }
+
+        uploadToOnlyOffice()
       } catch (err) {
         if (import.meta.env.DEV) {
           console.error('Failed to load original file:', err)
@@ -418,6 +446,7 @@ export default function EditorPage() {
           wordCount={wordCount}
           onRescore={performRescore}
           originalDocxFile={originalDocxFile}
+          sessionId={onlyOfficeSessionId || undefined}
         />
       </div>
     </div>

@@ -132,15 +132,44 @@ class SectionDetector:
         return False
 
     # Common section headers for keyword-based detection
+    # Expanded to recognize many alternate names people use for sections
     SECTION_KEYWORDS = {
-        'Contact': ['contact', 'personal', 'profile'],
-        'Summary': ['summary', 'objective', 'about'],
-        'Experience': ['experience', 'employment', 'work history', 'professional experience'],
-        'Education': ['education', 'academic', 'qualifications'],
-        'Skills': ['skills', 'technical skills', 'competencies'],
-        'Projects': ['projects', 'portfolio'],
-        'Certifications': ['certifications', 'certificates', 'licenses'],
-        'Awards': ['awards', 'honors', 'achievements']
+        'Contact': ['contact', 'personal', 'contact information', 'personal information', 'details'],
+        'Summary': [
+            'summary', 'objective', 'about', 'profile', 'brief',
+            'professional summary', 'career summary', 'executive summary',
+            'profile brief', 'professional profile', 'career profile',
+            'about me', 'career objective', 'professional objective',
+            'personal statement', 'introduction', 'overview',
+            'professional overview', 'career overview'
+        ],
+        'Experience': [
+            'experience', 'employment', 'work history', 'professional experience',
+            'work experience', 'employment history', 'career history',
+            'professional history', 'relevant experience', 'work'
+        ],
+        'Education': [
+            'education', 'academic', 'qualifications', 'academic background',
+            'educational background', 'academic qualifications', 'academics',
+            'educational qualifications', 'training'
+        ],
+        'Skills': [
+            'skills', 'technical skills', 'competencies', 'core competencies',
+            'areas of expertise', 'key skills', 'expertise', 'capabilities',
+            'technical competencies', 'professional skills', 'skillset'
+        ],
+        'Projects': [
+            'projects', 'portfolio', 'key projects', 'notable projects',
+            'project portfolio', 'major projects', 'project experience'
+        ],
+        'Certifications': [
+            'certifications', 'certificates', 'licenses', 'professional certifications',
+            'licensed', 'certification', 'professional licenses'
+        ],
+        'Awards': [
+            'awards', 'honors', 'achievements', 'accomplishments',
+            'recognition', 'honors and awards', 'awards and honors'
+        ]
     }
 
     def detect_sections(self, doc: Document) -> list[dict]:

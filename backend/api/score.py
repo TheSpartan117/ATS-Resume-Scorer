@@ -8,7 +8,16 @@ from backend.services.scorer_v2 import AdaptiveScorer
 from backend.services.role_taxonomy import get_role_scoring_data, ExperienceLevel
 from backend.services.suggestion_integrator import SuggestionIntegrator
 from backend.services.scoring_utils import normalize_scoring_mode
-from backend.schemas.resume import ScoreResponse, CategoryBreakdown
+from backend.services.suggestion_prioritizer import SuggestionPrioritizer
+from backend.services.pass_probability_calculator import PassProbabilityCalculator
+from backend.schemas.resume import (
+    ScoreResponse,
+    CategoryBreakdown,
+    PrioritizedSuggestions,
+    PassProbability,
+    PlatformProbability,
+    EnhancedSuggestion,
+)
 
 
 router = APIRouter(prefix="/api", tags=["score"])
@@ -109,6 +118,48 @@ async def score_resume(request: ScoreRequest):
     # Extract enhanced suggestions
     enhanced_suggestions = score_result.get("enhanced_suggestions", [])
 
+    # Phase 3: Prioritize suggestions
+    prioritizer = SuggestionPrioritizer()
+    prioritized = prioritizer.prioritize_suggestions(enhanced_suggestions, top_n=3)
+
+    # Convert to response model
+    prioritized_suggestions = None
+    if enhanced_suggestions:
+        prioritized_suggestions = PrioritizedSuggestions(
+            top_issues=[EnhancedSuggestion(**s) for s in prioritized["top_issues"]],
+            remaining_by_priority={
+                priority: [EnhancedSuggestion(**s) for s in suggestions]
+                for priority, suggestions in prioritized["remaining_by_priority"].items()
+            },
+            total_count=prioritized["total_count"]
+        )
+
+    # Phase 3: Calculate pass probability
+    pass_probability = None
+    if mode in ["ats_simulation", "ats"]:
+        calculator = PassProbabilityCalculator()
+        pass_prob_data = calculator.calculate_pass_probability(
+            overall_score=score_result["overallScore"],
+            breakdown=score_result["breakdown"],
+            auto_reject=score_result.get("auto_reject", False),
+            critical_issues=issues_response.get("critical", []),
+            keyword_details=score_result.get("keyword_details"),
+            job_description=request.jobDescription
+        )
+
+        # Convert to response model
+        pass_probability = PassProbability(
+            overall_probability=pass_prob_data["overall_probability"],
+            platform_breakdown={
+                platform: PlatformProbability(**details)
+                for platform, details in pass_prob_data["platform_breakdown"].items()
+            },
+            confidence_level=pass_prob_data["confidence_level"],
+            interpretation=pass_prob_data["interpretation"],
+            color_code=pass_prob_data["color_code"],
+            based_on_score=pass_prob_data["based_on_score"]
+        )
+
     return ScoreResponse(
         overallScore=score_result["overallScore"],
         breakdown=breakdown_response,
@@ -118,5 +169,7 @@ async def score_resume(request: ScoreRequest):
         keywordDetails=score_result.get("keyword_details"),
         autoReject=score_result.get("auto_reject"),
         issueCounts=issue_counts,
-        enhancedSuggestions=enhanced_suggestions
+        enhancedSuggestions=enhanced_suggestions,
+        prioritizedSuggestions=prioritized_suggestions,
+        passProbability=pass_probability
     )

@@ -14,6 +14,7 @@ interface ResumeEditorProps {
   wordCount: number;
   onRescore: () => void;
   originalDocxFile?: File | null;
+  sessionId?: string;
 }
 
 export const ResumeEditor: React.FC<ResumeEditorProps> = ({
@@ -23,7 +24,8 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
   isRescoring: _isRescoring,
   wordCount: _wordCount,
   onRescore: _onRescore,
-  originalDocxFile
+  originalDocxFile,
+  sessionId
 }) => {
   const editorRef = useRef<any>(null);
 
@@ -86,6 +88,7 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
           htmlContent={value}
           onHtmlChange={onChange}
           onEditorReady={handleEditorReady}
+          sessionId={sessionId}
         />
       </div>
 

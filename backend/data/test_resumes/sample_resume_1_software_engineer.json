@@ -1,0 +1,8 @@
+{
+  "id": "test_resume_001",
+  "role": "Software Engineer",
+  "experience_level": "Mid-level (3-5 years)",
+  "industry": "Technology",
+  "resume_text": "John Doe\nSoftware Engineer\n\nEXPERIENCE\nSenior Software Engineer | Tech Corp | 2021-Present\n- Developed scalable microservices using Python and FastAPI, reducing response time by 40%\n- Led team of 5 engineers in migrating legacy monolith to containerized architecture using Docker and Kubernetes\n- Implemented CI/CD pipelines with GitHub Actions, reducing deployment time from 2 hours to 15 minutes\n- Designed and optimized PostgreSQL databases, improving query performance by 60%\n\nSoftware Engineer | StartupXYZ | 2019-2021\n- Built RESTful APIs serving 100K+ daily active users\n- Collaborated with product team to deliver 15+ features per quarter\n- Mentored 3 junior developers on best practices and code review\n- Reduced bug count by 35% through comprehensive unit testing with pytest\n\nSKILLS\nLanguages: Python, JavaScript, TypeScript, SQL\nFrameworks: FastAPI, React, Node.js, Django\nTools: Docker, Kubernetes, AWS, Git, PostgreSQL, Redis\nMethodologies: Agile, TDD, CI/CD, Microservices\n\nEDUCATION\nB.S. Computer Science | University of Technology | 2019\nGPA: 3.8/4.0\n\nCERTIFICATIONS\nAWS Certified Solutions Architect\nCertified Kubernetes Administrator (CKA)",
+  "job_description": "We are seeking a talented Software Engineer to join our team. Responsibilities include developing scalable backend services, working with microservices architecture, and implementing CI/CD pipelines. Required skills: Python, FastAPI, Docker, Kubernetes, PostgreSQL, AWS. Experience with Agile methodologies and mentoring junior developers is a plus."
+}

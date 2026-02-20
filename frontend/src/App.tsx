@@ -6,6 +6,7 @@ import ResultsPage from './components/ResultsPage'
 import EditorPage from './components/EditorPage'
 import SavedResumesPage from './components/SavedResumesPage'
 import NewEditorPage from './pages/EditorPage'
+import LaTeXEditorPage from './pages/LaTeXEditorPage'
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/editor" element={<EditorPage />} />
           <Route path="/editor/:sessionId" element={<NewEditorPage />} />
           <Route path="/my-resumes" element={<SavedResumesPage />} />
+          <Route path="/latex-editor" element={<LaTeXEditorPage />} />
         </Routes>
       </AuthProvider>
     </ErrorBoundary>

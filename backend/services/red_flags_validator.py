@@ -15,6 +15,13 @@ try:
 except ImportError:
     SPELLCHECKER_AVAILABLE = False
 
+# Import LanguageTool for advanced grammar checking
+try:
+    from backend.services.grammar_checker import get_grammar_checker
+    LANGUAGETOOL_AVAILABLE = True
+except ImportError:
+    LANGUAGETOOL_AVAILABLE = False
+
 
 class RedFlagsValidator:
     """
@@ -27,6 +34,8 @@ class RedFlagsValidator:
         self._spell_checker = None
         self._spell_init_failed = False
         self._grammar_cache = {}  # Cache grammar results by text hash
+        self._languagetool = None  # LanguageTool instance
+        self._languagetool_failed = False  # Track if LanguageTool initialization failed
 
     def _get_spell_checker(self):
         """Get or initialize SpellChecker instance"""
@@ -42,6 +51,21 @@ class RedFlagsValidator:
                 return None
 
         return self._spell_checker
+
+    def _get_languagetool(self):
+        """Get or initialize LanguageTool instance"""
+        if self._languagetool_failed:
+            return None
+
+        if self._languagetool is None and LANGUAGETOOL_AVAILABLE:
+            try:
+                self._languagetool = get_grammar_checker()
+            except Exception as e:
+                # If initialization fails, mark it and don't try again
+                self._languagetool_failed = True
+                return None
+
+        return self._languagetool
 
     def validate_resume(self, resume: ResumeData, role: str, level: str) -> Dict:
         """
@@ -729,17 +753,24 @@ class RedFlagsValidator:
         """
         Validate grammar, spelling, and capitalization in resume text.
         Parameters 18-21 from design doc:
-        - P18: Typo Detection (using pyspellchecker)
-        - P19: Grammar Errors (basic regex patterns for common issues)
-        - P20: Verb Tense Consistency (basic pattern matching)
+        - P18: Typo Detection (using LanguageTool or pyspellchecker)
+        - P19: Grammar Errors (using LanguageTool or basic regex patterns)
+        - P20: Verb Tense Consistency (using LanguageTool or basic pattern matching)
         - P21: Capitalization (proper nouns, job titles)
+
+        Uses LanguageTool (advanced) if available, falls back to pyspellchecker (basic).
         """
         issues = []
 
-        # Check if SpellChecker is available
-        spell = self._get_spell_checker()
-        if spell is None:
-            return []  # Return empty list if SpellChecker unavailable
+        # Try to use LanguageTool first (advanced grammar checking)
+        languagetool = self._get_languagetool()
+        use_languagetool = languagetool is not None
+
+        # Fall back to SpellChecker if LanguageTool unavailable
+        if not use_languagetool:
+            spell = self._get_spell_checker()
+            if spell is None:
+                return []  # Return empty list if neither checker is available
 
         # Collect all text sections to check
         text_sections = []
@@ -794,8 +825,8 @@ class RedFlagsValidator:
                     })
 
         # Check each text section for grammar issues
-        issue_counts = {'typo': 0, 'grammar': 0, 'capitalization': 0}
-        max_per_category = 10  # Limit issues to avoid spam
+        issue_counts = {'typo': 0, 'grammar': 0, 'capitalization': 0, 'spelling': 0}
+        max_per_category = 15  # Allow more issues for better accuracy (increased from 10)
 
         for section in text_sections:
             text = section['text']
@@ -819,6 +850,67 @@ class RedFlagsValidator:
 
             # New issues to cache for this text
             text_issues = []
+
+            # PRIORITY 1: Use LanguageTool (advanced grammar checking)
+            if use_languagetool:
+                try:
+                    lt_result = languagetool.check(text, max_issues=20)
+
+                    # Process LanguageTool issues
+                    for lt_issue in lt_result.get('issues', []):
+                        category = lt_issue.get('category', 'grammar')
+                        severity = lt_issue.get('severity', 'warning')
+
+                        # Map severity to our system
+                        if severity == 'critical':
+                            our_severity = 'warning'
+                        elif severity == 'warning':
+                            our_severity = 'warning'
+                        else:
+                            our_severity = 'suggestion'
+
+                        # Map category
+                        if category == 'spelling':
+                            our_category = 'typo'
+                        elif category in ['grammar', 'typo', 'capitalization']:
+                            our_category = category
+                        else:
+                            our_category = 'grammar'
+
+                        # Check if we've hit the limit for this category
+                        if issue_counts.get(our_category, 0) >= max_per_category:
+                            continue
+
+                        message = lt_issue.get('message', 'Grammar issue detected')
+
+                        # Add suggestions if available
+                        replacements = lt_issue.get('replacements', [])
+                        if replacements:
+                            message += f" - Suggestion: '{replacements[0]}'"
+
+                        text_issues.append({
+                            'category': our_category,
+                            'severity': our_severity,
+                            'message': message
+                        })
+
+                        issues.append({
+                            'severity': our_severity,
+                            'category': our_category,
+                            'message': f"{context}: {message}",
+                            'section': section_name
+                        })
+                        issue_counts[our_category] += 1
+
+                except Exception as e:
+                    # LanguageTool failed for this text, fall through to basic checks
+                    pass
+                else:
+                    # LanguageTool succeeded, cache and continue to next section
+                    self._grammar_cache[text_hash] = text_issues
+                    continue
+
+            # PRIORITY 2: Fall back to basic checks (pyspellchecker + regex)
 
             # P18: Typo detection using pyspellchecker
             typo_issues = self._check_spelling(text, spell)
@@ -1085,13 +1177,25 @@ class RedFlagsValidator:
             issues.append("Multiple consecutive spaces detected")
 
         # Check for subject-verb agreement patterns (basic)
-        # Pattern: "they is", "he are", "we was"
+        # Pattern: "they is", "he are", "we was", "I has", etc.
         subject_verb_errors = [
-            (r'\bthey\s+is\b', "Subject-verb disagreement: 'they is' should be 'they are'"),
+            (r'\bI\s+is\b', "Subject-verb disagreement: 'I is' should be 'I am'"),
+            (r'\bI\s+are\b', "Subject-verb disagreement: 'I are' should be 'I am'"),
+            (r'\bI\s+has\b', "Subject-verb disagreement: 'I has' should be 'I have'"),
+            (r'\bI\s+was\b.*\band\b.*\bwas\b', "Consider using 'were' with compound subjects"),
             (r'\bhe\s+are\b', "Subject-verb disagreement: 'he are' should be 'he is'"),
+            (r'\bhe\s+have\b', "Subject-verb disagreement: 'he have' should be 'he has'"),
             (r'\bshe\s+are\b', "Subject-verb disagreement: 'she are' should be 'she is'"),
+            (r'\bshe\s+have\b', "Subject-verb disagreement: 'she have' should be 'she has'"),
+            (r'\bit\s+are\b', "Subject-verb disagreement: 'it are' should be 'it is'"),
+            (r'\bwe\s+is\b', "Subject-verb disagreement: 'we is' should be 'we are'"),
             (r'\bwe\s+was\b', "Subject-verb disagreement: 'we was' should be 'we were'"),
+            (r'\bthey\s+is\b', "Subject-verb disagreement: 'they is' should be 'they are'"),
             (r'\bthey\s+was\b', "Subject-verb disagreement: 'they was' should be 'they were'"),
+            (r'\bthey\s+has\b', "Subject-verb disagreement: 'they has' should be 'they have'"),
+            (r'\bteam\s+were\b', "Collective noun: 'team were' should be 'team was'"),
+            (r'\b(\d+)\s+year\s+of\b', "Plural needed: should be 'years' after a number"),
+            (r'\b(\d+)\s+month\s+of\b', "Plural needed: should be 'months' after a number"),
         ]
 
         for pattern, message in subject_verb_errors:
@@ -1147,7 +1251,7 @@ class RedFlagsValidator:
                 issues.append(f"Very long sentence detected ({len(sentence.split())} words) - consider breaking it up")
                 break  # Only report first one
 
-        return issues[:5]  # Limit to 5 issues per text (increased from 3)
+        return issues[:10]  # Limit to 10 issues per text for better accuracy
 
     def _check_capitalization(self, text: str) -> List[str]:
         """

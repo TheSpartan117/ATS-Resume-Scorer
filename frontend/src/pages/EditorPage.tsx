@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import SuggestionsPanel from '../components/SuggestionsPanel';
 import RichEditor from '../components/RichEditor';
 import OfficePreview from '../components/OfficePreview';
+import DocxStructureEditor from '../components/DocxStructureEditor';
 
 interface Section {
   name: string;
@@ -41,7 +42,7 @@ const EditorPage: React.FC = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
+  const [activeTab, setActiveTab] = useState<'editor' | 'structure' | 'preview'>('structure');
   const [sections, setSections] = useState<Section[]>([]);
   const [currentScore, setCurrentScore] = useState<Score | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -167,6 +168,18 @@ const EditorPage: React.FC = () => {
           <div className="border-b bg-white" role="tablist">
             <button
               role="tab"
+              aria-selected={activeTab === 'structure'}
+              onClick={() => setActiveTab('structure')}
+              className={`px-6 py-3 font-medium ${
+                activeTab === 'structure'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              ⚡ Structure Editor (100% Format Preserving)
+            </button>
+            <button
+              role="tab"
               aria-selected={activeTab === 'editor'}
               onClick={() => setActiveTab('editor')}
               className={`px-6 py-3 font-medium ${
@@ -192,21 +205,34 @@ const EditorPage: React.FC = () => {
           </div>
 
           {/* Tab content */}
-          <div className="flex-1 overflow-auto p-6">
-            {activeTab === 'editor' && (
-              <RichEditor
-                content="<p>Resume content here...</p>"
-                onChange={(html) => {
-                  // TODO: Implement auto-save
+          <div className="flex-1 overflow-hidden">
+            {activeTab === 'structure' && sessionId && (
+              <DocxStructureEditor
+                sessionId={sessionId}
+                onSave={() => {
+                  handleRescore();
                 }}
               />
             )}
 
+            {activeTab === 'editor' && (
+              <div className="p-6 h-full overflow-auto">
+                <RichEditor
+                  content="<p>Resume content here...</p>"
+                  onChange={(html) => {
+                    // TODO: Implement auto-save
+                  }}
+                />
+              </div>
+            )}
+
             {activeTab === 'preview' && (
-              <OfficePreview
-                officeOnlineUrl={workingDocxUrl}
-                docxDownloadUrl={workingDocxUrl}
-              />
+              <div className="p-6 h-full overflow-auto">
+                <OfficePreview
+                  officeOnlineUrl={workingDocxUrl}
+                  docxDownloadUrl={workingDocxUrl}
+                />
+              </div>
             )}
           </div>
         </main>

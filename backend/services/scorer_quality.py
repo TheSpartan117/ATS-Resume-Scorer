@@ -134,15 +134,19 @@ class QualityScorer:
         verb_results = self._analyze_action_verbs(resume_data, action_verbs)
 
         verb_percentage = verb_results['percentage']
-        if verb_percentage >= 90:
+        # Phase 1.1: Recalibrated thresholds (90% -> 70% for excellent)
+        if verb_percentage >= 70:  # Reduced from 90% to 70%
             verb_score = 15
             details['action_verbs_feedback'] = f"Excellent action verb usage ({verb_percentage:.0f}%)"
-        elif verb_percentage >= 70:
-            verb_score = 7.5
-            details['action_verbs_feedback'] = f"Good action verb usage ({verb_percentage:.0f}%), but aim for 90%+"
+        elif verb_percentage >= 50:  # Reduced from 70% to 50%
+            verb_score = 10
+            details['action_verbs_feedback'] = f"Good action verb usage ({verb_percentage:.0f}%), aim for 70%+"
+        elif verb_percentage >= 30:
+            verb_score = 5
+            details['action_verbs_feedback'] = f"Moderate action verb usage ({verb_percentage:.0f}%), needs improvement"
         else:
             verb_score = 0
-            details['action_verbs_feedback'] = f"Poor action verb usage ({verb_percentage:.0f}%). Minimum 70% required"
+            details['action_verbs_feedback'] = f"Poor action verb usage ({verb_percentage:.0f}%). Add more action verbs"
 
         score += verb_score
         details['action_verbs_score'] = verb_score
@@ -153,15 +157,19 @@ class QualityScorer:
         quant_results = self._analyze_quantification(resume_data)
 
         quant_percentage = quant_results['percentage']
-        if quant_percentage >= 60:
+        # Phase 1.1: Recalibrated thresholds (60% -> 40% for excellent)
+        if quant_percentage >= 40:  # Reduced from 60% to 40%
             quant_score = 10
             details['quantification_feedback'] = f"Excellent quantification ({quant_percentage:.0f}%)"
-        elif quant_percentage >= 40:
-            quant_score = 5
-            details['quantification_feedback'] = f"Moderate quantification ({quant_percentage:.0f}%), aim for 60%+"
+        elif quant_percentage >= 25:  # Reduced from 40% to 25%
+            quant_score = 6
+            details['quantification_feedback'] = f"Good quantification ({quant_percentage:.0f}%), aim for 40%+"
+        elif quant_percentage >= 10:
+            quant_score = 3
+            details['quantification_feedback'] = f"Moderate quantification ({quant_percentage:.0f}%), needs improvement"
         else:
             quant_score = 0
-            details['quantification_feedback'] = f"Poor quantification ({quant_percentage:.0f}%). Minimum 40% required"
+            details['quantification_feedback'] = f"Poor quantification ({quant_percentage:.0f}%). Add metrics to achievements"
 
         score += quant_score
         details['quantification_score'] = quant_score

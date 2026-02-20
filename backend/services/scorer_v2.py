@@ -15,7 +15,7 @@ Main Scorer Orchestrator:
 import re
 from typing import Dict, List, Optional, Any
 from backend.services.keyword_extractor import extract_keywords_from_jd, match_with_synonyms
-from backend.services.role_taxonomy import ExperienceLevel, get_role_scoring_data
+from backend.services.role_taxonomy import ExperienceLevel, get_role_scoring_data, get_role_scoring_data_enhanced
 from backend.services.parser import ResumeData
 from backend.services.content_impact_analyzer import ContentImpactAnalyzer
 from backend.services.writing_quality_analyzer import WritingQualityAnalyzer
@@ -51,7 +51,11 @@ class AdaptiveScorer:
             Dictionary with overall_score, mode, breakdown, and keyword_details
         """
         # Get role-specific scoring data
-        role_data = get_role_scoring_data(role_id, level)
+        # Use enhanced version with corpus keywords for better matching
+        role_data = get_role_scoring_data_enhanced(role_id, level)
+        if not role_data:
+            # Fallback to basic version if enhanced fails
+            role_data = get_role_scoring_data(role_id, level)
         if not role_data:
             raise ValueError(f"Invalid role_id: {role_id}")
 

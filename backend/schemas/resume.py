@@ -50,6 +50,33 @@ class EnhancedSuggestion(BaseModel):
     template: Optional[str] = None
     quickFix: Optional[Dict] = None
     keywords: Optional[List[str]] = None
+    # Phase 3 additions
+    impact_score: Optional[float] = None  # Impact score for prioritization
+    priority: Optional[str] = None  # critical, important, optional
+    action_cta: Optional[str] = None  # Clear call-to-action
+
+
+class PlatformProbability(BaseModel):
+    """ATS platform pass probability"""
+    probability: float  # 0-100
+    status: str  # excellent, good, fair, poor
+
+
+class PassProbability(BaseModel):
+    """Overall ATS pass probability analysis"""
+    overall_probability: float  # 0-100
+    platform_breakdown: Dict[str, PlatformProbability]  # By platform name
+    confidence_level: str  # high, moderate, low
+    interpretation: str  # Human-readable interpretation
+    color_code: str  # green, yellow, red
+    based_on_score: float  # Score this is based on
+
+
+class PrioritizedSuggestions(BaseModel):
+    """Prioritized suggestions with top issues"""
+    top_issues: List[EnhancedSuggestion]  # Top 3-5 most critical
+    remaining_by_priority: Dict[str, List[EnhancedSuggestion]]  # Grouped by priority
+    total_count: int  # Total suggestion count
 
 
 class ScoreResponse(BaseModel):
@@ -63,6 +90,9 @@ class ScoreResponse(BaseModel):
     autoReject: Optional[bool] = None  # Auto-reject flag for ATS mode
     issueCounts: Optional[Dict[str, int]] = None  # Count of critical, warnings, suggestions
     enhancedSuggestions: Optional[List[EnhancedSuggestion]] = None  # Detailed actionable suggestions
+    # Phase 3 additions
+    prioritizedSuggestions: Optional[PrioritizedSuggestions] = None  # Prioritized top issues
+    passProbability: Optional[PassProbability] = None  # ATS pass probability
 
 
 class FormatCheckResponse(BaseModel):
@@ -82,6 +112,7 @@ class UploadResponse(BaseModel):
     previewPdfUrl: Optional[str] = None  # URL to preview PDF (for DOCX files)
     editableHtml: Optional[str] = None  # Rich HTML for WYSIWYG editing
     contact: ContactInfoResponse
+    summary: Optional[str] = None  # Professional summary/objective section
     experience: List[Dict] = []
     education: List[Dict] = []
     skills: List[str] = []

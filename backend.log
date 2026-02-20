@@ -1,518 +1,93 @@
+INFO:     Will watch for changes in these directories: ['/Users/sabuj.mondal/ats-resume-scorer']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [49864] using WatchFiles
 /Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/pypdf/_crypt_providers/_cryptography.py:32: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from cryptography.hazmat.primitives.ciphers.algorithms in 48.0.0.
   from cryptography.hazmat.primitives.ciphers.algorithms import AES, ARC4
-INFO:     Started server process [3140]
+INFO:     Started server process [49879]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:backend.api.upload:Converting PDF to DOCX for better formatting preservation...
-INFO:backend.services.pdf_to_docx:Converting PDF to DOCX using pdf2docx...
-INFO:root:Start to convert /var/folders/fy/h0lm1bj94cg6kwy_sm9sz_780000gn/T/tmp9f0tzfus.pdf
-INFO:root:[1;36m[1/4] Opening document...[0m
-INFO:root:[1;36m[2/4] Analyzing document...[0m
-INFO:root:[1;36m[3/4] Parsing pages...[0m
-INFO:root:(1/1) Page 1
-INFO:root:[1;36m[4/4] Creating pages...[0m
-INFO:root:(1/1) Page 1
-INFO:root:Terminated in 0.13s.
-INFO:backend.services.pdf_to_docx:PDF converted to DOCX successfully (39653 bytes)
-INFO:backend.api.upload:PDF converted to DOCX successfully (39653 bytes)
-INFO:backend.api.upload:Saved original file: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/65255dfc-f946-4e0f-a136-814ac5dd06b1.pdf
-INFO:backend.api.upload:Saved converted DOCX: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/65255dfc-f946-4e0f-a136-814ac5dd06b1_converted.docx
+INFO:     127.0.0.1:52563 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52688 - "GET /api/roles HTTP/1.1" 200 OK
+INFO:backend.api.upload:Saved original file: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/78e4daa0-3a28-499d-9538-b76f6c093252.pdf
 INFO:backend.api.upload:Converting document to editable HTML with advanced converter...
-INFO:backend.api.upload:Generated editable HTML from converted DOCX (advanced)
-INFO:backend.api.upload:Editable HTML length: 9900 chars
-INFO:backend.api.upload:Parsing converted DOCX (from PDF)
-INFO:backend.services.parser:Scanning 28 lines for resume sections
-INFO:backend.services.parser:Found skills header: 'Product Skills: Product Strategy,Product Roadmapping, Backlog Prioritization, PRD Writing, Agile/Scrum, Stakeholder Management, KPI Definition, Agentic AI, Prompt Engineering, Process Automation, RPA, Power Automate, APIs, Computer Vision, Figma, ServiceNow, Operational Dashboards ' (matched: ['skills'])
-INFO:backend.services.parser:Skills section raw data: ['Awards: Dream Team Award – Air India (2024); Unstop Global Rank 44 (Top 5.3%, 2367 participants); Best Intern – Olfamach (1 of 10)']
-INFO:backend.services.parser:Processed 4 skills: ['Awards: Dream Team Award – Air India (2024)', 'Best Intern – Olfamach (1 of 10)', '2367 participants)', 'Unstop Global Rank 44 (Top 5.3%']
-INFO:backend.api.upload:Parsed resume - Word count: 525
+INFO:backend.api.upload:Generated editable HTML from PDF
+INFO:backend.api.upload:Editable HTML length: 4975 chars
+INFO:backend.api.upload:Parsing original PDF
+INFO:backend.services.parser:PyMuPDF extracted 541 words from PDF
+INFO:backend.services.parser:First 1000 chars: SABUJ MONDAL 
+Gurugram, India • sbj122333@gmail.com • +91 8918191698 •   LinkedIn Profile 
+ 
+PROFESSIONAL EXPERIENCE 
+AIR INDIA Gurugram, India 
+Automation Product Manager 
+May 2024 – Present 
+• Delivered ₹10+ Cr annualized cost savings through 10+ automations and real-time operational dashboards; received Dream 
+Team Award across 14K+ users 
+• Led Agentic AI workshops across 8 sub-departments identifying 6+ automation opportunities impacting 15+ stakeholders and 
+30 Cr+ potential savings 
+Key Product Initiatives: 
+• Report Sick/Fit Automation: Spearheaded end-to-end digitization eliminating manual tracking for 14K+ crew; integrated Tata 
+1MG API for medical certificate verification (₹5 Cr/year, 12K+ tickets/month auto-resolved, 90% automation) 
+• Crew Training Planning Automation: Architected integrated solution via Power Automate & RPA connecting legacy systems, 
+reducing 2,000 man-hrs/month by 80% and delivering ₹4 Cr/year savings through timely roster publication 
+• Agentic AI Rost
+INFO:backend.services.parser:Scanning 60 lines for resume sections
+INFO:backend.services.parser:Skills section raw data: []
+WARNING:backend.services.parser:No skills section found in resume
+INFO:backend.services.parser:Sections extracted - Experience: 1, Education: 1, Skills: 0
+INFO:backend.services.parser:Education entries: [{'degree': 'IIM LUCKNOW & CA FOSCARI, ITALY Lucknow / Venice', 'institution': 'MBA | 75.84%', 'location': '', 'graduationDate': '2024', 'gpa': ''}]
+INFO:backend.services.parser:Skills entries: []
+INFO:backend.services.parser:Skills keywords in text: True
+INFO:backend.services.parser:PyMuPDF missing skills/education sections, will try pdfplumber for table extraction
+INFO:backend.services.parser:Scanning 56 lines for resume sections
+INFO:backend.services.parser:Skills section raw data: []
+WARNING:backend.services.parser:No skills section found in resume
+INFO:backend.api.upload:Parsed resume - Word count: 569
 INFO:backend.api.upload:Experience entries: 1
 INFO:backend.api.upload:Education entries: 1
-INFO:backend.api.upload:Skills count: 4
-INFO:backend.api.upload:First experience entry: {'title': 'Automation Product Manager \tMay 2024 – Present\t•Delivered ₹10+ Cr annualized cost savings through 10+ automations and real-time operational dashboards; received Dream \t\tTeam Award acros
-INFO:backend.services.docx_template_manager:Saved original template: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/templates/c2de72e7-f5ca-4c3d-a7aa-ff7766516d70_original.docx
-INFO:backend.services.docx_template_manager:Created working copy: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/templates/c2de72e7-f5ca-4c3d-a7aa-ff7766516d70_working.docx
-INFO:backend.api.upload:Saved template for session: c2de72e7-f5ca-4c3d-a7aa-ff7766516d70
-INFO:backend.services.section_detector:Processing document with 14 paragraphs
-INFO:backend.services.section_detector:Detected 4 sections
-INFO:backend.api.upload:Detected 4 sections
-INFO:backend.api.upload:Running format check with raw_text length: 2958
+INFO:backend.api.upload:Skills count: 0
+INFO:backend.api.upload:First experience entry: {'title': 'Automation Product Manager  May 2024 – Present', 'company': 'AIR INDIA  Gurugram', 'location': 'India', 'startDate': '', 'endDate': '', 'description': 'Team Award across 14K+ users\n• Led A
+INFO:backend.api.upload:Running format check with raw_text length: 2708
 INFO:backend.api.upload:Format check passed: True
 INFO:backend.api.upload:Scoring mode: quality_coach
+INFO:backend.api.upload:Using role=product_manager, level=mid (defaults applied if not specified)
 INFO:backend.api.upload:Calculating score with role=product_manager, level=mid, mode=quality_coach
-INFO:backend.api.upload:Score calculated: 89.2
-INFO:backend.api.upload:Enhanced suggestions added: 4
-INFO:     127.0.0.1:49772 - "POST /api/upload HTTP/1.1" 200 OK
-INFO:backend.api.upload:Converting PDF to DOCX for better formatting preservation...
-INFO:backend.services.pdf_to_docx:Converting PDF to DOCX using pdf2docx...
-INFO:root:Start to convert /var/folders/fy/h0lm1bj94cg6kwy_sm9sz_780000gn/T/tmpy4unnh_c.pdf
-INFO:root:[1;36m[1/4] Opening document...[0m
-INFO:root:[1;36m[2/4] Analyzing document...[0m
-INFO:root:[1;36m[3/4] Parsing pages...[0m
-INFO:root:(1/1) Page 1
-INFO:root:[1;36m[4/4] Creating pages...[0m
-INFO:root:(1/1) Page 1
-INFO:root:Terminated in 0.11s.
-INFO:backend.services.pdf_to_docx:PDF converted to DOCX successfully (39653 bytes)
-INFO:backend.api.upload:PDF converted to DOCX successfully (39653 bytes)
-INFO:backend.api.upload:Saved original file: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/57c92a5e-9b99-4e50-9f43-cbb43ad7ab03.pdf
-INFO:backend.api.upload:Saved converted DOCX: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/57c92a5e-9b99-4e50-9f43-cbb43ad7ab03_converted.docx
-INFO:backend.api.upload:Converting document to editable HTML with advanced converter...
-INFO:backend.api.upload:Generated editable HTML from converted DOCX (advanced)
-INFO:backend.api.upload:Editable HTML length: 9900 chars
-INFO:backend.api.upload:Parsing converted DOCX (from PDF)
-INFO:backend.services.parser:Scanning 28 lines for resume sections
-INFO:backend.services.parser:Found skills header: 'Product Skills: Product Strategy,Product Roadmapping, Backlog Prioritization, PRD Writing, Agile/Scrum, Stakeholder Management, KPI Definition, Agentic AI, Prompt Engineering, Process Automation, RPA, Power Automate, APIs, Computer Vision, Figma, ServiceNow, Operational Dashboards ' (matched: ['skills'])
-INFO:backend.services.parser:Skills section raw data: ['Awards: Dream Team Award – Air India (2024); Unstop Global Rank 44 (Top 5.3%, 2367 participants); Best Intern – Olfamach (1 of 10)']
-INFO:backend.services.parser:Processed 4 skills: ['Awards: Dream Team Award – Air India (2024)', 'Best Intern – Olfamach (1 of 10)', '2367 participants)', 'Unstop Global Rank 44 (Top 5.3%']
-INFO:backend.api.upload:Parsed resume - Word count: 525
-INFO:backend.api.upload:Experience entries: 1
-INFO:backend.api.upload:Education entries: 1
-INFO:backend.api.upload:Skills count: 4
-INFO:backend.api.upload:First experience entry: {'title': 'Automation Product Manager \tMay 2024 – Present\t•Delivered ₹10+ Cr annualized cost savings through 10+ automations and real-time operational dashboards; received Dream \t\tTeam Award acros
-INFO:backend.services.docx_template_manager:Saved original template: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/templates/30ce807d-9689-4df7-aa56-df64f23fee14_original.docx
-INFO:backend.services.docx_template_manager:Created working copy: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/templates/30ce807d-9689-4df7-aa56-df64f23fee14_working.docx
-INFO:backend.api.upload:Saved template for session: 30ce807d-9689-4df7-aa56-df64f23fee14
-INFO:backend.services.section_detector:Processing document with 14 paragraphs
-INFO:backend.services.section_detector:Detected 4 sections
-INFO:backend.api.upload:Detected 4 sections
-INFO:backend.api.upload:Running format check with raw_text length: 2958
-INFO:backend.api.upload:Format check passed: True
-INFO:backend.api.upload:Scoring mode: quality_coach
-INFO:backend.api.upload:Calculating score with role=product_manager, level=mid, mode=quality_coach
-INFO:backend.api.upload:Score calculated: 89.2
-INFO:backend.api.upload:Enhanced suggestions added: 4
-INFO:     127.0.0.1:49810 - "POST /api/upload HTTP/1.1" 200 OK
-INFO:backend.api.upload:Converting PDF to DOCX for better formatting preservation...
-INFO:backend.services.pdf_to_docx:Converting PDF to DOCX using pdf2docx...
-INFO:root:Start to convert /var/folders/fy/h0lm1bj94cg6kwy_sm9sz_780000gn/T/tmpcytg3_f3.pdf
-INFO:root:[1;36m[1/4] Opening document...[0m
-INFO:root:[1;36m[2/4] Analyzing document...[0m
-INFO:root:[1;36m[3/4] Parsing pages...[0m
-INFO:root:(1/1) Page 1
-INFO:root:[1;36m[4/4] Creating pages...[0m
-INFO:root:(1/1) Page 1
-INFO:root:Terminated in 0.13s.
-INFO:backend.services.pdf_to_docx:PDF converted to DOCX successfully (39653 bytes)
-INFO:backend.api.upload:PDF converted to DOCX successfully (39653 bytes)
-INFO:backend.api.upload:Saved original file: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/ddd33ad7-00d9-4858-ba0e-f6f673a505c2.pdf
-INFO:backend.api.upload:Saved converted DOCX: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/ddd33ad7-00d9-4858-ba0e-f6f673a505c2_converted.docx
-INFO:backend.api.upload:Converting document to editable HTML with advanced converter...
-INFO:backend.api.upload:Generated editable HTML from converted DOCX (advanced)
-INFO:backend.api.upload:Editable HTML length: 9900 chars
-INFO:backend.api.upload:Parsing converted DOCX (from PDF)
-INFO:backend.services.parser:Scanning 28 lines for resume sections
-INFO:backend.services.parser:Found skills header: 'Product Skills: Product Strategy,Product Roadmapping, Backlog Prioritization, PRD Writing, Agile/Scrum, Stakeholder Management, KPI Definition, Agentic AI, Prompt Engineering, Process Automation, RPA, Power Automate, APIs, Computer Vision, Figma, ServiceNow, Operational Dashboards ' (matched: ['skills'])
-INFO:backend.services.parser:Skills section raw data: ['Awards: Dream Team Award – Air India (2024); Unstop Global Rank 44 (Top 5.3%, 2367 participants); Best Intern – Olfamach (1 of 10)']
-INFO:backend.services.parser:Processed 4 skills: ['Awards: Dream Team Award – Air India (2024)', 'Best Intern – Olfamach (1 of 10)', '2367 participants)', 'Unstop Global Rank 44 (Top 5.3%']
-INFO:backend.api.upload:Parsed resume - Word count: 525
-INFO:backend.api.upload:Experience entries: 1
-INFO:backend.api.upload:Education entries: 1
-INFO:backend.api.upload:Skills count: 4
-INFO:backend.api.upload:First experience entry: {'title': 'Automation Product Manager \tMay 2024 – Present\t•Delivered ₹10+ Cr annualized cost savings through 10+ automations and real-time operational dashboards; received Dream \t\tTeam Award acros
-INFO:backend.services.docx_template_manager:Saved original template: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/templates/68456a42-4479-4f1d-9c92-4dfb0f92ce36_original.docx
-INFO:backend.services.docx_template_manager:Created working copy: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/templates/68456a42-4479-4f1d-9c92-4dfb0f92ce36_working.docx
-INFO:backend.api.upload:Saved template for session: 68456a42-4479-4f1d-9c92-4dfb0f92ce36
-INFO:backend.services.section_detector:Processing document with 14 paragraphs
-INFO:backend.services.section_detector:Detected 4 sections
-INFO:backend.api.upload:Detected 4 sections
-INFO:backend.api.upload:Running format check with raw_text length: 2958
-INFO:backend.api.upload:Format check passed: True
-INFO:backend.api.upload:Scoring mode: quality_coach
-INFO:backend.api.upload:Calculating score with role=product_manager, level=mid, mode=quality_coach
-INFO:backend.api.upload:Score calculated: 89.2
-INFO:backend.api.upload:Enhanced suggestions added: 4
-INFO:     127.0.0.1:49962 - "POST /api/upload HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49998 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49998 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49998 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49998 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49998 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49998 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49998 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49998 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:backend.api.upload:Converting PDF to DOCX for better formatting preservation...
-INFO:backend.services.pdf_to_docx:Converting PDF to DOCX using pdf2docx...
-INFO:root:Start to convert /var/folders/fy/h0lm1bj94cg6kwy_sm9sz_780000gn/T/tmp50nkorpz.pdf
-INFO:root:[1;36m[1/4] Opening document...[0m
-INFO:root:[1;36m[2/4] Analyzing document...[0m
-INFO:root:[1;36m[3/4] Parsing pages...[0m
-INFO:root:(1/2) Page 1
-INFO:root:(2/2) Page 2
-INFO:root:[1;36m[4/4] Creating pages...[0m
-INFO:root:(1/2) Page 1
-INFO:root:(2/2) Page 2
-INFO:root:Terminated in 1.19s.
-INFO:backend.services.pdf_to_docx:PDF converted to DOCX successfully (402594 bytes)
-INFO:backend.api.upload:PDF converted to DOCX successfully (402594 bytes)
-INFO:backend.api.upload:Saved original file: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/cb7e76a9-2aff-4fbe-abd3-ed2c97b49cf6.pdf
-INFO:backend.api.upload:Saved converted DOCX: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/cb7e76a9-2aff-4fbe-abd3-ed2c97b49cf6_converted.docx
-INFO:backend.api.upload:Converting document to editable HTML with advanced converter...
-INFO:backend.api.upload:Generated editable HTML from converted DOCX (advanced)
-INFO:backend.api.upload:Editable HTML length: 626779 chars
-INFO:backend.api.upload:Parsing converted DOCX (from PDF)
-INFO:backend.services.parser:Scanning 477 lines for resume sections
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Adding skills content: •PROJECT
-MANAGEMENT TOOL: JIRA, MS PROJECTS
-•VISUALIZATION :
-POWERBI, TABLEAU
-•DATABASES :
-MYSQL, MONGO DB, GCP, ORACLE
-•MS SUITE :
-ADVANCED MS EXCEL, VBA, MACRO,
-MS POWERPOINT
-•PROGRAMMING
-LANGUAGE:
-...
-INFO:backend.services.parser:Skills section raw data: ['•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\nSenior Software Engineer | Fin-Tech | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\n• Implemented the Analytics engine to enable users take data driven investment decision basis technical and fundamental parameters\n• NLP-NLG implementation for global news curation , summarisation and processing | • Implemented the Analytics engine to enable users take data driven investment decision basis technical and fundamental parameters\n• NLP-NLG implementation for global news curation , summarisation and processing | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\nLISTER TECH N OLOGIES | JUN 2014 – SEP 2016 | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\nSoftware Engineer | Edu-Tech | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\n• Backend development in Java Spring Hibernate\n• Structured and non-structured DB sql', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON']
-INFO:backend.services.parser:Processed 35 skills: ['GCP', 'Structured and non-structured DB sql', 'JAVA- SPRING-', 'VBA', 'NLP-NLG implementation for global news curation', 'Backend development in Java Spring Hibernate', 'ORACLE', 'POWERBI', 'Software Engineer', 'Fin-Tech']
-INFO:backend.api.upload:Parsed resume - Word count: 5448
-INFO:backend.api.upload:Experience entries: 3
-INFO:backend.api.upload:Education entries: 3
-INFO:backend.api.upload:Skills count: 35
-INFO:backend.api.upload:First experience entry: {'title': 'I N DI AN I N STI T UTE OF', 'company': 'MASTER OF BUSINESS ADMINISTRATION', 'location': '', 'startDate': 'haragpur 2018', 'endDate': '2020', 'description': 'IMMERSION PROGRAM ( MBA)\nS I N
-INFO:backend.services.docx_template_manager:Saved original template: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/templates/19f6f988-2c71-4d05-9de1-f07b4514e502_original.docx
-INFO:backend.services.docx_template_manager:Created working copy: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/templates/19f6f988-2c71-4d05-9de1-f07b4514e502_working.docx
-INFO:backend.api.upload:Saved template for session: 19f6f988-2c71-4d05-9de1-f07b4514e502
-INFO:backend.services.section_detector:Processing document with 13 paragraphs
-INFO:backend.services.section_detector:Detected 3 sections
-INFO:backend.api.upload:Detected 3 sections
-INFO:backend.api.upload:Running format check with raw_text length: 2058
-INFO:backend.api.upload:Format check passed: True
-INFO:backend.api.upload:Scoring mode: quality_coach
-INFO:backend.api.upload:Calculating score with role=product_manager, level=mid, mode=quality_coach
-INFO:backend.api.upload:Score calculated: 50.8
-INFO:backend.api.upload:Enhanced suggestions added: 4
-INFO:     127.0.0.1:50068 - "POST /api/upload HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51153 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51153 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51155 - "GET /docs HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51219 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51219 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:backend.api.upload:Converting PDF to DOCX for better formatting preservation...
-INFO:backend.services.pdf_to_docx:Converting PDF to DOCX using pdf2docx...
-INFO:root:Start to convert /var/folders/fy/h0lm1bj94cg6kwy_sm9sz_780000gn/T/tmpyoew_iv9.pdf
-INFO:root:[1;36m[1/4] Opening document...[0m
-INFO:root:[1;36m[2/4] Analyzing document...[0m
-INFO:root:[1;36m[3/4] Parsing pages...[0m
-INFO:root:(1/2) Page 1
-INFO:root:(2/2) Page 2
-INFO:root:[1;36m[4/4] Creating pages...[0m
-INFO:root:(1/2) Page 1
-INFO:root:(2/2) Page 2
-INFO:root:Terminated in 1.16s.
-INFO:backend.services.pdf_to_docx:PDF converted to DOCX successfully (402594 bytes)
-INFO:backend.api.upload:PDF converted to DOCX successfully (402594 bytes)
-INFO:backend.api.upload:Saved original file: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/37f477d6-ea5a-49a9-ab90-a82e044ca665.pdf
-INFO:backend.api.upload:Saved converted DOCX: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/37f477d6-ea5a-49a9-ab90-a82e044ca665_converted.docx
-INFO:backend.api.upload:Converting document to editable HTML with advanced converter...
-INFO:backend.api.upload:Generated editable HTML from converted DOCX (advanced)
-INFO:backend.api.upload:Editable HTML length: 626779 chars
-INFO:backend.api.upload:Parsing converted DOCX (from PDF)
-INFO:backend.services.parser:Scanning 477 lines for resume sections
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Adding skills content: •PROJECT
-MANAGEMENT TOOL: JIRA, MS PROJECTS
-•VISUALIZATION :
-POWERBI, TABLEAU
-•DATABASES :
-MYSQL, MONGO DB, GCP, ORACLE
-•MS SUITE :
-ADVANCED MS EXCEL, VBA, MACRO,
-MS POWERPOINT
-•PROGRAMMING
-LANGUAGE:
-...
-INFO:backend.services.parser:Skills section raw data: ['•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\nSenior Software Engineer | Fin-Tech | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\n• Implemented the Analytics engine to enable users take data driven investment decision basis technical and fundamental parameters\n• NLP-NLG implementation for global news curation , summarisation and processing | • Implemented the Analytics engine to enable users take data driven investment decision basis technical and fundamental parameters\n• NLP-NLG implementation for global news curation , summarisation and processing | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\nLISTER TECH N OLOGIES | JUN 2014 – SEP 2016 | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\nSoftware Engineer | Edu-Tech | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\n• Backend development in Java Spring Hibernate\n• Structured and non-structured DB sql', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON']
-INFO:backend.services.parser:Processed 35 skills: ['GCP', 'Structured and non-structured DB sql', 'JAVA- SPRING-', 'VBA', 'NLP-NLG implementation for global news curation', 'Backend development in Java Spring Hibernate', 'ORACLE', 'POWERBI', 'Software Engineer', 'Fin-Tech']
-INFO:backend.api.upload:Parsed resume - Word count: 5448
-INFO:backend.api.upload:Experience entries: 3
-INFO:backend.api.upload:Education entries: 3
-INFO:backend.api.upload:Skills count: 35
-INFO:backend.api.upload:First experience entry: {'title': 'I N DI AN I N STI T UTE OF', 'company': 'MASTER OF BUSINESS ADMINISTRATION', 'location': '', 'startDate': 'haragpur 2018', 'endDate': '2020', 'description': 'IMMERSION PROGRAM ( MBA)\nS I N
-INFO:backend.services.docx_template_manager:Saved original template: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/templates/cfe42dcc-4aca-425e-88ce-9672c46d57fd_original.docx
-INFO:backend.services.docx_template_manager:Created working copy: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/templates/cfe42dcc-4aca-425e-88ce-9672c46d57fd_working.docx
-INFO:backend.api.upload:Saved template for session: cfe42dcc-4aca-425e-88ce-9672c46d57fd
-INFO:backend.services.section_detector:Processing document with 13 paragraphs
-INFO:backend.services.section_detector:Detected 3 sections
-INFO:backend.api.upload:Detected 3 sections
-INFO:backend.api.upload:Running format check with raw_text length: 2058
-INFO:backend.api.upload:Format check passed: True
-INFO:backend.api.upload:Scoring mode: quality_coach
-INFO:backend.api.upload:Calculating score with role=product_manager, level=mid, mode=quality_coach
-INFO:backend.api.upload:Score calculated: 50.8
-INFO:backend.api.upload:Enhanced suggestions added: 4
-INFO:     127.0.0.1:51309 - "POST /api/upload HTTP/1.1" 200 OK
-INFO:backend.api.upload:Converting PDF to DOCX for better formatting preservation...
-INFO:backend.services.pdf_to_docx:Converting PDF to DOCX using pdf2docx...
-INFO:root:Start to convert /var/folders/fy/h0lm1bj94cg6kwy_sm9sz_780000gn/T/tmpf6gh0v5y.pdf
-INFO:root:[1;36m[1/4] Opening document...[0m
-INFO:root:[1;36m[2/4] Analyzing document...[0m
-INFO:root:[1;36m[3/4] Parsing pages...[0m
-INFO:root:(1/1) Page 1
-INFO:root:[1;36m[4/4] Creating pages...[0m
-INFO:root:(1/1) Page 1
-INFO:root:Terminated in 0.10s.
-INFO:backend.services.pdf_to_docx:PDF converted to DOCX successfully (39653 bytes)
-INFO:backend.api.upload:PDF converted to DOCX successfully (39653 bytes)
-INFO:backend.api.upload:Saved original file: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/9b39a6ad-f7ec-412b-b14c-322e8d47b8c2.pdf
-INFO:backend.api.upload:Saved converted DOCX: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/9b39a6ad-f7ec-412b-b14c-322e8d47b8c2_converted.docx
-INFO:backend.api.upload:Converting document to editable HTML with advanced converter...
-INFO:backend.api.upload:Generated editable HTML from converted DOCX (advanced)
-INFO:backend.api.upload:Editable HTML length: 9900 chars
-INFO:backend.api.upload:Parsing converted DOCX (from PDF)
-INFO:backend.services.parser:Scanning 28 lines for resume sections
-INFO:backend.services.parser:Found skills header: 'Product Skills: Product Strategy,Product Roadmapping, Backlog Prioritization, PRD Writing, Agile/Scrum, Stakeholder Management, KPI Definition, Agentic AI, Prompt Engineering, Process Automation, RPA, Power Automate, APIs, Computer Vision, Figma, ServiceNow, Operational Dashboards ' (matched: ['skills'])
-INFO:backend.services.parser:Skills section raw data: ['Awards: Dream Team Award – Air India (2024); Unstop Global Rank 44 (Top 5.3%, 2367 participants); Best Intern – Olfamach (1 of 10)']
-INFO:backend.services.parser:Processed 4 skills: ['Awards: Dream Team Award – Air India (2024)', 'Best Intern – Olfamach (1 of 10)', '2367 participants)', 'Unstop Global Rank 44 (Top 5.3%']
-INFO:backend.api.upload:Parsed resume - Word count: 525
-INFO:backend.api.upload:Experience entries: 1
-INFO:backend.api.upload:Education entries: 1
-INFO:backend.api.upload:Skills count: 4
-INFO:backend.api.upload:First experience entry: {'title': 'Automation Product Manager \tMay 2024 – Present\t•Delivered ₹10+ Cr annualized cost savings through 10+ automations and real-time operational dashboards; received Dream \t\tTeam Award acros
-INFO:backend.services.docx_template_manager:Saved original template: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/templates/0ae3a002-712a-49f9-a79f-491b0adb7db4_original.docx
-INFO:backend.services.docx_template_manager:Created working copy: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/templates/0ae3a002-712a-49f9-a79f-491b0adb7db4_working.docx
-INFO:backend.api.upload:Saved template for session: 0ae3a002-712a-49f9-a79f-491b0adb7db4
-INFO:backend.services.section_detector:Processing document with 14 paragraphs
-INFO:backend.services.section_detector:Detected 4 sections
-INFO:backend.api.upload:Detected 4 sections
-INFO:backend.api.upload:Running format check with raw_text length: 2958
-INFO:backend.api.upload:Format check passed: True
-INFO:backend.api.upload:Scoring mode: quality_coach
-INFO:backend.api.upload:Calculating score with role=product_manager, level=mid, mode=quality_coach
-INFO:backend.api.upload:Score calculated: 89.2
-INFO:backend.api.upload:Enhanced suggestions added: 4
-INFO:     127.0.0.1:51616 - "POST /api/upload HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51740 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51740 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51740 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51740 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51740 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51740 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51740 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51740 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51740 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51740 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:backend.api.upload:Converting PDF to DOCX for better formatting preservation...
-INFO:backend.services.pdf_to_docx:Converting PDF to DOCX using pdf2docx...
-INFO:root:Start to convert /var/folders/fy/h0lm1bj94cg6kwy_sm9sz_780000gn/T/tmps1yftcb_.pdf
-INFO:root:[1;36m[1/4] Opening document...[0m
-INFO:root:[1;36m[2/4] Analyzing document...[0m
-INFO:root:[1;36m[3/4] Parsing pages...[0m
-INFO:root:(1/2) Page 1
-INFO:root:(2/2) Page 2
-INFO:root:[1;36m[4/4] Creating pages...[0m
-INFO:root:(1/2) Page 1
-INFO:root:(2/2) Page 2
-INFO:root:Terminated in 1.17s.
-INFO:backend.services.pdf_to_docx:PDF converted to DOCX successfully (402594 bytes)
-INFO:backend.api.upload:PDF converted to DOCX successfully (402594 bytes)
-INFO:backend.api.upload:Saved original file: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/e295e16e-2872-4235-aec5-bda84b1d8682.pdf
-INFO:backend.api.upload:Saved converted DOCX: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/e295e16e-2872-4235-aec5-bda84b1d8682_converted.docx
-INFO:backend.api.upload:Converting document to editable HTML with advanced converter...
-INFO:backend.api.upload:Generated editable HTML from converted DOCX (advanced)
-INFO:backend.api.upload:Editable HTML length: 626779 chars
-INFO:backend.api.upload:Parsing converted DOCX (from PDF)
-INFO:backend.services.parser:Scanning 477 lines for resume sections
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Adding skills content: •PROJECT
-MANAGEMENT TOOL: JIRA, MS PROJECTS
-•VISUALIZATION :
-POWERBI, TABLEAU
-•DATABASES :
-MYSQL, MONGO DB, GCP, ORACLE
-•MS SUITE :
-ADVANCED MS EXCEL, VBA, MACRO,
-MS POWERPOINT
-•PROGRAMMING
-LANGUAGE:
-...
-INFO:backend.services.parser:Skills section raw data: ['•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\nSenior Software Engineer | Fin-Tech | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\n• Implemented the Analytics engine to enable users take data driven investment decision basis technical and fundamental parameters\n• NLP-NLG implementation for global news curation , summarisation and processing | • Implemented the Analytics engine to enable users take data driven investment decision basis technical and fundamental parameters\n• NLP-NLG implementation for global news curation , summarisation and processing | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\nLISTER TECH N OLOGIES | JUN 2014 – SEP 2016 | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\nSoftware Engineer | Edu-Tech | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\n• Backend development in Java Spring Hibernate\n• Structured and non-structured DB sql', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON']
-INFO:backend.services.parser:Processed 35 skills: ['GCP', 'Structured and non-structured DB sql', 'JAVA- SPRING-', 'VBA', 'NLP-NLG implementation for global news curation', 'Backend development in Java Spring Hibernate', 'ORACLE', 'POWERBI', 'Software Engineer', 'Fin-Tech']
-INFO:backend.api.upload:Parsed resume - Word count: 5448
-INFO:backend.api.upload:Experience entries: 3
-INFO:backend.api.upload:Education entries: 3
-INFO:backend.api.upload:Skills count: 35
-INFO:backend.api.upload:First experience entry: {'title': 'I N DI AN I N STI T UTE OF', 'company': 'MASTER OF BUSINESS ADMINISTRATION', 'location': '', 'startDate': 'haragpur 2018', 'endDate': '2020', 'description': 'IMMERSION PROGRAM ( MBA)\nS I N
-INFO:backend.services.docx_template_manager:Saved original template: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/templates/73bbd954-e988-4bc2-9847-3241ca054629_original.docx
-INFO:backend.services.docx_template_manager:Created working copy: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/templates/73bbd954-e988-4bc2-9847-3241ca054629_working.docx
-INFO:backend.api.upload:Saved template for session: 73bbd954-e988-4bc2-9847-3241ca054629
-INFO:backend.services.section_detector:Processing document with 13 paragraphs
-INFO:backend.services.section_detector:Detected 3 sections
-INFO:backend.api.upload:Detected 3 sections
-INFO:backend.api.upload:Running format check with raw_text length: 2058
-INFO:backend.api.upload:Format check passed: True
-INFO:backend.api.upload:Scoring mode: quality_coach
-INFO:backend.api.upload:Calculating score with role=product_manager, level=mid, mode=quality_coach
-INFO:backend.api.upload:Score calculated: 50.8
-INFO:backend.api.upload:Enhanced suggestions added: 4
-INFO:     127.0.0.1:51830 - "POST /api/upload HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52341 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:backend.api.upload:Converting PDF to DOCX for better formatting preservation...
-INFO:backend.services.pdf_to_docx:Converting PDF to DOCX using pdf2docx...
-INFO:root:Start to convert /var/folders/fy/h0lm1bj94cg6kwy_sm9sz_780000gn/T/tmp4au993d5.pdf
-INFO:root:[1;36m[1/4] Opening document...[0m
-INFO:root:[1;36m[2/4] Analyzing document...[0m
-INFO:root:[1;36m[3/4] Parsing pages...[0m
-INFO:root:(1/1) Page 1
-INFO:root:[1;36m[4/4] Creating pages...[0m
-INFO:root:(1/1) Page 1
-INFO:root:Terminated in 0.12s.
-INFO:backend.services.pdf_to_docx:PDF converted to DOCX successfully (39653 bytes)
-INFO:backend.api.upload:PDF converted to DOCX successfully (39653 bytes)
-INFO:backend.api.upload:Saved original file: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/4472be2d-35be-434b-a326-0afaab4dfc3a.pdf
-INFO:backend.api.upload:Saved converted DOCX: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/4472be2d-35be-434b-a326-0afaab4dfc3a_converted.docx
-INFO:backend.api.upload:Converting document to editable HTML with advanced converter...
-INFO:backend.api.upload:Generated editable HTML from converted DOCX (advanced)
-INFO:backend.api.upload:Editable HTML length: 9900 chars
-INFO:backend.api.upload:Parsing converted DOCX (from PDF)
-INFO:backend.services.parser:Scanning 28 lines for resume sections
-INFO:backend.services.parser:Found skills header: 'Product Skills: Product Strategy,Product Roadmapping, Backlog Prioritization, PRD Writing, Agile/Scrum, Stakeholder Management, KPI Definition, Agentic AI, Prompt Engineering, Process Automation, RPA, Power Automate, APIs, Computer Vision, Figma, ServiceNow, Operational Dashboards ' (matched: ['skills'])
-INFO:backend.services.parser:Skills section raw data: ['Awards: Dream Team Award – Air India (2024); Unstop Global Rank 44 (Top 5.3%, 2367 participants); Best Intern – Olfamach (1 of 10)']
-INFO:backend.services.parser:Processed 4 skills: ['Awards: Dream Team Award – Air India (2024)', 'Best Intern – Olfamach (1 of 10)', '2367 participants)', 'Unstop Global Rank 44 (Top 5.3%']
-INFO:backend.api.upload:Parsed resume - Word count: 525
-INFO:backend.api.upload:Experience entries: 1
-INFO:backend.api.upload:Education entries: 1
-INFO:backend.api.upload:Skills count: 4
-INFO:backend.api.upload:First experience entry: {'title': 'Automation Product Manager \tMay 2024 – Present\t•Delivered ₹10+ Cr annualized cost savings through 10+ automations and real-time operational dashboards; received Dream \t\tTeam Award acros
-INFO:backend.services.docx_template_manager:Saved original template: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/templates/65bdc085-23c0-4746-92ca-653a13dfa4f8_original.docx
-INFO:backend.services.docx_template_manager:Created working copy: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/templates/65bdc085-23c0-4746-92ca-653a13dfa4f8_working.docx
-INFO:backend.api.upload:Saved template for session: 65bdc085-23c0-4746-92ca-653a13dfa4f8
-INFO:backend.services.section_detector:Processing document with 14 paragraphs
-INFO:backend.services.section_detector:Detected 4 sections
-INFO:backend.api.upload:Detected 4 sections
-INFO:backend.api.upload:Running format check with raw_text length: 2958
-INFO:backend.api.upload:Format check passed: True
-INFO:backend.api.upload:Scoring mode: quality_coach
-INFO:backend.api.upload:Calculating score with role=product_manager, level=mid, mode=quality_coach
-INFO:backend.api.upload:Score calculated: 89.2
-INFO:backend.api.upload:Enhanced suggestions added: 4
-INFO:     127.0.0.1:52443 - "POST /api/upload HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52580 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52580 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52580 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52580 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52580 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52580 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52580 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52580 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52906 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52906 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:backend.api.upload:Converting PDF to DOCX for better formatting preservation...
-INFO:backend.services.pdf_to_docx:Converting PDF to DOCX using pdf2docx...
-INFO:root:Start to convert /var/folders/fy/h0lm1bj94cg6kwy_sm9sz_780000gn/T/tmpn53_5kfs.pdf
-INFO:root:[1;36m[1/4] Opening document...[0m
-INFO:root:[1;36m[2/4] Analyzing document...[0m
-INFO:root:[1;36m[3/4] Parsing pages...[0m
-INFO:root:(1/2) Page 1
-INFO:root:(2/2) Page 2
-INFO:root:[1;36m[4/4] Creating pages...[0m
-INFO:root:(1/2) Page 1
-INFO:root:(2/2) Page 2
-INFO:root:Terminated in 1.22s.
-INFO:backend.services.pdf_to_docx:PDF converted to DOCX successfully (402594 bytes)
-INFO:backend.api.upload:PDF converted to DOCX successfully (402594 bytes)
-INFO:backend.api.upload:Saved original file: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/98054589-a06e-46e3-ad66-91ce0ff0e9d0.pdf
-INFO:backend.api.upload:Saved converted DOCX: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/uploads/98054589-a06e-46e3-ad66-91ce0ff0e9d0_converted.docx
-INFO:backend.api.upload:Converting document to editable HTML with advanced converter...
-INFO:backend.api.upload:Generated editable HTML from converted DOCX (advanced)
-INFO:backend.api.upload:Editable HTML length: 626779 chars
-INFO:backend.api.upload:Parsing converted DOCX (from PDF)
-INFO:backend.services.parser:Scanning 477 lines for resume sections
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Found skills header: 'TECHNOLOGY SKILLS' (matched: ['skills'])
-INFO:backend.services.parser:Adding skills content: •PROJECT
-MANAGEMENT TOOL: JIRA, MS PROJECTS
-•VISUALIZATION :
-POWERBI, TABLEAU
-•DATABASES :
-MYSQL, MONGO DB, GCP, ORACLE
-•MS SUITE :
-ADVANCED MS EXCEL, VBA, MACRO,
-MS POWERPOINT
-•PROGRAMMING
-LANGUAGE:
-...
-INFO:backend.services.parser:Skills section raw data: ['•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\nSenior Software Engineer | Fin-Tech | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\n• Implemented the Analytics engine to enable users take data driven investment decision basis technical and fundamental parameters\n• NLP-NLG implementation for global news curation , summarisation and processing | • Implemented the Analytics engine to enable users take data driven investment decision basis technical and fundamental parameters\n• NLP-NLG implementation for global news curation , summarisation and processing | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\nLISTER TECH N OLOGIES | JUN 2014 – SEP 2016 | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\nSoftware Engineer | Edu-Tech | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON\n• Backend development in Java Spring Hibernate\n• Structured and non-structured DB sql', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON | MANAGEMENT', '•PROJECT\nMANAGEMENT TOOL: JIRA, MS PROJECTS\n•VISUALIZATION :\nPOWERBI, TABLEAU\n•DATABASES :\nMYSQL, MONGO DB, GCP, ORACLE\n•MS SUITE :\nADVANCED MS EXCEL, VBA, MACRO,\nMS POWERPOINT\n•PROGRAMMING\nLANGUAGE:\nJAVA- SPRING-\nHIBERNATE,\nPHP, R, PYTHON']
-INFO:backend.services.parser:Processed 35 skills: ['GCP', 'Structured and non-structured DB sql', 'JAVA- SPRING-', 'VBA', 'NLP-NLG implementation for global news curation', 'Backend development in Java Spring Hibernate', 'ORACLE', 'POWERBI', 'Software Engineer', 'Fin-Tech']
-INFO:backend.api.upload:Parsed resume - Word count: 5448
-INFO:backend.api.upload:Experience entries: 3
-INFO:backend.api.upload:Education entries: 3
-INFO:backend.api.upload:Skills count: 35
-INFO:backend.api.upload:First experience entry: {'title': 'I N DI AN I N STI T UTE OF', 'company': 'MASTER OF BUSINESS ADMINISTRATION', 'location': '', 'startDate': 'haragpur 2018', 'endDate': '2020', 'description': 'IMMERSION PROGRAM ( MBA)\nS I N
-INFO:backend.services.docx_template_manager:Saved original template: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/templates/7d093170-df0b-4093-8a36-9f4cb28a14e2_original.docx
-INFO:backend.services.docx_template_manager:Created working copy: /Users/sabuj.mondal/ats-resume-scorer/backend/storage/templates/7d093170-df0b-4093-8a36-9f4cb28a14e2_working.docx
-INFO:backend.api.upload:Saved template for session: 7d093170-df0b-4093-8a36-9f4cb28a14e2
-INFO:backend.services.section_detector:Processing document with 13 paragraphs
-INFO:backend.services.section_detector:Detected 3 sections
-INFO:backend.api.upload:Detected 3 sections
-INFO:backend.api.upload:Running format check with raw_text length: 2058
-INFO:backend.api.upload:Format check passed: True
-INFO:backend.api.upload:Scoring mode: quality_coach
-INFO:backend.api.upload:Calculating score with role=product_manager, level=mid, mode=quality_coach
-INFO:backend.api.upload:Score calculated: 50.8
-INFO:backend.api.upload:Enhanced suggestions added: 4
-INFO:     127.0.0.1:52960 - "POST /api/upload HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53834 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53834 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53836 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53836 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54176 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54176 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54178 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54178 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54178 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54406 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54875 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55130 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55130 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56005 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56005 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56114 - "GET /docs HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56007 - "GET /api/roles HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56007 - "GET /api/roles HTTP/1.1" 200 OK
+INFO:backend.api.upload:Score calculated: 69.0
+INFO:backend.api.upload:Enhanced suggestions added: 5
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+Grammar checking failed: 'NoneType' object has no attribute 'check'
+INFO:     127.0.0.1:52776 - "POST /api/upload HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'backend/services/grammar_checker.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [49879]
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/pypdf/_crypt_providers/_cryptography.py:32: CryptographyDeprecationWarning: ARC4 has been moved to cryptography.hazmat.decrepit.ciphers.algorithms.ARC4 and will be removed from cryptography.hazmat.primitives.ciphers.algorithms in 48.0.0.
+  from cryptography.hazmat.primitives.ciphers.algorithms import AES, ARC4
+INFO:     Started server process [50092]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.

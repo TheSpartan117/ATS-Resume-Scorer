@@ -19,6 +19,7 @@ import { useState, useEffect } from 'react';
 import DocxViewer from './DocxViewer';
 import TiptapEditor from './TiptapEditor';
 import OfficeViewer from './OfficeViewer';
+import OnlyOfficeEditor from './OnlyOfficeEditor';
 
 interface ResumeViewerTabsProps {
   originalDocx: File | Blob | null;
@@ -27,9 +28,10 @@ interface ResumeViewerTabsProps {
   previewUrl?: string; // Public URL for Office Online fallback
   onEditorReady?: (editor: any) => void;
   className?: string;
+  sessionId?: string; // Session ID for OnlyOffice
 }
 
-type TabId = 'original' | 'edit' | 'office';
+type TabId = 'onlyoffice' | 'original' | 'edit' | 'office';
 
 interface Tab {
   id: TabId;
@@ -46,10 +48,12 @@ export const ResumeViewerTabs: React.FC<ResumeViewerTabsProps> = ({
   previewUrl,
   onEditorReady,
   className = '',
+  sessionId,
 }) => {
-  const [activeTab, setActiveTab] = useState<TabId>('original');
+  const [activeTab, setActiveTab] = useState<TabId>('onlyoffice');
   const [docxViewerError, setDocxViewerError] = useState(false);
   const [showOfficeTab, setShowOfficeTab] = useState(false);
+  const [onlyOfficeEnabled, setOnlyOfficeEnabled] = useState(true);
 
   // Show Office Online tab if docx-preview fails and public URL available
   useEffect(() => {
@@ -62,16 +66,23 @@ export const ResumeViewerTabs: React.FC<ResumeViewerTabsProps> = ({
 
   // Define available tabs
   const baseTabs: Tab[] = [
+    ...(onlyOfficeEnabled && sessionId ? [{
+      id: 'onlyoffice' as TabId,
+      label: 'OnlyOffice Editor',
+      icon: '📝',
+      description: '100% Word-like editing with zero format discrepancy - powered by OnlyOffice',
+      badge: '100% Accurate',
+    }] : []),
     {
       id: 'original',
-      label: 'Original Document',
+      label: 'Preview',
       icon: '📄',
       description: 'View your document exactly as uploaded with preserved formatting',
       badge: '85-95% Accurate',
     },
     {
       id: 'edit',
-      label: 'Edit Mode',
+      label: 'Structure Editor',
       icon: '✏️',
       description: 'Make changes to your resume content with rich text editing',
     },
@@ -162,6 +173,22 @@ export const ResumeViewerTabs: React.FC<ResumeViewerTabsProps> = ({
 
       {/* Tab Content Area */}
       <div className="flex-1 overflow-hidden relative">
+        {/* OnlyOffice Editor Tab */}
+        {activeTab === 'onlyoffice' && sessionId && (
+          <div className="h-full">
+            <OnlyOfficeEditor
+              sessionId={sessionId}
+              onDocumentReady={() => console.log('OnlyOffice document ready')}
+              onError={(error) => {
+                console.error('OnlyOffice error:', error);
+                setOnlyOfficeEnabled(false);
+                setActiveTab('original');
+              }}
+              className="h-full"
+            />
+          </div>
+        )}
+
         {/* Original Document Tab */}
         {activeTab === 'original' && (
           <div className="h-full">
@@ -221,6 +248,13 @@ export const ResumeViewerTabs: React.FC<ResumeViewerTabsProps> = ({
         <div className="flex items-center justify-between text-xs">
           {/* Left side - viewer info */}
           <div className="flex items-center space-x-4 text-gray-600">
+            {activeTab === 'onlyoffice' && (
+              <span className="flex items-center">
+                <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                OnlyOffice Document Server - 100% Word Compatible
+              </span>
+            )}
+
             {activeTab === 'original' && (
               <>
                 <span className="flex items-center">

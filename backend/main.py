@@ -3,6 +3,14 @@ ATS Resume Scorer API
 """
 
 import os
+import sys
+from pathlib import Path
+
+# Add parent directory to Python path to allow 'backend' imports
+backend_dir = Path(__file__).parent
+parent_dir = backend_dir.parent
+sys.path.insert(0, str(parent_dir))
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -52,6 +60,10 @@ from backend.api.export import router as export_router
 from backend.api.preview import router as preview_router
 from backend.api.editor import router as editor_router
 from backend.api.files import router as files_router
+from backend.api.latex_editor import router as latex_router
+from backend.api.docx_editor import router as docx_editor_router
+from backend.api.onlyoffice import router as onlyoffice_router
+from backend.api.phase2_features import router as phase2_router
 
 # Include routers
 app.include_router(upload_router)
@@ -64,6 +76,10 @@ app.include_router(export_router)
 app.include_router(preview_router)
 app.include_router(editor_router)
 app.include_router(files_router)
+app.include_router(latex_router)
+app.include_router(docx_editor_router)
+app.include_router(onlyoffice_router)
+app.include_router(phase2_router)
 
 # Global exception handler
 @app.exception_handler(Exception)

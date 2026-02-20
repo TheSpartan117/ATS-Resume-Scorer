@@ -1,0 +1,18 @@
+Task 4: Implement SuggestionGenerator with location mapping
+
+- Added SuggestionGenerator class to suggestion_generator.py
+- Generates 4 types of suggestions: missing_content, content_change, missing_section, formatting
+- Maps suggestions to paragraph indices for editor navigation
+- Sorts by priority (critical > high > medium > low)
+- Added comprehensive test suite with 12 tests
+- All tests passing
+
+Features:
+- Detects missing contact info (phone, LinkedIn)
+- Identifies weak action verbs in experience descriptions
+- Suggests missing sections (Skills, Projects, Summary)
+- Detects formatting inconsistencies
+- Role-specific suggestions (tech roles get Projects section)
+- Location mapping for frontend navigation
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>

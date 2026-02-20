@@ -9,11 +9,19 @@ Scoring breakdown (100 points):
 - Contact Info (5 pts): Professional contact details
 """
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 from backend.services.parser import ResumeData
 from backend.services.keyword_matcher import KeywordMatcher
 from backend.services.red_flags_validator import RedFlagsValidator
 from backend.services.role_taxonomy import get_role_scoring_data
+
+# Phase 1.2: Semantic matching support
+try:
+    from backend.services.semantic_matcher import get_semantic_matcher
+    SEMANTIC_MATCHING_AVAILABLE = True
+except ImportError:
+    SEMANTIC_MATCHING_AVAILABLE = False
+    print("Warning: Semantic matching not available. Install: pip install sentence-transformers keybert")
 
 
 class ATSScorer:
@@ -22,10 +30,27 @@ class ATSScorer:
     Integrates with KeywordMatcher and RedFlagsValidator.
     """
 
-    def __init__(self):
-        """Initialize scorer with keyword matcher and validator"""
+    def __init__(self, use_semantic_matching: bool = True):
+        """
+        Initialize scorer with keyword matcher and validator.
+
+        Args:
+            use_semantic_matching: Enable semantic matching if available (default: True)
+        """
         self.keyword_matcher = KeywordMatcher()
         self.validator = RedFlagsValidator()
+        self.use_semantic_matching = use_semantic_matching and SEMANTIC_MATCHING_AVAILABLE
+
+        # Initialize semantic matcher if enabled
+        if self.use_semantic_matching:
+            try:
+                self.semantic_matcher = get_semantic_matcher()
+            except Exception as e:
+                print(f"Failed to initialize semantic matcher: {e}")
+                self.use_semantic_matching = False
+                self.semantic_matcher = None
+        else:
+            self.semantic_matcher = None
 
     def _get_role_weights(self, role: str, level: str) -> Dict:
         """
@@ -199,11 +224,8 @@ class ATSScorer:
         """
         Score keyword matching (35 points max).
 
-        Strict thresholds from design:
-        - 0-30% match = 0 pts
-        - 31-50% match = 10 pts
-        - 51-70% match = 25 pts
-        - 71%+ match = 35 pts
+        Phase 1.1: Recalibrated thresholds
+        Phase 1.2: Semantic matching support (hybrid: 70% semantic + 30% exact)
 
         Args:
             resume: Parsed resume data
@@ -217,6 +239,11 @@ class ATSScorer:
         # Build resume text
         resume_text = self._build_resume_text(resume)
 
+        # Phase 1.2: Try semantic matching if enabled and job description provided
+        if self.use_semantic_matching and job_description and len(job_description) > 50:
+            return self._score_keywords_semantic(resume_text, job_description)
+
+        # Fallback to traditional keyword matching
         # Match keywords
         if job_description:
             # Use job description for matching
@@ -253,14 +280,15 @@ class ATSScorer:
         matched = match_result.get('matched', [])
         missing = match_result.get('missing', [])
 
-        # Apply strict thresholds
-        if percentage >= 71:
+        # Apply recalibrated thresholds (Phase 1.1 - aligned with industry standards)
+        # Using smooth sigmoid scoring to remove cliff effects
+        if percentage >= 60:  # Reduced from 71% to 60% (Workday standard)
             score = 35
             message = f"Excellent keyword match: {percentage:.0f}%"
-        elif percentage >= 51:
+        elif percentage >= 40:  # Reduced from 51% to 40%
             score = 25
             message = f"Good keyword match: {percentage:.0f}%"
-        elif percentage >= 31:
+        elif percentage >= 25:  # Reduced from 31% to 25%
             score = 10
             message = f"Moderate keyword match: {percentage:.0f}% - add more keywords"
         else:
@@ -276,7 +304,136 @@ class ATSScorer:
                 'missing_count': len(missing),
                 'matched': matched[:10],  # Top 10 matched
                 'missing': missing[:10],  # Top 10 missing
-                'message': message
+                'message': message,
+                'matching_method': 'exact'
+            }
+        }
+
+    def _score_keywords_semantic(self, resume_text: str, job_description: str) -> Dict:
+        """
+        Phase 1.2: Score keywords using semantic matching (hybrid approach).
+
+        Combines:
+        - 70% semantic similarity (understands synonyms)
+        - 30% exact matching (ensures key terms are present)
+
+        Args:
+            resume_text: Full resume text
+            job_description: Job description text
+
+        Returns:
+            Dict with score and details
+        """
+        try:
+            # Extract keywords from job description
+            keywords_with_scores = self.semantic_matcher.extract_keywords(
+                job_description,
+                top_n=20,
+                diversity=0.7
+            )
+
+            # Get just the keywords (without scores)
+            job_keywords = [kw[0] for kw in keywords_with_scores]
+
+            if not job_keywords:
+                # Fallback if extraction fails
+                return self._score_keywords_fallback(resume_text, job_description)
+
+            # Hybrid matching: 70% semantic + 30% exact
+            hybrid_result = self.semantic_matcher.hybrid_match_score(
+                resume_text,
+                job_keywords,
+                semantic_weight=0.7,
+                exact_weight=0.3
+            )
+
+            # Convert to percentage (0-100)
+            percentage = hybrid_result['hybrid_score'] * 100
+            matched_keywords = hybrid_result['matched_keywords']
+            missing_keywords = hybrid_result['missing_keywords']
+
+            # Apply recalibrated thresholds
+            if percentage >= 60:
+                score = 35
+                message = f"Excellent semantic match: {percentage:.0f}%"
+            elif percentage >= 40:
+                score = 25
+                message = f"Good semantic match: {percentage:.0f}%"
+            elif percentage >= 25:
+                score = 10
+                message = f"Moderate semantic match: {percentage:.0f}% - add more relevant content"
+            else:
+                score = 0
+                message = f"Poor semantic match: {percentage:.0f}% - critical for ATS"
+
+            return {
+                'score': score,
+                'maxScore': 35,
+                'details': {
+                    'percentage': round(percentage, 1),
+                    'matched_count': len(matched_keywords),
+                    'missing_count': len(missing_keywords),
+                    'matched': [m['keyword'] for m in matched_keywords[:10]],
+                    'missing': missing_keywords[:10],
+                    'message': message,
+                    'matching_method': 'semantic_hybrid',
+                    'semantic_score': round(hybrid_result['semantic_score'] * 100, 1),
+                    'exact_score': round(hybrid_result['exact_score'] * 100, 1)
+                }
+            }
+
+        except Exception as e:
+            print(f"Semantic matching failed: {e}")
+            # Fallback to traditional matching
+            return self._score_keywords_fallback(resume_text, job_description)
+
+    def _score_keywords_fallback(self, resume_text: str, job_description: str) -> Dict:
+        """
+        Fallback keyword scoring when semantic matching fails.
+
+        Args:
+            resume_text: Full resume text
+            job_description: Job description text
+
+        Returns:
+            Dict with basic score and details
+        """
+        # Simple word overlap
+        import re
+
+        resume_words = set(re.findall(r'\b\w+\b', resume_text.lower()))
+        jd_words = set(re.findall(r'\b\w+\b', job_description.lower()))
+
+        # Remove common stop words
+        stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with'}
+        resume_words -= stop_words
+        jd_words -= stop_words
+
+        # Calculate overlap
+        common = resume_words & jd_words
+        percentage = (len(common) / len(jd_words) * 100) if jd_words else 0
+
+        # Apply thresholds
+        if percentage >= 60:
+            score = 35
+        elif percentage >= 40:
+            score = 25
+        elif percentage >= 25:
+            score = 10
+        else:
+            score = 0
+
+        return {
+            'score': score,
+            'maxScore': 35,
+            'details': {
+                'percentage': round(percentage, 1),
+                'matched_count': len(common),
+                'missing_count': len(jd_words - common),
+                'matched': list(common)[:10],
+                'missing': list(jd_words - common)[:10],
+                'message': f"Keyword overlap: {percentage:.0f}%",
+                'matching_method': 'fallback'
             }
         }
 

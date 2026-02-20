@@ -59,7 +59,9 @@ vi.mock('react-router-dom', async () => {
     useLocation: () => ({
       state: {
         result: {
+          resumeId: 'test-resume-123',
           sessionId: 'test-session-123',
+          fileName: 'test-resume.docx',
           sections: [
             {
               title: 'EXPERIENCE',
@@ -69,15 +71,25 @@ vi.mock('react-router-dom', async () => {
               end_para_idx: 1,
             },
           ],
-          previewUrl: 'https://example.com/preview.docx',
+          previewPdfUrl: 'https://example.com/preview.pdf',
           score: {
             overallScore: 75,
-            breakdown: {},
+            breakdown: {
+              contactInfo: { score: 10, maxScore: 10, issues: [] },
+              formatting: { score: 15, maxScore: 20, issues: [] },
+              keywords: { score: 15, maxScore: 20, issues: [] },
+              content: { score: 15, maxScore: 20, issues: [] },
+              lengthDensity: { score: 10, maxScore: 15, issues: [] },
+              roleSpecific: { score: 10, maxScore: 15, issues: [] }
+            },
             issues: {
               critical: ['Critical issue 1'],
               warnings: ['Warning 1', 'Warning 2'],
               suggestions: ['Suggestion 1'],
+              info: []
             },
+            strengths: [],
+            mode: 'ats_simulation'
           },
         },
       },

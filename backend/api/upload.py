@@ -19,7 +19,20 @@ from backend.services.docx_to_html_advanced import docx_to_html_advanced
 from backend.services.section_detector import SectionDetector
 from backend.services.docx_template_manager import DocxTemplateManager
 from backend.services.scoring_utils import normalize_scoring_mode
-from backend.schemas.resume import UploadResponse, ContactInfoResponse, MetadataResponse, ScoreResponse, CategoryBreakdown, FormatCheckResponse
+from backend.services.suggestion_prioritizer import SuggestionPrioritizer
+from backend.services.pass_probability_calculator import PassProbabilityCalculator
+from backend.schemas.resume import (
+    UploadResponse,
+    ContactInfoResponse,
+    MetadataResponse,
+    ScoreResponse,
+    CategoryBreakdown,
+    FormatCheckResponse,
+    PrioritizedSuggestions,
+    PassProbability,
+    PlatformProbability,
+    EnhancedSuggestion,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,8 +49,8 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 @router.post("/upload", response_model=UploadResponse)
 async def upload_resume(
     file: UploadFile = File(...),
-    role: str = Form(...),
-    level: str = Form(...),
+    role: Optional[str] = Form(None),
+    level: Optional[str] = Form(None),
     jobDescription: Optional[str] = Form(None),
     mode: Optional[str] = Form("auto"),  # "ats", "quality", or "auto" (default)
     industry: Optional[str] = Form(None)  # Kept for backward compatibility
@@ -81,17 +94,18 @@ async def upload_resume(
     file_content = await file.read()
     original_content_type = file.content_type
 
-    # Convert PDF to DOCX for better formatting preservation
+    # DISABLED: PDF to DOCX conversion loses text structure in multi-column layouts
+    # Parse PDF directly instead for better accuracy
     docx_content = None
-    if file.content_type == "application/pdf":
-        try:
-            logger.info("Converting PDF to DOCX for better formatting preservation...")
-            docx_content = convert_pdf_to_docx(file_content)
-            logger.info(f"PDF converted to DOCX successfully ({len(docx_content)} bytes)")
-        except Exception as e:
-            logger.warning(f"PDF to DOCX conversion failed, will process as PDF: {str(e)}")
-            # Continue with PDF if conversion fails
-            docx_content = None
+    # if file.content_type == "application/pdf":
+    #     try:
+    #         logger.info("Converting PDF to DOCX for better formatting preservation...")
+    #         docx_content = convert_pdf_to_docx(file_content)
+    #         logger.info(f"PDF converted to DOCX successfully ({len(docx_content)} bytes)")
+    #     except Exception as e:
+    #         logger.warning(f"PDF to DOCX conversion failed, will process as PDF: {str(e)}")
+    #         # Continue with PDF if conversion fails
+    #         docx_content = None
 
     # Save original file for preview
     file_id = str(uuid.uuid4())
@@ -244,15 +258,21 @@ async def upload_resume(
     scoring_mode = normalize_scoring_mode(mode or "auto", jobDescription or "")
     logger.info(f"Scoring mode: {scoring_mode}")
 
+    # Use defaults for role and level if not provided
+    role_to_use = role if role else "software_engineer"
+    level_to_use = level if level else "mid"
+
+    logger.info(f"Using role={role_to_use}, level={level_to_use} (defaults applied if not specified)")
+
     # Use adaptive scorer
     scorer = AdaptiveScorer()
 
     try:
-        logger.info(f"Calculating score with role={role}, level={level}, mode={scoring_mode}")
+        logger.info(f"Calculating score with role={role_to_use}, level={level_to_use}, mode={scoring_mode}")
         score_result = scorer.score(
             resume_data=resume_data,
-            role_id=role,
-            level=level,
+            role_id=role_to_use,
+            level=level_to_use,
             job_description=jobDescription,
             mode=scoring_mode
         )
@@ -263,8 +283,8 @@ async def upload_resume(
         score_result = SuggestionIntegrator.enrich_score_result(
             score_result=score_result,
             resume_data=resume_data,
-            role=role,
-            level=level,
+            role=role_to_use,
+            level=level_to_use,
             job_description=jobDescription or ""
         )
         logger.info(f"Enhanced suggestions added: {len(score_result.get('enhanced_suggestions', []))}")
@@ -302,6 +322,48 @@ async def upload_resume(
     # Extract enhanced suggestions
     enhanced_suggestions = score_result.get("enhanced_suggestions", [])
 
+    # Phase 3: Prioritize suggestions
+    prioritizer = SuggestionPrioritizer()
+    prioritized = prioritizer.prioritize_suggestions(enhanced_suggestions, top_n=3)
+
+    # Convert to response model
+    prioritized_suggestions = None
+    if enhanced_suggestions:
+        prioritized_suggestions = PrioritizedSuggestions(
+            top_issues=[EnhancedSuggestion(**s) for s in prioritized["top_issues"]],
+            remaining_by_priority={
+                priority: [EnhancedSuggestion(**s) for s in suggestions]
+                for priority, suggestions in prioritized["remaining_by_priority"].items()
+            },
+            total_count=prioritized["total_count"]
+        )
+
+    # Phase 3: Calculate pass probability
+    pass_probability = None
+    if scoring_mode in ["ats_simulation", "ats"]:
+        calculator = PassProbabilityCalculator()
+        pass_prob_data = calculator.calculate_pass_probability(
+            overall_score=score_result["overallScore"],
+            breakdown=score_result["breakdown"],
+            auto_reject=score_result.get("auto_reject", False),
+            critical_issues=issues_response.get("critical", []),
+            keyword_details=score_result.get("keyword_details"),
+            job_description=jobDescription
+        )
+
+        # Convert to response model
+        pass_probability = PassProbability(
+            overall_probability=pass_prob_data["overall_probability"],
+            platform_breakdown={
+                platform: PlatformProbability(**details)
+                for platform, details in pass_prob_data["platform_breakdown"].items()
+            },
+            confidence_level=pass_prob_data["confidence_level"],
+            interpretation=pass_prob_data["interpretation"],
+            color_code=pass_prob_data["color_code"],
+            based_on_score=pass_prob_data["based_on_score"]
+        )
+
     score_response = ScoreResponse(
         overallScore=score_result["overallScore"],
         breakdown=breakdown_response,
@@ -311,7 +373,9 @@ async def upload_resume(
         keywordDetails=score_result.get("keyword_details"),
         autoReject=score_result.get("auto_reject"),
         issueCounts=issue_counts,
-        enhancedSuggestions=enhanced_suggestions
+        enhancedSuggestions=enhanced_suggestions,
+        prioritizedSuggestions=prioritized_suggestions,
+        passProbability=pass_probability
     )
 
     # Format check response
@@ -330,6 +394,7 @@ async def upload_resume(
         previewPdfUrl=preview_pdf_url,  # Only set for DOCX files
         editableHtml=editable_html,  # Rich HTML for WYSIWYG editing
         contact=contact_response,
+        summary=resume_data.summary,  # Professional summary/objective
         experience=resume_data.experience,
         education=resume_data.education,
         skills=resume_data.skills,
@@ -338,8 +403,8 @@ async def upload_resume(
         score=score_response,
         formatCheck=format_check_response,
         scoringMode=scoring_mode,
-        role=role,
-        level=level,
+        role=role_to_use,
+        level=level_to_use,
         jobDescription=jobDescription,
         uploadedAt=datetime.now(timezone.utc),
         industry=industry,

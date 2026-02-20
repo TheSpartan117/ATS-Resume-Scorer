@@ -1,0 +1,8 @@
+{
+  "id": "test_resume_004",
+  "role": "Junior Developer",
+  "experience_level": "Entry-level (0-2 years)",
+  "industry": "Technology",
+  "resume_text": "Emily Rodriguez\nJunior Software Developer\n\nEDUCATION\nB.S. Computer Science | State University | 2023\nGPA: 3.6/4.0\nRelevant Coursework: Data Structures, Algorithms, Web Development, Database Systems\n\nPROJECTS\nE-Commerce Web Application | Personal Project | 2023\n- Built full-stack e-commerce site using React, Node.js, and MongoDB\n- Implemented user authentication with JWT\n- Integrated Stripe payment processing\n- Deployed on AWS with Docker\n\nTask Management App | Capstone Project | 2023\n- Developed mobile app using React Native\n- Created RESTful API with Express.js\n- Worked in team of 4 using Git for version control\n\nINTERNSHIP\nSoftware Engineering Intern | Tech Startup | Summer 2022\n- Contributed to codebase with 10+ pull requests\n- Fixed bugs and implemented new features\n- Participated in code reviews and stand-ups\n- Learned Agile development practices\n\nSKILLS\nLanguages: JavaScript, Python, Java, HTML/CSS, SQL\nFrameworks: React, Node.js, Express, React Native\nTools: Git, GitHub, VS Code, MongoDB, PostgreSQL\nConcepts: RESTful APIs, Agile, Object-Oriented Programming\n\nCERTIFICATIONS\nfreeCodeCamp Full Stack Developer Certification",
+  "job_description": "We're hiring an entry-level developer to join our team. You'll work on web applications using modern JavaScript frameworks. Required: JavaScript, React, Node.js, Git, basic understanding of APIs and databases. Computer Science degree or equivalent experience. Eagerness to learn and grow."
+}

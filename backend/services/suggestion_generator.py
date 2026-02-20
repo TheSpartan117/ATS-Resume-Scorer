@@ -460,7 +460,11 @@ Technical Skills<br/>
 
         # Check for professional summary/objective
         has_summary = False
-        if resume_data.contact and resume_data.contact.get('summary'):
+        # Check if summary field exists and is not empty
+        if hasattr(resume_data, 'summary') and resume_data.summary:
+            has_summary = True
+        # Also check contact for backward compatibility
+        elif resume_data.contact and resume_data.contact.get('summary'):
             has_summary = True
         if not has_summary:
             missing.append('summary')
@@ -897,7 +901,14 @@ class SuggestionGenerator:
             })
 
         # Check for missing Professional Summary
-        if not resume_data.get('summary') and 'Summary' not in section_map:
+        has_summary_field = resume_data.get('summary')
+        has_summary_section = 'Summary' in section_map
+        # Debug logging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Summary check - has_summary_field: {bool(has_summary_field)}, has_summary_section: {has_summary_section}, summary length: {len(str(has_summary_field)) if has_summary_field else 0}")
+
+        if not has_summary_field and not has_summary_section:
             suggestions.append({
                 'id': 'missing-summary',
                 'type': 'missing_section',

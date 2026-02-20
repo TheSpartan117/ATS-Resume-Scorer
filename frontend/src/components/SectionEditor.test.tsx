@@ -102,8 +102,8 @@ describe('SectionEditor', () => {
       />
     );
 
-    const experienceSection = screen.getByText('EXPERIENCE').closest('.section-container');
-    expect(experienceSection).toHaveClass('highlighted');
+    const experienceSection = screen.getByText('EXPERIENCE').closest('div');
+    expect(experienceSection).toHaveClass('border-blue-500');
 
     // Change highlighted section
     rerender(
@@ -114,8 +114,8 @@ describe('SectionEditor', () => {
       />
     );
 
-    const educationSection = screen.getByText('EDUCATION').closest('.section-container');
-    expect(educationSection).toHaveClass('highlighted');
+    const educationSection = screen.getByText('EDUCATION').closest('div');
+    expect(educationSection).toHaveClass('border-blue-500');
   });
 
   it('should maintain edited content in state', () => {

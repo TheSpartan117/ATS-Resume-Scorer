@@ -66,6 +66,7 @@ class ResumeData(BaseModel):
     """Complete structured resume data"""
     fileName: str
     contact: Optional[Dict[str, Optional[str]]] = Field(default_factory=dict)
+    summary: Optional[str] = None  # Professional summary/objective section
     experience: Optional[List[Dict]] = Field(default_factory=list)
     education: Optional[List[Dict]] = Field(default_factory=list)
     skills: Optional[List[str]] = Field(default_factory=list)
@@ -84,9 +85,12 @@ def extract_email(text: str) -> Optional[str]:
 def extract_phone(text: str) -> Optional[str]:
     """Extract phone number from text using regex"""
     # Matches formats: (123) 456-7890, 123-456-7890, 123.456.7890, +1 123 456 7890
+    # Also handles Indian format: +91-8220594700, +91 8220594700, 8220594700
     phone_patterns = [
-        r'\+?1?\s*\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}',
-        r'\+?\d{1,3}[\s.-]?\d{3}[\s.-]?\d{3}[\s.-]?\d{4}',
+        r'\+\d{1,3}[\s-]?\d{10}',  # International format: +91-8220594700 or +91 8220594700
+        r'\+?1?\s*\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}',  # US format
+        r'\+?\d{1,3}[\s.-]?\d{3}[\s.-]?\d{3}[\s.-]?\d{4}',  # Generic international
+        r'(?<!\d)\d{10}(?!\d)',  # 10-digit number (Indian mobile): 8220594700
     ]
     for pattern in phone_patterns:
         match = re.search(pattern, text)
@@ -386,6 +390,34 @@ def split_education_entries(text: str) -> List[str]:
     return entries
 
 
+def is_likely_section_header(line: str) -> bool:
+    """
+    Check if a line is likely to be a section header (not body text).
+
+    Headers typically:
+    - Are relatively short (< 80 chars)
+    - Don't contain many commas or periods
+    - Don't start with bullets or numbers
+    """
+    line_stripped = line.strip()
+
+    # Too long to be a header
+    if len(line_stripped) > 80:
+        return False
+
+    # Starts with bullet or number (likely a list item, not a header)
+    if line_stripped and line_stripped[0] in ['•', '-', '*', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0']:
+        return False
+
+    # Has lots of punctuation (likely a sentence, not a header)
+    comma_count = line_stripped.count(',')
+    period_count = line_stripped.count('.')
+    if comma_count > 2 or period_count > 1:
+        return False
+
+    return True
+
+
 def extract_resume_sections(text: str) -> Dict[str, List]:
     """
     Extract structured sections from resume text.
@@ -394,24 +426,33 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
         text: Full resume text
 
     Returns:
-        Dictionary with sections: experience, education, skills, certifications
+        Dictionary with sections: experience, education, skills, certifications, summary
         - experience: List[Dict] with structured fields (title, company, dates, etc.)
         - education: List[Dict] with structured fields (degree, institution, dates, etc.)
         - skills: List[str] (strings directly)
         - certifications: List[Dict] with name field
+        - summary: List[str] (summary/objective text)
     """
     sections = {
         'experience': [],
         'education': [],
         'skills': [],
-        'certifications': []
+        'certifications': [],
+        'summary': []  # Add summary section
     }
 
     lines = text.split('\n')
     current_section = None
     current_content = []
 
-    # Section headers to detect
+    # Section headers to detect (expanded to recognize alternate names)
+    summary_headers = [
+        'summary', 'objective', 'about', 'profile', 'brief',
+        'professional summary', 'career summary', 'executive summary',
+        'profile brief', 'professional profile', 'career profile',
+        'about me', 'career objective', 'professional objective',
+        'personal statement', 'introduction', 'overview'
+    ]
     experience_headers = ['experience', 'work history', 'employment', 'professional experience', 'work experience']
     education_headers = ['education', 'academic background', 'qualifications', 'academic']
     skills_headers = ['skills', 'technical skills', 'core competencies', 'expertise', 'technologies']
@@ -424,7 +465,11 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
         line_lower = line.lower().strip()
 
         # Detect section headers
-        if any(header in line_lower for header in experience_headers):
+        # IMPORTANT: Check more specific headers FIRST (e.g., "experience summary" should match "experience" not "summary")
+        # Only match if the line is likely to be a header (not body text)
+
+        # Check experience BEFORE summary (because "EXPERIENCE SUMMARY" should be experience, not summary)
+        if is_likely_section_header(line) and any(header in line_lower for header in experience_headers):
             if current_section and current_content:
                 content_text = '\n'.join(current_content)
                 if current_section == 'experience':
@@ -435,9 +480,11 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
                     sections[current_section].append(content_text)
                 elif current_section == 'certifications':
                     sections[current_section].append({'name': content_text})
+                elif current_section == 'summary':
+                    sections[current_section].append(content_text)
             current_section = 'experience'
             current_content = []
-        elif any(header in line_lower for header in education_headers):
+        elif is_likely_section_header(line) and any(header in line_lower for header in education_headers):
             if current_section and current_content:
                 content_text = '\n'.join(current_content)
                 if current_section == 'experience':
@@ -448,9 +495,11 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
                     sections[current_section].append(content_text)
                 elif current_section == 'certifications':
                     sections[current_section].append({'name': content_text})
+                elif current_section == 'summary':
+                    sections[current_section].append(content_text)
             current_section = 'education'
             current_content = []
-        elif any(header in line_lower for header in skills_headers):
+        elif is_likely_section_header(line) and any(header in line_lower for header in skills_headers):
             logger.info(f"Found skills header: '{line}' (matched: {[h for h in skills_headers if h in line_lower]})")
             if current_section and current_content:
                 content_text = '\n'.join(current_content)
@@ -462,9 +511,11 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
                     sections[current_section].append(content_text)
                 elif current_section == 'certifications':
                     sections[current_section].append({'name': content_text})
+                elif current_section == 'summary':
+                    sections[current_section].append(content_text)
             current_section = 'skills'
             current_content = []
-        elif any(header in line_lower for header in cert_headers):
+        elif is_likely_section_header(line) and any(header in line_lower for header in cert_headers):
             if current_section and current_content:
                 content_text = '\n'.join(current_content)
                 if current_section == 'experience':
@@ -476,7 +527,25 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
                     sections[current_section].append(content_text)
                 elif current_section == 'certifications':
                     sections[current_section].append({'name': content_text})
+                elif current_section == 'summary':
+                    sections[current_section].append(content_text)
             current_section = 'certifications'
+            current_content = []
+        # Check summary LAST (lowest priority, so "EXPERIENCE SUMMARY" doesn't match here)
+        elif is_likely_section_header(line) and any(header in line_lower for header in summary_headers):
+            if current_section and current_content:
+                content_text = '\n'.join(current_content)
+                if current_section == 'experience':
+                    sections[current_section].append(parse_experience_entry(content_text))
+                elif current_section == 'education':
+                    sections[current_section].append(parse_education_entry(content_text))
+                elif current_section == 'skills':
+                    sections[current_section].append(content_text)
+                elif current_section == 'certifications':
+                    sections[current_section].append({'name': content_text})
+                elif current_section == 'summary':
+                    sections[current_section].append(content_text)
+            current_section = 'summary'
             current_content = []
         elif current_section and line.strip():
             current_content.append(line.strip())
@@ -498,6 +567,8 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
             sections[current_section].append(content_text)
         elif current_section == 'certifications':
             sections[current_section].append({'name': content_text})
+        elif current_section == 'summary':
+            sections[current_section].append(content_text)
 
     # Special handling for skills - split by commas/bullets (keep as strings)
     logger.info(f"Skills section raw data: {sections['skills']}")
@@ -541,12 +612,12 @@ def parse_pdf_with_pypdf(file_content: bytes, filename: str) -> ResumeData:
         # Extract sections
         sections = extract_resume_sections(full_text)
 
-        # Extract contact info
-        header_text = full_text[:500]
+        # Extract contact info - search full text for multi-column layouts
+        # (email/phone might be in right column, not in first 500 chars)
         name = extract_name_from_header(full_text)
-        email = extract_email(header_text)
-        phone = extract_phone(header_text)
-        linkedin = extract_linkedin(header_text)
+        email = extract_email(full_text)  # Search full text
+        phone = extract_phone(full_text)  # Search full text
+        linkedin = extract_linkedin(full_text)  # Search full text
 
         contact_info = {
             "name": name,
@@ -562,9 +633,14 @@ def parse_pdf_with_pypdf(file_content: bytes, filename: str) -> ResumeData:
             "fileFormat": "pdf"
         }
 
+        # Extract summary (join all summary sections)
+        summary_list = sections.get('summary', [])
+        summary = ' '.join(summary_list) if summary_list else None
+
         return ResumeData(
             fileName=filename,
             contact=contact_info,
+            summary=summary,
             experience=sections.get('experience', []),
             education=sections.get('education', []),
             skills=sections.get('skills', []),
@@ -624,18 +700,18 @@ def parse_pdf_with_pdfplumber(file_content: bytes, filename: str) -> ResumeData:
             sections = extract_resume_sections(full_text)
 
             # Extract contact info
-            header_text = full_text[:500]
+            # Extract contact info - search full text for multi-column layouts
             name = extract_name_from_header(full_text)
-            email = extract_email(header_text)
-            phone = extract_phone(header_text)
-            linkedin = extract_linkedin(header_text)
+            email = extract_email(full_text)
+            phone = extract_phone(full_text)
+            linkedin = extract_linkedin(full_text)
 
             contact_info = {
                 "name": name,
                 "email": email,
                 "phone": phone,
                 "linkedin": linkedin,
-                "location": extract_location(header_text)
+                "location": extract_location(full_text[:1000])  # Location usually in header
             }
 
             metadata = {
@@ -645,9 +721,14 @@ def parse_pdf_with_pdfplumber(file_content: bytes, filename: str) -> ResumeData:
                 "fileFormat": "pdf"
             }
 
+            # Extract summary (join all summary sections)
+            summary_list = sections.get('summary', [])
+            summary = ' '.join(summary_list) if summary_list else None
+
             return ResumeData(
                 fileName=filename,
                 contact=contact_info,
+                summary=summary,
                 experience=sections.get('experience', []),
                 education=sections.get('education', []),
                 skills=sections.get('skills', []),
@@ -739,18 +820,18 @@ def parse_pdf(file_content: bytes, filename: str) -> ResumeData:
             skills_found = 'skills' in text_lower or 'technical' in text_lower or 'competencies' in text_lower
             logger.info(f"Skills keywords in text: {skills_found}")
 
-            header_text = full_text[:500]
+            # Extract contact info - search full text for multi-column layouts
             name = extract_name_from_header(full_text)
-            email = extract_email(header_text)
-            phone = extract_phone(header_text)
-            linkedin = extract_linkedin(header_text)
+            email = extract_email(full_text)
+            phone = extract_phone(full_text)
+            linkedin = extract_linkedin(full_text)
 
             contact_info = {
                 "name": name,
                 "email": email,
                 "phone": phone,
                 "linkedin": linkedin,
-                "location": extract_location(header_text)
+                "location": extract_location(full_text[:1000])  # Location usually in header
             }
 
             metadata = {
@@ -760,9 +841,14 @@ def parse_pdf(file_content: bytes, filename: str) -> ResumeData:
                 "fileFormat": "pdf"
             }
 
+            # Extract summary (join all summary sections)
+            summary_list = sections.get('summary', [])
+            summary = ' '.join(summary_list) if summary_list else None
+
             result = ResumeData(
                 fileName=filename,
                 contact=contact_info,
+                summary=summary,
                 experience=sections.get('experience', []),
                 education=sections.get('education', []),
                 skills=sections.get('skills', []),
@@ -859,12 +945,11 @@ def parse_docx(file_content: bytes, filename: str) -> ResumeData:
     word_count = len(full_text.split())
 
     # Extract contact information from the header
-    header_text = full_text[:500]
-
+    # Extract contact info - search full text for multi-column layouts
     name = extract_name_from_header(full_text)
-    email = extract_email(header_text)
-    phone = extract_phone(header_text)
-    linkedin = extract_linkedin(header_text)
+    email = extract_email(full_text)
+    phone = extract_phone(full_text)
+    linkedin = extract_linkedin(full_text)
 
     contact_info = {
         "name": name,
@@ -881,10 +966,15 @@ def parse_docx(file_content: bytes, filename: str) -> ResumeData:
         "fileFormat": "docx"
     }
 
+    # Extract summary (join all summary sections)
+    summary_list = sections.get('summary', [])
+    summary = ' '.join(summary_list) if summary_list else None
+
     # Create ResumeData object with extracted sections
     resume_data = ResumeData(
         fileName=filename,
         contact=contact_info,
+        summary=summary,
         experience=sections.get('experience', []),
         education=sections.get('education', []),
         skills=sections.get('skills', []),
