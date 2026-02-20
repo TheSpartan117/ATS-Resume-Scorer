@@ -4,8 +4,11 @@ Role taxonomy system for experience-level based scoring.
 Provides comprehensive role definitions across all major career categories
 with experience-level-specific keywords and requirements.
 """
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 from enum import Enum
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ExperienceLevel(str, Enum):
@@ -852,6 +855,8 @@ def get_role_scoring_data(role_id: str, level: ExperienceLevel) -> Dict:
 
     role_data = ROLE_DEFINITIONS[role_id]
     return {
+        "role_id": role_id,
+        "level": level,
         "name": role_data["name"],
         "category": role_data["category"],
         "keywords": role_data.get("keywords", {}).get(level, []),  # Legacy support
@@ -860,5 +865,133 @@ def get_role_scoring_data(role_id: str, level: ExperienceLevel) -> Dict:
         "scoring_weights": role_data.get("scoring_weights", {}),
         "metrics_expected": role_data.get("metrics_expected", {}).get(level, 3),
         "required_skills": role_data.get("required_skills", []),
-        "preferred_sections": role_data.get("preferred_sections", [])
+        "preferred_sections": role_data.get("preferred_sections", []),
+        "education": role_data.get("education", []),
+        "certifications": role_data.get("certifications", []),
+        "experience_years": role_data.get("experience_years", {}).get(level, 0)
     }
+
+
+def get_corpus_keywords(role_id: str, level: str) -> List[str]:
+    """
+    Get corpus-derived keywords for a specific role and level.
+
+    This function retrieves keywords from the corpus skills database.
+    Currently returns top skills from corpus as role-specific mappings
+    are not yet implemented in the corpus database.
+
+    Args:
+        role_id: The role identifier (e.g., "ml_engineer", "software_engineer")
+        level: The experience level (e.g., "entry", "mid", "senior")
+
+    Returns:
+        List of corpus-derived keywords, or empty list if corpus unavailable
+    """
+    try:
+        # Import here to avoid circular dependencies
+        from backend.services.corpus_skills_database import get_corpus_skills_database
+
+        corpus_service = get_corpus_skills_database()
+
+        if not corpus_service or not corpus_service.is_available():
+            logger.debug("Corpus skills database not available")
+            return []
+
+        # Get top skills from corpus
+        # In future, this could be enhanced to get role-specific skills
+        # For now, return top 20 skills from corpus
+        keywords = corpus_service.get_top_skills(n=20)
+
+        logger.debug(f"Retrieved {len(keywords)} corpus keywords for {role_id}/{level}")
+        return keywords
+
+    except Exception as e:
+        logger.error(f"Error retrieving corpus keywords: {e}")
+        return []
+
+
+def get_role_scoring_data_enhanced(
+    role_id: str,
+    level: str
+) -> Optional[Dict]:
+    """
+    Get enhanced scoring criteria with hybrid keywords (manual + corpus).
+
+    This function merges manually curated keywords from the role taxonomy
+    with corpus-derived keywords from the skills database. The corpus
+    integration can be controlled via the ENABLE_CORPUS_KEYWORDS flag.
+
+    Args:
+        role_id: The role identifier (e.g., "ml_engineer", "software_engineer")
+        level: The experience level (e.g., "entry", "mid", "senior")
+
+    Returns:
+        Dictionary with enhanced role data including hybrid keywords,
+        or None if role_id is invalid
+    """
+    # Validate role exists
+    if role_id not in ROLE_DEFINITIONS:
+        logger.warning(f"Invalid role_id: {role_id}")
+        return None
+
+    # Convert level string to ExperienceLevel enum if needed
+    if isinstance(level, str):
+        try:
+            level_enum = ExperienceLevel(level.lower())
+        except ValueError:
+            logger.warning(f"Invalid experience level: {level}")
+            return None
+    else:
+        level_enum = level
+
+    # Get base role data
+    base_data = get_role_scoring_data(role_id, level_enum)
+    if base_data is None:
+        return None
+
+    # Get manual keywords
+    manual_keywords = base_data.get("typical_keywords", [])
+
+    # Check if corpus keywords are enabled
+    try:
+        from backend import config
+        corpus_enabled = config.ENABLE_CORPUS_KEYWORDS
+    except Exception as e:
+        logger.warning(f"Could not load config: {e}")
+        corpus_enabled = False
+
+    # Merge with corpus keywords if enabled
+    if corpus_enabled:
+        corpus_keywords = get_corpus_keywords(role_id, level)
+
+        # Merge and deduplicate (case-insensitive)
+        # Use a dict to track lowercase versions for deduplication
+        keyword_map = {}
+
+        # Add manual keywords first (they take precedence)
+        for kw in manual_keywords:
+            keyword_map[kw.lower()] = kw
+
+        # Add corpus keywords (don't override manual ones)
+        for kw in corpus_keywords:
+            kw_lower = kw.lower()
+            if kw_lower not in keyword_map:
+                keyword_map[kw_lower] = kw
+
+        # Get deduplicated keywords (preserve original casing)
+        merged_keywords = list(keyword_map.values())
+
+        logger.debug(
+            f"Merged keywords for {role_id}/{level}: "
+            f"{len(manual_keywords)} manual + {len(corpus_keywords)} corpus = "
+            f"{len(merged_keywords)} total"
+        )
+    else:
+        # Corpus disabled, use only manual keywords
+        merged_keywords = manual_keywords
+        logger.debug(f"Using {len(merged_keywords)} manual keywords (corpus disabled)")
+
+    # Update base data with merged keywords
+    base_data["keywords"] = merged_keywords
+
+    return base_data
