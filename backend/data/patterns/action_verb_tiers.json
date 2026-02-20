@@ -1,12 +1,11 @@
 {
   "tier_4_transformational": [
     "transformed", "established", "pioneered", "revolutionized",
-    "scaled", "built", "founded", "created"
+    "scaled", "founded"
   ],
   "tier_3_leadership": [
     "led", "architected", "launched", "delivered", "drove",
-    "spearheaded", "orchestrated", "directed", "championed",
-    "designed", "developed", "implemented"
+    "spearheaded", "orchestrated", "directed", "championed"
   ],
   "tier_2_execution": [
     "developed", "designed", "implemented", "created", "built",

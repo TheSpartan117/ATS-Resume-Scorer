@@ -1,13 +1,13 @@
 {
   "patterns": {
-    "percentage": "\\d+%",
-    "money": "\\$\\d+[.,]?\\d*[KMB]?",
-    "multiplier": "\\d+x",
-    "plus": "\\d+\\+",
+    "percentage": "\\b\\d+(?:\\.\\d+)?%",
+    "money": "\\$\\d+(?:[.,]\\d+)?[KMB]?\\b",
+    "multiplier": "\\b\\d+x\\b",
+    "plus": "\\b\\d+\\+",
     "range": "from \\d+ to \\d+",
-    "comparison": "(increased|reduced|improved).+by \\d+",
-    "time": "\\d+ (days|weeks|months|years)",
-    "count": "\\d+ (users|customers|projects|teams|people)"
+    "comparison": "(?:increased|reduced|improved|decreased|enhanced|boosted|cut|accelerated).*?by\\s+\\d+",
+    "time": "\\d+\\s+(?:days|weeks|months|years)",
+    "count": "\\d+\\s+(?:users|customers|clients|projects|teams|people|employees|members|engineers)"
   },
   "quality_weights": {
     "money": 1.0,

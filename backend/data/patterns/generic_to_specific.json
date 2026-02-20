@@ -1,8 +1,34 @@
 {
-  "frameworks": ["React", "Angular", "Vue", "Django", "Flask", "Spring", "Express", "Next.js"],
-  "databases": ["PostgreSQL", "MySQL", "MongoDB", "Redis", "Cassandra", "DynamoDB", "Elasticsearch"],
-  "cloud platforms": ["AWS", "Azure", "GCP", "EC2", "Lambda", "S3", "CloudFormation", "Terraform"],
-  "tools": ["JIRA", "Confluence", "Slack", "Git", "Docker", "Kubernetes", "Jenkins", "GitHub Actions"],
-  "languages": ["Python", "JavaScript", "Java", "Go", "TypeScript", "C++", "Ruby", "Rust"],
-  "methodologies": ["Agile", "Scrum", "Kanban", "Lean", "Six Sigma", "DevOps", "CI/CD"]
+  "frameworks": {
+    "generic_terms": ["framework", "frontend", "backend", "web framework"],
+    "specific_examples": ["React", "Angular", "Vue", "Django", "Flask", "Spring", "Express", "Next.js"]
+  },
+  "databases": {
+    "generic_terms": ["database", "datastore", "storage"],
+    "specific_examples": ["PostgreSQL", "MySQL", "MongoDB", "Redis", "Cassandra", "DynamoDB", "Elasticsearch"]
+  },
+  "cloud_providers": {
+    "generic_terms": ["cloud", "cloud platform", "cloud provider"],
+    "specific_examples": ["AWS", "Azure", "GCP"]
+  },
+  "aws_services": {
+    "generic_terms": ["compute", "storage", "serverless"],
+    "specific_examples": ["EC2", "Lambda", "S3"]
+  },
+  "iac_tools": {
+    "generic_terms": ["infrastructure as code", "IaC", "provisioning tool"],
+    "specific_examples": ["CloudFormation", "Terraform"]
+  },
+  "tools": {
+    "generic_terms": ["project management", "communication", "version control", "CI/CD"],
+    "specific_examples": ["JIRA", "Confluence", "Slack", "Git", "Docker", "Kubernetes", "Jenkins", "GitHub Actions"]
+  },
+  "languages": {
+    "generic_terms": ["programming language", "language"],
+    "specific_examples": ["Python", "JavaScript", "Java", "Go", "TypeScript", "C++", "Ruby", "Rust"]
+  },
+  "methodologies": {
+    "generic_terms": ["methodology", "process", "framework"],
+    "specific_examples": ["Agile", "Scrum", "Kanban", "Lean", "Six Sigma", "DevOps", "CI/CD"]
+  }
 }
