@@ -139,3 +139,51 @@ def extract_skills_database(file_path: Path) -> Dict[str, Dict]:
     logger.info(f"Extracted {len(result)} unique skills")
 
     return result
+
+
+def extract_role_mappings(file_path: Path) -> Dict[str, str]:
+    """
+    Extract role mappings from normlized_classes.txt
+
+    Format: original title:Normalized_Title
+    Example: senior software engineer:Software_Engineer
+
+    Args:
+        file_path: Path to normlized_classes.txt
+
+    Returns:
+        Dictionary mapping original title -> normalized role_id
+        role_id format: lowercase with underscores (e.g., 'software_engineer')
+    """
+    mappings = {}
+
+    logger.info(f"Extracting role mappings from {file_path}")
+
+    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+
+            # Parse format: "original:Normalized_Title"
+            if ':' not in line:
+                logger.debug(f"Skipping malformed line: {line}")
+                continue
+
+            parts = line.split(':', 1)
+            if len(parts) != 2:
+                logger.debug(f"Skipping malformed line: {line}")
+                continue
+
+            original = parts[0].strip()
+            normalized = parts[1].strip()
+
+            # Convert Normalized_Title to role_id (lowercase with underscores)
+            # Example: Software_Engineer -> software_engineer
+            role_id = normalized.lower()
+
+            mappings[original] = role_id
+
+    logger.info(f"Extracted {len(mappings)} role mappings")
+
+    return mappings

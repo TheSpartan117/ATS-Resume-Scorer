@@ -73,3 +73,23 @@ def test_extract_skills_from_corpus():
 
     # Cleanup
     test_file.unlink()
+
+
+def test_extract_role_mappings():
+    """Should extract role mappings from normlized_classes.txt"""
+    from backend.scripts.corpus_parser import extract_role_mappings
+
+    test_file = Path('/tmp/test_mappings.txt')
+    test_file.write_text(
+        "senior software engineer:Software_Engineer\n"
+        "software development engineer:Software_Engineer\n"
+        "database administrator:Database_Administrator\n"
+    )
+
+    mappings = extract_role_mappings(test_file)
+
+    assert mappings['senior software engineer'] == 'software_engineer'
+    assert mappings['software development engineer'] == 'software_engineer'
+    assert mappings['database administrator'] == 'database_administrator'
+
+    test_file.unlink()
