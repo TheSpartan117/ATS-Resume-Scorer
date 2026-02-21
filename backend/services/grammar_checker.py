@@ -40,13 +40,15 @@ class GrammarChecker:
             return
 
         try:
-            # Skip LanguageTool due to network blocking
-            # Use basic grammar checker from red_flags_validator instead
-            self._tool = None
+            import language_tool_python
+            # Initialize LanguageTool with local server (no remote API calls)
+            self._tool = language_tool_python.LanguageTool(self._language)
             self._initialized = True
         except Exception as e:
-            print(f"Error: Failed to initialize LanguageTool (tried both public API and local): {e}")
-            self._initialized = False
+            print(f"Warning: LanguageTool initialization failed: {e}")
+            print("Falling back to basic grammar checking")
+            self._tool = None
+            self._initialized = True  # Still mark as initialized to use fallback
 
     def check(self, text: str, max_issues: int = 50) -> Dict:
         """
