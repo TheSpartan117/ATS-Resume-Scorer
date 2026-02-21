@@ -23,6 +23,7 @@ Usage:
 
 import pytest
 from backend.services.parameters.p1_2_preferred_keywords import PreferredKeywordsMatcher
+from tests.conftest import requires_semantic_model
 
 
 @pytest.fixture
@@ -138,8 +139,9 @@ def test_40_percent_match(matcher, sample_resume_partial):
     assert result['matched_count'] == 2, f"Expected 2 matched, got {result['matched_count']}"
 
 
+@requires_semantic_model
 def test_30_percent_match_exact(matcher, sample_resume_partial):
-    """Exactly 30% match should give 6 points (boundary test)"""
+    """Exactly 30% match should give 6 points (boundary test) - requires semantic matching"""
     preferred_keywords = [
         "Python", "Django", "React", "Angular", "Vue.js",
         "TypeScript", "Node.js", "GraphQL", "MongoDB", "Kubernetes"
@@ -171,8 +173,9 @@ def test_20_percent_match(matcher, sample_resume_minimal):
     assert result['matched_count'] == 1, f"Expected 1 matched, got {result['matched_count']}"
 
 
+@requires_semantic_model
 def test_15_percent_match_exact(matcher, sample_resume_minimal):
-    """Exactly 15% match should give 3 points (boundary test)"""
+    """Exactly 15% match should give 3 points (boundary test) - requires semantic matching"""
     preferred_keywords = [
         "Python", "React", "Angular", "Vue.js", "TypeScript", "Ruby", "Go"
     ]
@@ -292,8 +295,9 @@ def test_case_insensitive_matching(matcher):
     assert result['matched_count'] == 3
 
 
+@requires_semantic_model
 def test_hybrid_semantic_matching(matcher):
-    """Should use hybrid matching (semantic + exact) via HybridKeywordMatcher"""
+    """Should use hybrid matching (semantic + exact) via HybridKeywordMatcher - requires semantic model"""
     resume_text = "Expert in Pythonic programming and machine learning algorithms"
     preferred_keywords = ["Python", "ML", "Deep Learning"]
 

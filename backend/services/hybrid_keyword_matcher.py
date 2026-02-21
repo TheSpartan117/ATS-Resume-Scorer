@@ -107,6 +107,10 @@ class HybridKeywordMatcher:
 
         self._lazy_init()
 
+        # If model failed to load (network issues), fall back to exact matching only
+        if self._model is None:
+            return 0.0
+
         try:
             from sentence_transformers import util
 
@@ -142,6 +146,8 @@ class HybridKeywordMatcher:
         1. Semantic similarity (70%): Understands synonyms and related terms
         2. Exact match bonus (30%): Rewards exact keyword presence
 
+        In offline mode (when semantic model unavailable), falls back to pure exact matching.
+
         Args:
             keyword: The keyword to match (e.g., "Python", "machine learning")
             resume_text: Full resume text or relevant section
@@ -150,17 +156,24 @@ class HybridKeywordMatcher:
             Match score between 0.0 and 1.0
 
         Formula:
-            score = (semantic_similarity * 0.7) + (exact_match * 0.3)
+            - Online: score = (semantic_similarity * 0.7) + (exact_match * 0.3)
+            - Offline: score = exact_match (1.0 or 0.0)
 
         Examples:
             - "Python" in "Python developer" → ~1.0 (semantic + exact)
             - "Python" in "Pythonic code" → ~0.6 (semantic only)
             - "Python" in "C++ developer" → ~0.1 (no match)
         """
-        semantic_score = self._semantic_match_score(keyword, resume_text)
+        self._lazy_init()
+
         exact_score = self._exact_match_score(keyword, resume_text)
 
-        # Hybrid formula: 70% semantic + 30% exact
+        # If semantic model is unavailable (offline mode), use pure exact matching
+        if self._model is None:
+            return exact_score
+
+        # Otherwise use hybrid matching
+        semantic_score = self._semantic_match_score(keyword, resume_text)
         hybrid_score = (semantic_score * self.semantic_weight) + (exact_score * self.exact_weight)
 
         return hybrid_score

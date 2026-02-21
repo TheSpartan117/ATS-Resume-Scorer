@@ -13,6 +13,7 @@ Scoring tiers (Workday standard - 60% passing):
 
 import pytest
 from backend.services.parameters.p1_1_required_keywords import RequiredKeywordsMatcher
+from tests.conftest import requires_semantic_model
 
 
 @pytest.fixture
@@ -91,6 +92,7 @@ def test_below_25_percent(matcher):
 # SEMANTIC MATCHING TESTS
 # ============================================================================
 
+@requires_semantic_model
 def test_semantic_matching_works(matcher):
     """Semantic matching should catch variations"""
     keywords = ['Machine Learning', 'Python']
@@ -103,6 +105,7 @@ def test_semantic_matching_works(matcher):
     assert result['score'] == 25  # Should get full points
 
 
+@requires_semantic_model
 def test_semantic_matching_abbreviations(matcher):
     """Semantic matching should handle abbreviations"""
     keywords = ['API', 'UI/UX', 'CI/CD']
