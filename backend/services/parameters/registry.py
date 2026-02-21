@@ -34,17 +34,17 @@ class ParameterRegistry:
     def _initialize_registry(self):
         """Initialize the parameter registry with all scorers."""
         # Import all scorer classes
-        from services.parameters.p1_1_required_keywords import RequiredKeywordsMatcher
-        from services.parameters.p1_2_preferred_keywords import PreferredKeywordsMatcher
-        from services.parameters.p2_1_action_verbs import ActionVerbScorer
-        from services.parameters.p2_2_quantification import QuantificationScorer
-        from services.parameters.p2_3_achievement_depth import AchievementDepthScorer
-        from services.parameters.p3_1_page_count import PageCountScorer
-        from services.parameters.p3_2_word_count import WordCountScorer
-        from services.parameters.p3_3_section_balance import SectionBalanceScorer
-        from services.parameters.p3_4_ats_formatting import ATSFormattingScorer
-        from services.parameters.p4_1_grammar import GrammarScorer
-        from services.parameters.p4_2_professional_standards import ProfessionalStandardsScorer
+        from backend.services.parameters.p1_1_required_keywords import RequiredKeywordsMatcher
+        from backend.services.parameters.p1_2_preferred_keywords import PreferredKeywordsMatcher
+        from backend.services.parameters.p2_1_action_verbs import ActionVerbScorer
+        from backend.services.parameters.p2_2_quantification import QuantificationScorer
+        from backend.services.parameters.p2_3_achievement_depth import AchievementDepthScorer
+        from backend.services.parameters.p3_1_page_count import PageCountScorer
+        from backend.services.parameters.p3_2_word_count import WordCountScorer
+        from backend.services.parameters.p3_3_section_balance import SectionBalanceScorer
+        from backend.services.parameters.p3_4_ats_formatting import ATSFormattingScorer
+        from backend.services.parameters.p4_1_grammar import GrammarScorer
+        from backend.services.parameters.p4_2_professional_standards import ProfessionalStandardsScorer
 
         # Define all parameters with metadata
         self._parameters = {

@@ -7,8 +7,8 @@ and the dict format expected by ScorerV3, and vice versa for responses.
 
 from typing import Dict, List, Any, Optional
 import re
-from services.parser import ResumeData
-from services.scorer_v3 import ScorerV3
+from backend.services.parser import ResumeData
+from backend.services.scorer_v3 import ScorerV3
 
 
 class ScorerV3Adapter:
