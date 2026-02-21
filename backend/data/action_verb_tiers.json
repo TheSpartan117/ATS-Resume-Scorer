@@ -52,7 +52,8 @@
       "tested", "proven", "demonstrated", "showcased", "leveraged",
       "utilized", "applied", "employed", "operated", "administered",
       "introduced", "added", "extended", "expanded", "boosted",
-      "maximized", "minimized", "synchronized", "tuned", "refined"
+      "maximized", "minimized", "synchronized", "tuned", "refined",
+      "redesigned", "sourced", "written"
     ],
     "stats": {
       "corpus_frequency": "Very High",
@@ -74,7 +75,8 @@
       "facilitated", "liaised", "interfaced", "responded", "answered",
       "addressed", "provided", "supplied", "distributed", "shared",
       "transferred", "moved", "loaded", "uploaded", "downloaded",
-      "backed up", "archived", "recovered", "restored", "refreshed"
+      "backed up", "archived", "recovered", "restored", "refreshed",
+      "authorized", "certified", "completed", "ensured", "selected"
     ],
     "stats": {
       "corpus_frequency": "Very High",
@@ -92,7 +94,8 @@
       "worked with", "worked", "provided", "served", "acted",
       "included", "based", "focused", "specialized", "dedicated",
       "tasked", "assigned", "experienced", "gained", "received",
-      "attended", "participated", "involved", "engaged", "interacted"
+      "attended", "participated", "involved", "engaged", "interacted",
+      "helped"
     ],
     "stats": {
       "corpus_frequency": "Extremely High (weak/filler verbs)",
