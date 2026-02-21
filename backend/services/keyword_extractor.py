@@ -9,7 +9,7 @@ matching, which is crucial for ATS Simulation mode scoring.
 import re
 from typing import Dict, List, Set, Tuple
 
-from backend.services.synonym_database import get_all_synonyms
+from services.synonym_database import get_all_synonyms
 
 
 # Technical keywords to extract from job descriptions

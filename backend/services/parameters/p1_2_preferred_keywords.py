@@ -17,7 +17,7 @@ Research basis:
 - Based on Workday/Greenhouse ATS analysis
 
 Usage:
-    from backend.services.parameters.p1_2_preferred_keywords import PreferredKeywordsMatcher
+    from services.parameters.p1_2_preferred_keywords import PreferredKeywordsMatcher
 
     matcher = PreferredKeywordsMatcher()
     result = matcher.calculate_score(
@@ -64,7 +64,7 @@ class PreferredKeywordsMatcher:
 
     def __init__(self):
         """Initialize with hybrid keyword matcher for semantic matching."""
-        from backend.services.hybrid_keyword_matcher import get_hybrid_matcher
+        from services.hybrid_keyword_matcher import get_hybrid_matcher
         self.hybrid_matcher = get_hybrid_matcher()
 
     def calculate_score(

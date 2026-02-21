@@ -14,14 +14,14 @@ Main Scorer Orchestrator:
 
 import re
 from typing import Dict, List, Optional, Any
-from backend.services.keyword_extractor import extract_keywords_from_jd, match_with_synonyms
-from backend.services.role_taxonomy import ExperienceLevel, get_role_scoring_data, get_role_scoring_data_enhanced
-from backend.services.parser import ResumeData
-from backend.services.content_impact_analyzer import ContentImpactAnalyzer
-from backend.services.writing_quality_analyzer import WritingQualityAnalyzer
-from backend.services.context_aware_scorer import ContextAwareScorer
-from backend.services.feedback_generator import FeedbackGenerator
-from backend.services.benchmark_tracker import BenchmarkTracker
+from services.keyword_extractor import extract_keywords_from_jd, match_with_synonyms
+from services.role_taxonomy import ExperienceLevel, get_role_scoring_data, get_role_scoring_data_enhanced
+from services.parser import ResumeData
+from services.content_impact_analyzer import ContentImpactAnalyzer
+from services.writing_quality_analyzer import WritingQualityAnalyzer
+from services.context_aware_scorer import ContextAwareScorer
+from services.feedback_generator import FeedbackGenerator
+from services.benchmark_tracker import BenchmarkTracker
 
 
 class AdaptiveScorer:
@@ -425,22 +425,29 @@ class AdaptiveScorer:
         # REALISTIC scoring thresholds for Quality Coach mode
         # With large keyword lists (100+), even good resumes only match 15-25%
         # We focus on absolute counts rather than percentages
+        # Using interpolation within buckets for smoother scoring
         if total_keywords > 100:
-            # Large keyword list (corpus-enhanced) - use absolute count thresholds
+            # Large keyword list (corpus-enhanced) - use absolute count thresholds with interpolation
             if total_matched >= 40:  # Exceptional
                 score = 25
             elif total_matched >= 30:  # Excellent (target for 86+ score)
-                score = 23
+                # Interpolate between 23-25 for 30-40 matches
+                score = 23 + ((total_matched - 30) / 10) * 2
             elif total_matched >= 20:  # Good
-                score = 20
+                # Interpolate between 20-23 for 20-30 matches
+                score = 20 + ((total_matched - 20) / 10) * 3
             elif total_matched >= 15:  # Decent
-                score = 17
+                # Interpolate between 17-20 for 15-20 matches
+                score = 17 + ((total_matched - 15) / 5) * 3
             elif total_matched >= 10:  # Fair
-                score = 14
+                # Interpolate between 14-17 for 10-15 matches
+                score = 14 + ((total_matched - 10) / 5) * 3
             elif total_matched >= 5:  # Minimal
-                score = 10
+                # Interpolate between 10-14 for 5-10 matches
+                score = 10 + ((total_matched - 5) / 5) * 4
             else:
-                score = (total_matched / 5) * 10  # Linear up to 5 matches
+                # Linear up to 5 matches
+                score = (total_matched / 5) * 10
         else:
             # Small keyword list (manual only) - use percentage thresholds
             if match_pct >= 60:
@@ -634,7 +641,7 @@ class AdaptiveScorer:
         details = []
 
         # Grammar and spelling check with severity weighting (up to 10 points)
-        from backend.services.red_flags_validator import RedFlagsValidator
+        from services.red_flags_validator import RedFlagsValidator
         validator = RedFlagsValidator()
         grammar_issues = validator.validate_grammar(resume_data)
 
@@ -674,17 +681,23 @@ class AdaptiveScorer:
 
         score += grammar_score
 
-        # Word count check (up to 5 points)
+        # Word count check (up to 5 points) - STRICTER for Quality Coach
         word_count = resume_data.metadata.get("wordCount", 0)
-        if 400 <= word_count <= 800:
+        if 450 <= word_count <= 750:
             word_score = 5
             details.append("Optimal word count")
-        elif 300 <= word_count <= 1000:
-            word_score = 3
+        elif 400 <= word_count <= 850:
+            word_score = 4
             details.append("Good word count")
-        else:
+        elif 350 <= word_count <= 950:
+            word_score = 3
+            details.append("Acceptable word count")
+        elif 300 <= word_count <= 1100:
             word_score = 2
             details.append("Word count could be improved")
+        else:
+            word_score = 1
+            details.append("Word count suboptimal")
 
         score += word_score
 
@@ -729,46 +742,86 @@ class AdaptiveScorer:
 
     def _score_format(self, resume_data: ResumeData, resume_text: str) -> Dict:
         """
-        Score ATS format compatibility.
+        Score ATS format compatibility with quality assessment.
 
         Checks:
-        - Has required sections (contact, experience, education)
-        - Has skills section
-        - Has contact info (email, phone)
+        - Has required sections (contact, experience, education) - 10 pts
+        - Section quality (detail, structure) - 5 pts
+        - Skills section - 2 pts
+        - Contact info completeness - 2 pts
+        - Section balance - 1 pt
 
         Args:
             resume_data: Parsed resume data
             resume_text: Full resume text
 
         Returns:
-            Dictionary with score and details
+            Dictionary with score and details (max 20 pts)
         """
         score = 0
         details = []
 
-        # Required sections (15 points total: 5 each)
+        # Required sections presence (10 points total: 3-4-3)
         if resume_data.contact and (resume_data.contact.get("name") or resume_data.contact.get("email")):
-            score += 5
+            score += 3
             details.append("Has contact section")
         else:
             details.append("Missing contact section")
 
         if resume_data.experience and len(resume_data.experience) > 0:
-            score += 5
+            score += 4
             details.append("Has experience section")
         else:
             details.append("Missing experience section")
 
         if resume_data.education and len(resume_data.education) > 0:
-            score += 5
+            score += 3
             details.append("Has education section")
         else:
             details.append("Missing education section")
 
-        # Skills section (3 points)
-        if resume_data.skills and len(resume_data.skills) > 0:
-            score += 3
-            details.append("Has skills section")
+        # Experience quality assessment (up to 5 points)
+        if resume_data.experience:
+            exp_quality = 0
+            total_bullets = 0
+
+            for exp in resume_data.experience:
+                # Count bullets/descriptions
+                if isinstance(exp, dict):
+                    if "bullets" in exp and isinstance(exp["bullets"], list):
+                        total_bullets += len(exp["bullets"])
+                    elif "description" in exp:
+                        if isinstance(exp["description"], list):
+                            total_bullets += len(exp["description"])
+                        elif isinstance(exp["description"], str) and len(exp["description"]) > 20:
+                            total_bullets += 1
+
+            # Award points based on experience detail quality
+            if total_bullets >= 10:
+                exp_quality = 5  # Well-detailed experience
+                details.append("Well-detailed experience")
+            elif total_bullets >= 6:
+                exp_quality = 4  # Good detail level
+                details.append("Good experience detail")
+            elif total_bullets >= 3:
+                exp_quality = 3  # Adequate detail
+                details.append("Adequate experience detail")
+            elif total_bullets >= 1:
+                exp_quality = 2  # Minimal detail
+                details.append("Minimal experience detail")
+            else:
+                exp_quality = 0  # No detailed descriptions
+                details.append("Experience lacks detail")
+
+            score += exp_quality
+
+        # Skills section (2 points)
+        if resume_data.skills and len(resume_data.skills) >= 5:
+            score += 2
+            details.append("Comprehensive skills section")
+        elif resume_data.skills and len(resume_data.skills) > 0:
+            score += 1
+            details.append("Basic skills section")
         else:
             details.append("Missing skills section")
 
@@ -782,6 +835,16 @@ class AdaptiveScorer:
             details.append("Partial contact info")
         else:
             details.append("No contact info")
+
+        # Section balance check (1 point)
+        # Check if resume has good balance of sections
+        has_multiple_experiences = len(resume_data.experience) >= 2 if resume_data.experience else False
+        has_education = len(resume_data.education) >= 1 if resume_data.education else False
+        has_skills = len(resume_data.skills) >= 3 if resume_data.skills else False
+
+        if has_multiple_experiences and has_education and has_skills:
+            score += 1
+            details.append("Well-balanced structure")
 
         # Cap at maximum score
         score = min(score, 20)

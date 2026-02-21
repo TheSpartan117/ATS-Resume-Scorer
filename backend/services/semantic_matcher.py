@@ -14,7 +14,7 @@ from functools import lru_cache
 
 # Phase 1.4: Caching support
 try:
-    from backend.services.cache_utils import cache_embeddings, cache_keywords
+    from services.cache_utils import cache_embeddings, cache_keywords
     CACHING_AVAILABLE = True
 except ImportError:
     CACHING_AVAILABLE = False

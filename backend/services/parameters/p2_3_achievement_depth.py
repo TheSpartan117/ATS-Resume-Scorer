@@ -17,7 +17,7 @@ Research Basis:
 """
 
 from typing import List, Dict, Any
-from backend.services.vague_phrase_detector import VaguePhraseDetector
+from services.vague_phrase_detector import VaguePhraseDetector
 
 
 class AchievementDepthScorer:

@@ -9,8 +9,8 @@ import uuid
 import logging
 from pathlib import Path
 from backend.services.parser import parse_pdf, parse_docx
-# Removed legacy scorer import - using scorer_v2.AdaptiveScorer instead
-from backend.services.scorer_v2 import AdaptiveScorer
+# Updated to use ScorerV3 via adapter
+from backend.services.scorer_v3_adapter import ScorerV3Adapter
 from backend.services.format_checker import ATSFormatChecker
 from backend.services.docx_to_pdf import convert_docx_to_pdf
 from backend.services.document_to_html import docx_to_html, pdf_to_html
@@ -264,17 +264,15 @@ async def upload_resume(
 
     logger.info(f"Using role={role_to_use}, level={level_to_use} (defaults applied if not specified)")
 
-    # Use adaptive scorer
-    scorer = AdaptiveScorer()
+    # Use ScorerV3 via adapter
+    scorer = ScorerV3Adapter()
 
     try:
-        logger.info(f"Calculating score with role={role_to_use}, level={level_to_use}, mode={scoring_mode}")
+        logger.info(f"Calculating score with level={level_to_use}, mode={scoring_mode}")
         score_result = scorer.score(
             resume_data=resume_data,
-            role_id=role_to_use,
             level=level_to_use,
-            job_description=jobDescription,
-            mode=scoring_mode
+            job_description=jobDescription
         )
         logger.info(f"Score calculated: {score_result.get('overallScore', 0)}")
 

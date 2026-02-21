@@ -20,8 +20,8 @@ Research Basis:
 """
 
 from typing import List, Dict, Any
-from backend.services.quantification_classifier import QuantificationClassifier
-from backend.config.scoring_thresholds import get_thresholds_for_level
+from services.quantification_classifier import QuantificationClassifier
+from config.scoring_thresholds import get_thresholds_for_level
 
 
 class QuantificationScorer:

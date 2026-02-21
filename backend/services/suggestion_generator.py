@@ -7,8 +7,8 @@ with templates, examples, and specific keywords.
 
 from typing import List, Dict, Optional, Set
 import re
-from backend.services.parser import ResumeData
-from backend.services.role_taxonomy import get_role_scoring_data
+from services.parser import ResumeData
+from services.role_taxonomy import get_role_scoring_data
 
 
 class EnhancedSuggestionGenerator:

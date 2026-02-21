@@ -17,7 +17,7 @@ This parameter enforces vocabulary diversity for professional writing quality.
 """
 
 from typing import List, Dict, Any
-from backend.services.repetition_detector import RepetitionDetector
+from services.repetition_detector import RepetitionDetector
 
 
 class RepetitionPenaltyScorer:

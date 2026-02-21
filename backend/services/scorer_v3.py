@@ -18,7 +18,7 @@ Research Foundation:
 """
 
 from typing import Dict, List, Any, Optional
-from backend.services.parameters.registry import get_parameter_registry
+from services.parameters.registry import get_parameter_registry
 
 
 class ScorerV3:

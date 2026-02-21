@@ -17,8 +17,8 @@ Scoring:
 """
 
 from typing import List, Dict, Any
-from backend.services.action_verb_classifier import ActionVerbClassifier, VerbTier
-from backend.config.scoring_thresholds import get_thresholds_for_level
+from services.action_verb_classifier import ActionVerbClassifier, VerbTier
+from config.scoring_thresholds import get_thresholds_for_level
 
 
 class ActionVerbScorer:

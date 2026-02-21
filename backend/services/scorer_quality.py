@@ -11,10 +11,10 @@ This scorer evaluates resumes based on content quality and depth:
 
 import re
 from typing import Dict, List, Optional
-from backend.services.parser import ResumeData
-from backend.services.red_flags_validator import RedFlagsValidator
-from backend.services.keyword_extractor import match_with_synonyms
-from backend.services.role_taxonomy import get_role_scoring_data
+from services.parser import ResumeData
+from services.red_flags_validator import RedFlagsValidator
+from services.keyword_extractor import match_with_synonyms
+from services.role_taxonomy import get_role_scoring_data
 
 
 class QualityScorer:
@@ -266,7 +266,7 @@ class QualityScorer:
 
         if job_description:
             # Match against JD keywords
-            from backend.services.keyword_extractor import extract_keywords_from_jd
+            from services.keyword_extractor import extract_keywords_from_jd
             jd_keywords = extract_keywords_from_jd(job_description)
 
             required = jd_keywords.get('required', [])

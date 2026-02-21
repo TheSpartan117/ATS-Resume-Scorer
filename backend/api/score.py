@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from backend.services.parser import ResumeData
-from backend.services.scorer_v2 import AdaptiveScorer
+from backend.services.scorer_v3_adapter import ScorerV3Adapter
 from backend.services.role_taxonomy import get_role_scoring_data, ExperienceLevel
 from backend.services.suggestion_integrator import SuggestionIntegrator
 from backend.services.scoring_utils import normalize_scoring_mode
@@ -73,14 +73,12 @@ async def score_resume(request: ScoreRequest):
     # Normalize mode parameter using utility function
     mode = normalize_scoring_mode(request.mode or "auto", request.jobDescription or "")
 
-    # Calculate score using AdaptiveScorer
-    scorer = AdaptiveScorer()
+    # Calculate score using ScorerV3 via adapter
+    scorer = ScorerV3Adapter()
     score_result = scorer.score(
         resume_data=resume_data,
-        role_id=request.role or "software_engineer",
         level=request.level or "mid",
-        job_description=request.jobDescription,
-        mode=mode
+        job_description=request.jobDescription
     )
 
     # Enrich with enhanced suggestions

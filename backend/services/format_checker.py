@@ -3,7 +3,7 @@ ATS Format Checker - Validates resume parseability and ATS compatibility
 """
 import re
 from typing import Dict, List
-from backend.services.parser import ResumeData
+from services.parser import ResumeData
 
 
 class ATSFormatChecker:

@@ -17,7 +17,7 @@ Detects:
 """
 
 from typing import Dict, Any
-from backend.services.section_balance_analyzer import SectionBalanceAnalyzer
+from services.section_balance_analyzer import SectionBalanceAnalyzer
 
 
 class SectionBalanceScorer:
