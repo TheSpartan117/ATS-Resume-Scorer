@@ -1,13 +1,16 @@
 """
-Vague Phrase Detector
+Vague Phrase Detector for Achievement Depth Scoring
 
-Identifies weak, passive phrases that indicate low-impact achievements.
-Used for Achievement Depth scoring (Parameter P2.3).
+Detects passive, vague phrases that indicate weak achievement descriptions.
+Part of P2.3 (Achievement Depth) parameter.
 
-Research basis:
-- ResumeWorded study: Resumes with 3+ vague phrases score 40% lower
-- Career coaches recommend max 1-2 passive phrases per resume
-- ATS systems penalize lack of specificity and measurable impact
+Penalty structure:
+- 0 instances: 5 points (excellent - strong, specific achievements)
+- 1-2 instances: 4 points (good - mostly specific)
+- 3-4 instances: 2 points (weak - too many vague descriptions)
+- 5+ instances: 0 points (poor - predominantly vague)
+
+Research basis: ResumeWorded, Jobscan analysis
 """
 
 import json
@@ -17,18 +20,10 @@ from typing import Dict, List
 
 
 class VaguePhraseDetector:
-    """
-    Detect vague, passive phrases in resume text.
-
-    Penalty structure (for Achievement Depth parameter):
-    - 0 phrases: 5 points (excellent specificity)
-    - 1-2 phrases: 4 points (minor issue)
-    - 3-4 phrases: 2 points (moderate concern)
-    - 5+ phrases: 0 points (poor specificity)
-    """
+    """Detect vague, passive phrases in resume text."""
 
     def __init__(self, data_path: str = None):
-        """Initialize detector with vague phrases data."""
+        """Initialize detector with vague phrase patterns."""
         if data_path is None:
             data_path = Path(__file__).parent.parent / "data" / "vague_phrases.json"
 
@@ -36,112 +31,71 @@ class VaguePhraseDetector:
             data = json.load(f)
 
         self.vague_phrases = data['vague_phrases']
+        self.penalty_structure = data['penalty_structure']
 
-        # Compile regex patterns for case-insensitive matching
-        self.patterns = [
-            (phrase, re.compile(r'\b' + re.escape(phrase) + r'\b', re.IGNORECASE))
-            for phrase in self.vague_phrases
-        ]
+        # Compile regex patterns for efficient matching
+        # Case-insensitive, word boundary aware
+        self.patterns = []
+        for phrase in self.vague_phrases:
+            # Escape special regex characters, use word boundaries
+            pattern = re.compile(r'\b' + re.escape(phrase) + r'\b', re.IGNORECASE)
+            self.patterns.append((phrase, pattern))
 
-    def detect(self, text: str) -> Dict:
+    def detect(self, resume_text: str) -> Dict:
         """
-        Detect all vague phrases in the text.
+        Detect vague phrases in resume text and calculate penalty score.
 
         Args:
-            text: Resume text or section
+            resume_text: Full resume text or relevant section
 
         Returns:
             {
-                'count': int (total occurrences),
-                'phrases_found': [
-                    {
-                        'phrase': str (original phrase from data),
-                        'matches': List[str] (actual text matches),
-                        'occurrences': int
-                    }
-                ]
+                'vague_phrase_count': int,  # Total occurrences
+                'score': int,               # Points (0-5)
+                'found_phrases': List[str], # Phrases found
+                'penalty_breakdown': str    # Which penalty tier
             }
         """
-        if not text:
-            return {'count': 0, 'phrases_found': []}
+        if not resume_text:
+            return {
+                'vague_phrase_count': 0,
+                'score': 5,
+                'found_phrases': [],
+                'penalty_breakdown': '0 instances'
+            }
 
-        phrases_found = []
-        total_count = 0
+        found_phrases = []
 
+        # Count all occurrences of all vague phrases
         for phrase, pattern in self.patterns:
-            matches = pattern.findall(text)
+            matches = pattern.findall(resume_text)
             if matches:
-                occurrences = len(matches)
-                total_count += occurrences
-                phrases_found.append({
-                    'phrase': phrase,
-                    'matches': matches,
-                    'occurrences': occurrences
-                })
+                # Add phrase for each occurrence (handles duplicates)
+                found_phrases.extend([phrase] * len(matches))
 
-        return {
-            'count': total_count,
-            'phrases_found': phrases_found
-        }
+        vague_count = len(found_phrases)
 
-    def get_penalty_score(self, vague_phrase_count: int) -> int:
-        """
-        Calculate penalty score based on vague phrase count.
-
-        Scoring structure (out of 5 points):
-        - 0 phrases: 5 points (no penalty)
-        - 1-2 phrases: 4 points (minor penalty)
-        - 3-4 phrases: 2 points (moderate penalty)
-        - 5+ phrases: 0 points (full penalty)
-
-        Args:
-            vague_phrase_count: Total number of vague phrases found
-
-        Returns:
-            Score from 0-5
-        """
-        if vague_phrase_count == 0:
-            return 5
-        elif vague_phrase_count <= 2:
-            return 4
-        elif vague_phrase_count <= 4:
-            return 2
+        # Calculate score based on penalty structure
+        if vague_count == 0:
+            score = 5
+            breakdown = '0 instances'
+        elif 1 <= vague_count <= 2:
+            score = 4
+            breakdown = '1-2 instances'
+        elif 3 <= vague_count <= 4:
+            score = 2
+            breakdown = '3-4 instances'
         else:  # 5+
-            return 0
-
-    def analyze_resume(self, resume_text: str) -> Dict:
-        """
-        Complete analysis with detection and scoring.
-
-        Args:
-            resume_text: Full resume text
-
-        Returns:
-            {
-                'vague_phrase_count': int,
-                'penalty_score': int (0-5),
-                'max_score': int (always 5),
-                'phrases_found': List[Dict]
-            }
-        """
-        detection_result = self.detect(resume_text)
-        count = detection_result['count']
-        score = self.get_penalty_score(count)
+            score = 0
+            breakdown = '5+ instances'
 
         return {
-            'vague_phrase_count': count,
-            'penalty_score': score,
-            'max_score': 5,
-            'phrases_found': detection_result['phrases_found']
+            'vague_phrase_count': vague_count,
+            'score': score,
+            'found_phrases': found_phrases,
+            'penalty_breakdown': breakdown
         }
 
-
-# Singleton instance
-_detector_instance = None
-
-def get_vague_phrase_detector() -> VaguePhraseDetector:
-    """Get singleton instance of VaguePhraseDetector."""
-    global _detector_instance
-    if _detector_instance is None:
-        _detector_instance = VaguePhraseDetector()
-    return _detector_instance
+    def get_vague_phrases_list(self) -> List[str]:
+        """Get list of all vague phrases being detected."""
+        return self.vague_phrases.copy()
