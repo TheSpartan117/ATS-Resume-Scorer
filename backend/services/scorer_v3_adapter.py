@@ -212,13 +212,108 @@ class ScorerV3Adapter:
         """
         Extract required and preferred keywords from job description.
 
-        Uses simple keyword extraction. Can be enhanced with NLP in the future.
+        Uses semantic keyword extraction (KeyBERT) for intelligent extraction.
+        Falls back to simple heuristics if semantic extraction fails.
+
+        Strategy:
+        1. Use KeyBERT to extract top 25 relevant keywords/phrases
+        2. Classify into required vs preferred based on context markers
+        3. If semantic extraction fails, fall back to simple heuristics
         """
         if not job_description:
             return {'required_keywords': [], 'preferred_keywords': []}
 
-        # Extract technical terms (capitalized words, acronyms, common tech terms)
-        # This is a simplified version - can be enhanced with NLP
+        # Try semantic extraction first
+        try:
+            from backend.services.semantic_matcher import get_semantic_matcher
+
+            matcher = get_semantic_matcher()
+
+            # Extract keywords using KeyBERT (handles diversity and relevance)
+            keywords = matcher.extract_keywords(
+                job_description,
+                top_n=25,
+                diversity=0.7  # Balance between relevance and diversity
+            )
+
+            if not keywords:
+                # Fall back to simple extraction if semantic fails
+                return self._fallback_keyword_extraction(job_description)
+
+            # Split into required vs preferred based on context clues
+            required_keywords = []
+            preferred_keywords = []
+
+            # Convert to just the keyword strings (KeyBERT returns tuples)
+            keyword_strings = [kw if isinstance(kw, str) else kw[0] for kw in keywords]
+
+            # Analyze job description for required vs preferred markers
+            jd_lower = job_description.lower()
+
+            # Markers for required skills
+            required_markers = [
+                'required', 'must have', 'mandatory', 'essential',
+                'required skills', 'requirements', 'must be',
+                'need', 'necessary'
+            ]
+
+            # Markers for preferred skills
+            preferred_markers = [
+                'preferred', 'nice to have', 'bonus', 'plus',
+                'desirable', 'optional', 'advantage', 'nice-to-have'
+            ]
+
+            # Check if sections are explicitly marked
+            has_required_section = any(marker in jd_lower for marker in required_markers)
+            has_preferred_section = any(marker in jd_lower for marker in preferred_markers)
+
+            if has_required_section or has_preferred_section:
+                # Split based on sections
+                for keyword in keyword_strings:
+                    keyword_lower = keyword.lower()
+
+                    # Find keyword context in job description
+                    keyword_pos = jd_lower.find(keyword_lower)
+                    if keyword_pos == -1:
+                        # Keyword not found directly, add to required by default
+                        required_keywords.append(keyword)
+                        continue
+
+                    # Check context before keyword (200 chars)
+                    context_start = max(0, keyword_pos - 200)
+                    context = jd_lower[context_start:keyword_pos + len(keyword_lower)]
+
+                    # Classify based on nearest marker
+                    last_required = max((context.rfind(m) for m in required_markers), default=-1)
+                    last_preferred = max((context.rfind(m) for m in preferred_markers), default=-1)
+
+                    if last_preferred > last_required:
+                        preferred_keywords.append(keyword)
+                    else:
+                        required_keywords.append(keyword)
+            else:
+                # No explicit sections - use top keywords as required, rest as preferred
+                # Top 60% are required, rest are preferred
+                split_point = int(len(keyword_strings) * 0.6)
+                required_keywords = keyword_strings[:split_point]
+                preferred_keywords = keyword_strings[split_point:]
+
+            return {
+                'required_keywords': required_keywords[:15],  # Cap at 15 required
+                'preferred_keywords': preferred_keywords[:10]  # Cap at 10 preferred
+            }
+
+        except Exception as e:
+            # Fall back to simple extraction if anything fails
+            print(f"Semantic keyword extraction failed: {e}")
+            return self._fallback_keyword_extraction(job_description)
+
+    def _fallback_keyword_extraction(self, job_description: str) -> Dict[str, List[str]]:
+        """
+        Simple fallback keyword extraction using heuristics.
+
+        Used when semantic extraction is unavailable or fails.
+        """
         words = job_description.split()
 
         keywords = []
@@ -237,8 +332,6 @@ class ScorerV3Adapter:
         # Deduplicate and normalize
         unique_keywords = list(set(keywords))
 
-        # For now, treat all as required. Can be split based on section analysis.
-        # TODO: Enhance to distinguish required vs preferred
         return {
             'required_keywords': unique_keywords[:15],  # Top 15 as required
             'preferred_keywords': unique_keywords[15:25] if len(unique_keywords) > 15 else []
