@@ -51,12 +51,15 @@ export interface CategoryBreakdown {
 }
 
 export interface ScoreBreakdown {
-  contactInfo: CategoryBreakdown
-  formatting: CategoryBreakdown
-  keywords: CategoryBreakdown
-  content: CategoryBreakdown
-  lengthDensity: CategoryBreakdown
-  roleSpecific: CategoryBreakdown
+  [categoryName: string]: CategoryBreakdown
+  // Scorer V3 categories:
+  // - "Keyword Matching"
+  // - "Content Quality"
+  // - "Format & Structure"
+  // - "Professional Polish"
+  // - "Experience Validation"
+  // - "Red Flags"
+  // - "Readability"
 }
 
 export interface EnhancedSuggestion {
@@ -92,6 +95,10 @@ export interface ScoreResult {
     preferred_total?: number
     preferred_match_pct?: number
     match_percentage?: number
+    matchPercentage?: number
+    matchedKeywords?: string[]
+    missingKeywords?: string[]
+    totalRequired?: number
   }
   autoReject?: boolean
   enhancedSuggestions?: EnhancedSuggestion[] // New detailed suggestions

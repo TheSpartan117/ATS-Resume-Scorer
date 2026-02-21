@@ -60,12 +60,46 @@ class ActionVerbClassifier:
                 if verb in bullet_lower:
                     return tier
 
-        # Check single-word verbs (first word typically)
+        # Handle "Project Name: Verb..." format
+        # Check text after colon first if present
+        if ':' in bullet_lower:
+            after_colon = bullet_lower.split(':', 1)[1].strip()
+            if after_colon:
+                words_after_colon = re.findall(r'\b\w+\b', after_colon)
+                if words_after_colon:
+                    # Check first 2 words after colon
+                    for i in range(min(2, len(words_after_colon))):
+                        word = words_after_colon[i]
+                        if word in self.verb_to_tier:
+                            return self.verb_to_tier[word]
+
+                        # Handle hyphenated words
+                        if '-' in word:
+                            parts = word.split('-')
+                            for part in parts:
+                                if part in self.verb_to_tier:
+                                    return self.verb_to_tier[part]
+
+        # Extract words from beginning, checking first 3 words for the action verb
+        # Handles bullets like "Successfully delivered", "Co-led", etc.
         words = re.findall(r'\b\w+\b', bullet_lower)
-        if words:
-            first_word = words[0]
-            if first_word in self.verb_to_tier:
-                return self.verb_to_tier[first_word]
+        if not words:
+            return VerbTier.TIER_0
+
+        # Check first 3 words (most verbs are within first 3 words)
+        for i in range(min(3, len(words))):
+            word = words[i]
+
+            # Check exact match
+            if word in self.verb_to_tier:
+                return self.verb_to_tier[word]
+
+            # Handle hyphenated words (e.g., "co-led" → check "led")
+            if '-' in word:
+                parts = word.split('-')
+                for part in parts:
+                    if part in self.verb_to_tier:
+                        return self.verb_to_tier[part]
 
         # No recognized verb found
         return VerbTier.TIER_0

@@ -7,9 +7,12 @@ interface ModeIndicatorProps {
     required_match_pct?: number;
     preferred_match_pct?: number;
     match_percentage?: number;
+    matchPercentage?: number;
+    matchedKeywords?: string[];
+    missingKeywords?: string[];
   };
   breakdown: {
-    [key: string]: number;
+    [key: string]: number | { score: number; maxScore: number };
   };
   autoReject?: boolean;
 }
@@ -77,22 +80,91 @@ export const ModeIndicator: React.FC<ModeIndicatorProps> = ({
             60% match needed to pass ATS
           </p>
         )}
+        <p className="text-xs text-gray-500 mt-2">
+          💡 Base score capped at 100 (125 with bonuses)
+        </p>
       </div>
 
       {/* Keyword Details */}
-      {isATSMode && keywordDetails && (
-        <div className="mb-6 space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-700">Required Keywords:</span>
-            <span className={`font-semibold ${(keywordDetails.required_match_pct ?? 0) >= 60 ? 'text-green-600' : 'text-red-600'}`}>
-              {keywordDetails.required_match_pct?.toFixed(0) ?? '0'}% ✅
-            </span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-700">Preferred Keywords:</span>
-            <span className="font-semibold text-gray-600">
-              {keywordDetails.preferred_match_pct?.toFixed(0)}%
-            </span>
+      {keywordDetails && (
+        <div className="mb-6 space-y-3">
+          <h4 className="text-sm font-semibold text-gray-700">🔑 Keywords</h4>
+          <div className="space-y-2">
+            {/* Overall Match Percentage */}
+            {(keywordDetails.matchPercentage !== undefined || keywordDetails.match_percentage !== undefined) && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-700">Match Rate:</span>
+                <span className={`font-semibold ${
+                  (keywordDetails.matchPercentage ?? keywordDetails.match_percentage ?? 0) >= 60
+                    ? 'text-green-600'
+                    : (keywordDetails.matchPercentage ?? keywordDetails.match_percentage ?? 0) >= 40
+                      ? 'text-yellow-600'
+                      : 'text-red-600'
+                }`}>
+                  {(keywordDetails.matchPercentage ?? keywordDetails.match_percentage ?? 0).toFixed(0)}%
+                </span>
+              </div>
+            )}
+
+            {/* Matched Keywords */}
+            {keywordDetails.matchedKeywords && keywordDetails.matchedKeywords.length > 0 && (
+              <div className="text-sm">
+                <span className="text-gray-700">✅ Matched ({keywordDetails.matchedKeywords.length}):</span>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {keywordDetails.matchedKeywords.slice(0, 5).map((kw, idx) => (
+                    <span key={idx} className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs">
+                      {kw}
+                    </span>
+                  ))}
+                  {keywordDetails.matchedKeywords.length > 5 && (
+                    <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                      +{keywordDetails.matchedKeywords.length - 5} more
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Missing Keywords */}
+            {keywordDetails.missingKeywords && keywordDetails.missingKeywords.length > 0 && (
+              <div className="text-sm">
+                <span className="text-gray-700">❌ Missing ({keywordDetails.missingKeywords.length}):</span>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {keywordDetails.missingKeywords.slice(0, 5).map((kw, idx) => (
+                    <span key={idx} className="px-2 py-0.5 bg-red-100 text-red-800 rounded text-xs">
+                      {kw}
+                    </span>
+                  ))}
+                  {keywordDetails.missingKeywords.length > 5 && (
+                    <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                      +{keywordDetails.missingKeywords.length - 5} more
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Legacy format support */}
+            {!keywordDetails.matchPercentage && !keywordDetails.match_percentage && (
+              <>
+                {keywordDetails.required_match_pct !== undefined && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-700">Required:</span>
+                    <span className={`font-semibold ${keywordDetails.required_match_pct >= 60 ? 'text-green-600' : 'text-red-600'}`}>
+                      {keywordDetails.required_match_pct.toFixed(0)}%
+                    </span>
+                  </div>
+                )}
+                {keywordDetails.preferred_match_pct !== undefined && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-700">Preferred:</span>
+                    <span className="font-semibold text-gray-600">
+                      {keywordDetails.preferred_match_pct.toFixed(0)}%
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}
@@ -108,22 +180,40 @@ export const ModeIndicator: React.FC<ModeIndicatorProps> = ({
       {/* Breakdown */}
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-gray-700 mb-2">📊 BREAKDOWN</h4>
-        {Object.entries(breakdown).map(([category, scoreVal]) => {
-          // Determine max score based on mode and category
+        {Object.entries(breakdown).map(([category, value]) => {
+          // Handle both old format (number) and new format ({score, maxScore})
+          let scoreVal: number;
           let maxScore: number;
-          if (isATSMode) {
-            maxScore = category === 'keyword_match' ? 70 : category === 'format' ? 20 : 10;
+
+          if (typeof value === 'object' && value !== null && 'score' in value) {
+            // New format from Scorer V3
+            scoreVal = value.score;
+            maxScore = value.maxScore;
           } else {
-            // Quality Coach mode: role_keywords=25, content_quality=30, format=25, professional_polish=20
-            if (category === 'content_quality') {
+            // Old format (fallback)
+            scoreVal = value as number;
+            // Use Scorer V3 max scores
+            const categoryLower = category.toLowerCase();
+            if (categoryLower.includes('keyword')) {
+              maxScore = 35;
+            } else if (categoryLower.includes('content')) {
               maxScore = 30;
-            } else if (category === 'professional_polish') {
+            } else if (categoryLower.includes('format') || categoryLower.includes('structure')) {
               maxScore = 20;
+            } else if (categoryLower.includes('polish')) {
+              maxScore = 15;
+            } else if (categoryLower.includes('experience') || categoryLower.includes('validation')) {
+              maxScore = 15;
+            } else if (categoryLower.includes('readability')) {
+              maxScore = 10;
+            } else if (categoryLower.includes('red flag')) {
+              maxScore = 0; // Red flags are penalties
             } else {
-              maxScore = 25; // role_keywords and format
+              maxScore = 25; // Default fallback
             }
           }
-          const percentage = (scoreVal / maxScore) * 100;
+
+          const percentage = maxScore > 0 ? (scoreVal / maxScore) * 100 : 0;
 
           return (
             <div key={category} className="space-y-1">
@@ -135,12 +225,14 @@ export const ModeIndicator: React.FC<ModeIndicatorProps> = ({
                   {scoreVal}/{maxScore}
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-gradient-to-r from-teal-500 to-cyan-500 h-2 rounded-full transition-all"
-                  style={{ width: `${percentage}%` }}
-                />
-              </div>
+              {maxScore > 0 && (
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-gradient-to-r from-teal-500 to-cyan-500 h-2 rounded-full transition-all"
+                    style={{ width: `${Math.min(percentage, 100)}%` }}
+                  />
+                </div>
+              )}
             </div>
           );
         })}

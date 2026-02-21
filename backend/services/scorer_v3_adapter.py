@@ -31,6 +31,7 @@ class ScorerV3Adapter:
         resume_data: ResumeData,
         job_description: Optional[str] = None,
         level: str = "mid",
+        role: str = "software_engineer",
         **kwargs  # Accept but ignore other params for compatibility
     ) -> Dict[str, Any]:
         """
@@ -40,6 +41,7 @@ class ScorerV3Adapter:
             resume_data: Parsed resume data from API
             job_description: Raw job description text
             level: Experience level (entry/mid/senior/lead/executive)
+            role: Job role for default keyword matching (product_manager, software_engineer, etc.)
 
         Returns:
             Scoring result in API-compatible format
@@ -55,11 +57,12 @@ class ScorerV3Adapter:
         # Map experience level
         experience_level = self._map_experience_level(level)
 
-        # Score with ScorerV3
+        # Score with ScorerV3 (pass role for default keywords when no JD)
         result = self.scorer.score(
             resume_data=scorer_input,
             job_requirements=job_requirements,
-            experience_level=experience_level
+            experience_level=experience_level,
+            role=role  # Pass role for default keyword matching
         )
 
         # Convert result to API format
@@ -100,11 +103,15 @@ class ScorerV3Adapter:
                     if exp.get('location'):
                         experience_text.append(exp['location'])
 
-                    # Extract description as bullets
+                    # Extract description as text AND extract bullets from it
                     if exp.get('description'):
-                        experience_text.append(exp['description'])
+                        description = exp['description']
+                        experience_text.append(description)
+                        # CRITICAL FIX: Extract bullets from description
+                        # Most CVs have bullets in description, not separate achievements field
+                        bullets.extend(self._split_bullets(description))
 
-                    # Extract achievements as bullets
+                    # ALSO extract achievements as bullets if they exist separately
                     if exp.get('achievements'):
                         achievements = exp['achievements']
                         if isinstance(achievements, list):
@@ -184,13 +191,32 @@ class ScorerV3Adapter:
         if resume_data.metadata:
             file_format = resume_data.metadata.get('fileFormat', 'docx')
 
+        # Transform experience data for P5-P6 parameters
+        # P5/P6 expect 'dates' field (e.g., "2020 - Present"), but parser provides startDate/endDate
+        transformed_experience = []
+        if resume_data.experience:
+            for exp in resume_data.experience:
+                if isinstance(exp, dict):
+                    # Create a copy to avoid modifying original
+                    exp_copy = exp.copy()
+
+                    # Add 'dates' field if startDate/endDate exist
+                    start = exp.get('startDate', '')
+                    end = exp.get('endDate', '')
+                    if start or end:
+                        exp_copy['dates'] = f"{start} - {end}".strip(' -')
+                    else:
+                        exp_copy['dates'] = ''
+
+                    transformed_experience.append(exp_copy)
+
         return {
             'text': full_text,
             'sections': sections,
             'bullets': bullets,
             'page_count': page_count,
             'format': file_format,
-            'experience': resume_data.experience if resume_data.experience else [],  # For P5-P6 parameters
+            'experience': transformed_experience,  # For P5-P6 parameters
             'contact': resume_data.contact if resume_data.contact else {},  # For P4.2
             'docx_structure': None  # TODO: Add if needed for P3.4
         }
@@ -373,8 +399,9 @@ class ScorerV3Adapter:
         - mode: str
         - keyword_details: Optional[Dict]
         """
-        # Extract total score
-        overall_score = scorer_result['total_score']
+        # Use RAW score (not normalized) so breakdown matches overall
+        # User sees actual points earned, not normalized percentage
+        overall_score = scorer_result['raw_score']  # Changed from total_score to raw_score
 
         # Convert category scores to breakdown format
         breakdown = {}
@@ -446,7 +473,7 @@ class ScorerV3Adapter:
             'strengths': strengths,
             'mode': 'quality_coach',  # ScorerV3 is quality-focused
             'keyword_details': keyword_details,
-            'auto_reject': overall_score < 40,  # Auto-reject if score < 40
+            'auto_reject': scorer_result['total_score'] < 40,  # Use normalized score for auto-reject threshold
             'rating': scorer_result.get('rating', 'Fair'),
             'feedback': feedback,
             'version': scorer_result.get('version', 'v3.0')

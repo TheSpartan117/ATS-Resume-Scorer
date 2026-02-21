@@ -53,22 +53,28 @@ export default function UploadPage() {
     setError(null)
 
     try {
-      // Store original file in localStorage (PDF or DOCX)
-      const fileData = await selectedFile.arrayBuffer()
-      const bytes = new Uint8Array(fileData)
+      // Try to store original file in localStorage (PDF or DOCX) for later download
+      // This is optional - if it fails (e.g., quota exceeded), we continue anyway
+      try {
+        const fileData = await selectedFile.arrayBuffer()
+        const bytes = new Uint8Array(fileData)
 
-      // Convert to base64 in chunks to avoid stack overflow with large files
-      let base64 = ''
-      const chunkSize = 8192 // Process 8KB at a time
-      for (let i = 0; i < bytes.length; i += chunkSize) {
-        const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length))
-        base64 += String.fromCharCode(...chunk)
+        // Convert to base64 in chunks to avoid stack overflow with large files
+        let base64 = ''
+        const chunkSize = 8192 // Process 8KB at a time
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+          const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length))
+          base64 += String.fromCharCode(...chunk)
+        }
+        base64 = btoa(base64)
+
+        localStorage.setItem('uploaded-cv-file', base64)
+        localStorage.setItem('uploaded-cv-filename', selectedFile.name)
+        localStorage.setItem('uploaded-cv-type', selectedFile.type)
+      } catch (storageError) {
+        // localStorage failed (likely quota exceeded), but continue with upload
+        console.warn('Failed to store file in localStorage:', storageError)
       }
-      base64 = btoa(base64)
-
-      localStorage.setItem('uploaded-cv-file', base64)
-      localStorage.setItem('uploaded-cv-filename', selectedFile.name)
-      localStorage.setItem('uploaded-cv-type', selectedFile.type)
 
       const result: UploadResponse = await uploadResume(
         selectedFile,

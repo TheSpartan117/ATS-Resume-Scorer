@@ -6,7 +6,7 @@ import { useEffect } from 'react'
 import type { UploadResponse } from '../types/resume'
 import { ModeIndicator } from './ModeIndicator'
 import { DownloadMenu } from './DownloadMenu'
-import IssuesList from './IssuesList'
+import EnhancedResultsDisplay from './EnhancedResultsDisplay'
 import UserMenu from './UserMenu'
 
 export default function ResultsPage() {
@@ -149,12 +149,7 @@ export default function ResultsPage() {
               mode={result.scoringMode || result.score.mode || 'quality_coach'}
               score={result.score.overallScore}
               keywordDetails={result.score.keywordDetails}
-              breakdown={Object.fromEntries(
-                Object.entries(result.score.breakdown).map(([key, value]: [string, any]) => [
-                  key,
-                  typeof value === 'object' && 'score' in value ? value.score : value
-                ])
-              )}
+              breakdown={result.score.breakdown}
               autoReject={result.score.autoReject}
             />
 
@@ -203,7 +198,12 @@ export default function ResultsPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Issues List */}
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <IssuesList issues={result.score.issues} overallScore={result.score.overallScore} />
+              <EnhancedResultsDisplay
+                overallScore={result.score.overallScore}
+                breakdown={result.score.breakdown}
+                issues={result.score.issues}
+                strengths={result.score.strengths}
+              />
             </div>
 
             {/* Strengths */}

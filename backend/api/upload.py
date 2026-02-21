@@ -197,11 +197,12 @@ async def upload_resume(
             detail=f"Unable to read file. May be corrupted or password-protected: {str(e)}"
         )
 
-    # Check if resume is empty
-    if resume_data.metadata.get("wordCount", 0) < 50:
+    # Check if resume is empty (relaxed threshold)
+    word_count = resume_data.metadata.get("wordCount", 0)
+    if word_count < 20:
         raise HTTPException(
             status_code=400,
-            detail="Resume appears empty or unreadable"
+            detail=f"Resume appears empty or unreadable. Only {word_count} words detected. Please upload a properly formatted PDF or DOCX file."
         )
 
     # Save template and detect sections
@@ -268,10 +269,11 @@ async def upload_resume(
     scorer = ScorerV3Adapter()
 
     try:
-        logger.info(f"Calculating score with level={level_to_use}, mode={scoring_mode}")
+        logger.info(f"Calculating score with level={level_to_use}, role={role_to_use}, mode={scoring_mode}")
         score_result = scorer.score(
             resume_data=resume_data,
             level=level_to_use,
+            role=role_to_use,
             job_description=jobDescription
         )
         logger.info(f"Score calculated: {score_result.get('overallScore', 0)}")

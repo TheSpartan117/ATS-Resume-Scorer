@@ -1,29 +1,28 @@
 """
 P5.1 - Years of Experience Alignment (10 pts)
 
-Validates that resume experience years match selected experience level.
+Validates that resume experience years match selected experience level using gradient scoring.
 
 Research basis:
 - Experience level misalignment is a top reason for ATS rejection
-- Candidates listing 10+ years experience for "entry-level" positions get auto-rejected
-- Conversely, candidates with <5 years applying to "senior" roles rarely pass initial screen
-- Accurate experience alignment improves match quality and reduces wasted applications
+- However, relevant experience quality matters more than quantity
+- High-impact candidates with shorter but relevant experience should not be auto-rejected
+- Overlap between levels reflects real-world hiring practices
 
 Implementation:
 - Calculate total years from experience dates in resume
-- Compare against selected experience level expectations:
-  - Beginner: 0-3 years
-  - Intermediary: 3-7 years
-  - Senior: 7+ years
-- Scoring:
-  - 10 pts if years align with level
-  - 5 pts if close (within 1 year either direction)
-  - 0 pts if misaligned (completely outside range)
+- Use gradient scoring with overlap between levels:
+  - Beginner: 0-3 years ideal, up to 5 acceptable
+  - Intermediary: 3-7 years ideal, 1.5-10 acceptable with overlap
+  - Senior: 7+ years ideal, 5+ acceptable for strong experience, 3+ if high-impact
+- Scoring uses 2-10 point scale (never auto-rejects at 0)
+- Allows exceptional candidates to qualify with less traditional experience
 
 References:
 - LinkedIn Talent Insights (2024): Experience level filtering
 - Workday HCM: Experience range validation
 - Greenhouse ATS: Level-based screening criteria
+- ResumeWorded: Quality over quantity approach
 """
 
 from typing import Dict, List
@@ -38,15 +37,26 @@ class YearsAlignmentScorer:
     """
     Score resume based on years of experience alignment with selected level.
 
-    Scoring:
-    - 10 points: Years align with level range
-    - 5 points: Years close to range (within 1 year)
-    - 0 points: Years misaligned with level
+    Uses gradient scoring with overlap to reflect real-world hiring:
 
-    Experience Level Ranges:
-    - Beginner: 0-3 years
-    - Intermediary: 3-7 years
-    - Senior: 7+ years
+    Beginner (0-3 years ideal):
+    - 10 pts: 0-3.5 years
+    - 8 pts: 3.5-5 years (overlap with intermediary)
+    - 5 pts: 5-7 years
+    - 3 pts: 7+ years (overqualified)
+
+    Intermediary (3-7 years ideal):
+    - 10 pts: 2.5-8 years (allows overlap)
+    - 7 pts: 1.5-2.5 years
+    - 8 pts: 8-10 years
+    - 4-5 pts: outside range
+
+    Senior (7+ years ideal):
+    - 10 pts: 7+ years
+    - 8 pts: 5-7 years (strong intermediary)
+    - 6 pts: 3-5 years (high-impact acceptable)
+    - 4 pts: 2-3 years (relevant experience critical)
+    - 2 pts: <2 years
     """
 
     def __init__(self):
@@ -242,7 +252,12 @@ class YearsAlignmentScorer:
 
     def _check_alignment(self, years: float, expected_range: tuple, level: str) -> Dict:
         """
-        Check if years align with expected range.
+        Check if years align with expected range using gradient scoring.
+
+        Uses gradient scoring with overlap between levels to reflect real-world hiring:
+        - Relevant experience matters more than total years
+        - Exceptional candidates with shorter but relevant experience should not be auto-rejected
+        - Allows overlap between level boundaries
 
         Args:
             years: Calculated years
@@ -254,43 +269,77 @@ class YearsAlignmentScorer:
         """
         min_years, max_years = expected_range
 
-        # Perfect alignment: within range (with 0.5 year buffer for month precision at boundaries)
-        # This allows values like 3.1 to still count as perfect for beginner (0-3) range
-        if min_years <= years <= (max_years + 0.5):
-            return {
-                'score': 10,
-                'aligned': True,
-                'details': f'{years:.1f} years experience shows perfect alignment with {level} level ({min_years}-{max_years} years expected)'
-            }
+        # Gradient scoring based on level
+        if level.lower() == 'beginner':
+            # Beginner: 0-3 years ideal
+            if years <= 3.5:
+                score = 10  # Perfect
+                aligned = True
+                details = f'{years:.1f} years experience aligns well with {level} level'
+            elif years <= 5:
+                score = 8  # Still good, overlaps with intermediary
+                aligned = True
+                details = f'{years:.1f} years experience aligns with {level} level (acceptable overlap)'
+            elif years <= 7:
+                score = 5  # Getting experienced
+                aligned = False
+                details = f'{years:.1f} years experience suggests intermediary level'
+            else:
+                score = 3  # Overqualified
+                aligned = False
+                details = f'{years:.1f} years experience suggests senior level'
 
-        # Close alignment: within 1 year of range boundaries (with 0.5 year buffer for month precision)
-        if (min_years - 1.5) <= years < min_years:
-            return {
-                'score': 5,
-                'aligned': False,
-                'details': f'{years:.1f} years experience is close to {level} level (within 1 year of {min_years}-{max_years} years expected)'
-            }
+        elif level.lower() == 'intermediary':
+            # Intermediary: 3-7 years ideal
+            if 2.5 <= years <= 8:
+                score = 10  # Perfect fit with overlap
+                aligned = True
+                details = f'{years:.1f} years experience aligns well with {level} level'
+            elif 1.5 <= years < 2.5:
+                score = 7  # Junior but acceptable
+                aligned = True
+                details = f'{years:.1f} years experience is acceptable for {level} level'
+            elif 8 < years <= 10:
+                score = 8  # Senior but acceptable
+                aligned = True
+                details = f'{years:.1f} years experience is acceptable for {level} level'
+            elif years < 1.5:
+                score = 4  # Too junior
+                aligned = False
+                details = f'{years:.1f} years experience suggests beginner level'
+            else:
+                score = 5  # Too senior
+                aligned = False
+                details = f'{years:.1f} years experience suggests senior level'
 
-        if max_years < years <= (max_years + 1.5) and max_years < 90:  # Don't apply upper tolerance to senior
-            return {
-                'score': 5,
-                'aligned': False,
-                'details': f'{years:.1f} years experience is close to {level} level (within 1 year of {min_years}-{max_years} years expected)'
-            }
+        else:  # senior
+            # Senior: 7+ years ideal, but allow high-impact candidates with less
+            if years >= 7:
+                score = 10  # Perfect
+                aligned = True
+                details = f'{years:.1f} years experience aligns well with {level} level'
+            elif years >= 5:
+                score = 8  # Strong intermediary, acceptable for senior
+                aligned = True
+                details = f'{years:.1f} years experience is acceptable for {level} level (strong experience)'
+            elif years >= 3:
+                score = 6  # Intermediary, possible if high-impact
+                aligned = False
+                details = f'{years:.1f} years experience is below typical {level} level but acceptable for high-impact roles'
+            elif years >= 2:
+                score = 4  # Junior but don't auto-reject if relevant
+                aligned = False
+                details = f'{years:.1f} years experience is below {level} level expectations; ensure highly relevant experience'
+            else:
+                score = 2  # Very junior
+                aligned = False
+                details = f'{years:.1f} years experience is significantly below {level} level expectations'
 
-        # Misaligned: outside range and not close
-        if years < min_years:
-            return {
-                'score': 0,
-                'aligned': False,
-                'details': f'{years:.1f} years experience is below {level} level expectations ({min_years}-{max_years} years expected)'
-            }
-        else:
-            return {
-                'score': 0,
-                'aligned': False,
-                'details': f'{years:.1f} years experience exceeds {level} level expectations ({min_years}-{max_years} years expected)'
-            }
+        return {
+            'score': score,
+            'aligned': aligned,
+            'details': details
+        }
 
 
 def create_scorer() -> YearsAlignmentScorer:

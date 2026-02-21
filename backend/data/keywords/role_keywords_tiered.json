@@ -1,0 +1,480 @@
+{
+  "product_manager": {
+    "critical": {
+      "weight": 3.0,
+      "keywords": [
+        "roadmap",
+        "product strategy",
+        "PRD",
+        "product requirements",
+        "stakeholder management",
+        "user stories",
+        "prioritization",
+        "product vision",
+        "market research",
+        "competitive analysis",
+        "product lifecycle",
+        "go-to-market",
+        "product launch",
+        "MVP",
+        "product metrics",
+        "KPIs",
+        "OKRs",
+        "product analytics",
+        "A/B testing",
+        "user research"
+      ]
+    },
+    "high_value": {
+      "weight": 2.0,
+      "keywords": [
+        "agile",
+        "scrum",
+        "jira",
+        "confluence",
+        "product backlog",
+        "sprint planning",
+        "user interviews",
+        "wireframing",
+        "prototyping",
+        "Figma",
+        "Sketch",
+        "SQL",
+        "analytics tools",
+        "Google Analytics",
+        "Mixpanel",
+        "Amplitude",
+        "data analysis",
+        "customer feedback",
+        "product design",
+        "UX",
+        "feature prioritization",
+        "technical specifications",
+        "API",
+        "cross-functional",
+        "engineering collaboration"
+      ]
+    },
+    "medium": {
+      "weight": 1.0,
+      "keywords": [
+        "presentations",
+        "documentation",
+        "communication",
+        "project management",
+        "Microsoft Office",
+        "PowerPoint",
+        "Excel",
+        "Slack",
+        "Asana",
+        "Trello",
+        "team collaboration",
+        "meeting facilitation",
+        "problem solving",
+        "requirements gathering",
+        "business analysis",
+        "process improvement"
+      ]
+    }
+  },
+  "senior_product_manager": {
+    "critical": {
+      "weight": 3.0,
+      "keywords": [
+        "product strategy",
+        "roadmap planning",
+        "stakeholder management",
+        "leadership",
+        "team management",
+        "mentoring",
+        "vision",
+        "strategic planning",
+        "business case",
+        "ROI analysis",
+        "P&L",
+        "revenue growth",
+        "market expansion",
+        "product portfolio",
+        "executive communication",
+        "board presentations",
+        "product-led growth",
+        "north star metric",
+        "growth strategy",
+        "market positioning"
+      ]
+    },
+    "high_value": {
+      "weight": 2.0,
+      "keywords": [
+        "PRD",
+        "product requirements",
+        "OKRs",
+        "KPIs",
+        "data-driven decisions",
+        "customer insights",
+        "competitive intelligence",
+        "pricing strategy",
+        "go-to-market strategy",
+        "product analytics",
+        "user research",
+        "experimentation",
+        "A/B testing",
+        "agile",
+        "scrum master",
+        "API design",
+        "technical architecture",
+        "scalability",
+        "cross-functional leadership"
+      ]
+    },
+    "medium": {
+      "weight": 1.0,
+      "keywords": [
+        "Jira",
+        "Confluence",
+        "Figma",
+        "SQL",
+        "analytics",
+        "presentations",
+        "documentation",
+        "Slack",
+        "project management",
+        "team collaboration",
+        "agile methodologies"
+      ]
+    }
+  },
+  "software_engineer": {
+    "critical": {
+      "weight": 3.0,
+      "keywords": [
+        "Python",
+        "Java",
+        "JavaScript",
+        "TypeScript",
+        "C++",
+        "Go",
+        "Rust",
+        "system design",
+        "architecture",
+        "scalability",
+        "performance optimization",
+        "algorithms",
+        "data structures",
+        "distributed systems",
+        "microservices",
+        "REST API",
+        "GraphQL",
+        "database design",
+        "cloud architecture"
+      ]
+    },
+    "high_value": {
+      "weight": 2.0,
+      "keywords": [
+        "AWS",
+        "Azure",
+        "GCP",
+        "Docker",
+        "Kubernetes",
+        "CI/CD",
+        "Jenkins",
+        "GitHub Actions",
+        "React",
+        "Angular",
+        "Vue.js",
+        "Node.js",
+        "PostgreSQL",
+        "MongoDB",
+        "Redis",
+        "Kafka",
+        "testing",
+        "TDD",
+        "code review",
+        "agile"
+      ]
+    },
+    "medium": {
+      "weight": 1.0,
+      "keywords": [
+        "Git",
+        "Jira",
+        "debugging",
+        "troubleshooting",
+        "documentation",
+        "pair programming",
+        "collaboration",
+        "Scrum",
+        "Linux",
+        "bash",
+        "SQL"
+      ]
+    }
+  },
+  "senior_software_engineer": {
+    "critical": {
+      "weight": 3.0,
+      "keywords": [
+        "system architecture",
+        "distributed systems",
+        "microservices architecture",
+        "scalability",
+        "performance tuning",
+        "high availability",
+        "fault tolerance",
+        "technical leadership",
+        "code review",
+        "mentoring",
+        "design patterns",
+        "SOLID principles",
+        "refactoring",
+        "technical debt",
+        "architecture decisions",
+        "API design",
+        "database optimization",
+        "caching strategies",
+        "load balancing",
+        "security best practices"
+      ]
+    },
+    "high_value": {
+      "weight": 2.0,
+      "keywords": [
+        "cloud architecture",
+        "AWS",
+        "Kubernetes",
+        "Docker",
+        "CI/CD pipelines",
+        "DevOps",
+        "observability",
+        "monitoring",
+        "logging",
+        "tracing",
+        "Prometheus",
+        "Grafana",
+        "event-driven architecture",
+        "message queues",
+        "Kafka",
+        "RabbitMQ",
+        "testing strategies",
+        "integration testing",
+        "E2E testing",
+        "Python",
+        "Java",
+        "Go",
+        "TypeScript"
+      ]
+    },
+    "medium": {
+      "weight": 1.0,
+      "keywords": [
+        "agile",
+        "Scrum",
+        "Jira",
+        "Git",
+        "code documentation",
+        "technical writing",
+        "pair programming",
+        "collaboration",
+        "stakeholder communication"
+      ]
+    }
+  },
+  "ui_ux_designer": {
+    "critical": {
+      "weight": 3.0,
+      "keywords": [
+        "user research",
+        "user interviews",
+        "usability testing",
+        "user personas",
+        "user journey mapping",
+        "wireframing",
+        "prototyping",
+        "interaction design",
+        "information architecture",
+        "design systems",
+        "design thinking",
+        "user flows",
+        "accessibility",
+        "responsive design",
+        "mobile design",
+        "visual design",
+        "typography",
+        "color theory",
+        "Figma",
+        "Sketch"
+      ]
+    },
+    "high_value": {
+      "weight": 2.0,
+      "keywords": [
+        "Adobe XD",
+        "InVision",
+        "Principle",
+        "Framer",
+        "A/B testing",
+        "analytics",
+        "heatmaps",
+        "user testing",
+        "design sprints",
+        "agile",
+        "collaboration",
+        "stakeholder presentations",
+        "design critique",
+        "HTML",
+        "CSS",
+        "design handoff",
+        "Zeplin",
+        "Abstract"
+      ]
+    },
+    "medium": {
+      "weight": 1.0,
+      "keywords": [
+        "Photoshop",
+        "Illustrator",
+        "presentations",
+        "documentation",
+        "Slack",
+        "Jira",
+        "Confluence",
+        "team collaboration",
+        "brainstorming",
+        "design workshops"
+      ]
+    }
+  },
+  "data_scientist": {
+    "critical": {
+      "weight": 3.0,
+      "keywords": [
+        "machine learning",
+        "deep learning",
+        "neural networks",
+        "statistical modeling",
+        "predictive modeling",
+        "feature engineering",
+        "model evaluation",
+        "Python",
+        "R",
+        "SQL",
+        "data analysis",
+        "data visualization",
+        "A/B testing",
+        "hypothesis testing",
+        "regression",
+        "classification",
+        "clustering",
+        "time series analysis",
+        "NLP",
+        "computer vision"
+      ]
+    },
+    "high_value": {
+      "weight": 2.0,
+      "keywords": [
+        "TensorFlow",
+        "PyTorch",
+        "scikit-learn",
+        "pandas",
+        "NumPy",
+        "Jupyter",
+        "Spark",
+        "Hadoop",
+        "AWS SageMaker",
+        "Azure ML",
+        "data pipelines",
+        "ETL",
+        "big data",
+        "data warehousing",
+        "Tableau",
+        "Power BI",
+        "Looker",
+        "Git",
+        "Docker",
+        "API integration"
+      ]
+    },
+    "medium": {
+      "weight": 1.0,
+      "keywords": [
+        "Excel",
+        "data cleaning",
+        "data preprocessing",
+        "exploratory data analysis",
+        "presentations",
+        "stakeholder communication",
+        "agile",
+        "documentation",
+        "collaboration"
+      ]
+    }
+  },
+  "marketing_manager": {
+    "critical": {
+      "weight": 3.0,
+      "keywords": [
+        "marketing strategy",
+        "brand strategy",
+        "campaign management",
+        "digital marketing",
+        "content marketing",
+        "SEO",
+        "SEM",
+        "social media marketing",
+        "email marketing",
+        "marketing analytics",
+        "ROI analysis",
+        "customer acquisition",
+        "lead generation",
+        "conversion optimization",
+        "marketing automation",
+        "growth marketing",
+        "performance marketing",
+        "market research",
+        "competitive analysis",
+        "GTM strategy"
+      ]
+    },
+    "high_value": {
+      "weight": 2.0,
+      "keywords": [
+        "Google Analytics",
+        "Google Ads",
+        "Facebook Ads",
+        "LinkedIn Ads",
+        "HubSpot",
+        "Marketo",
+        "Salesforce",
+        "CRM",
+        "A/B testing",
+        "landing pages",
+        "funnel optimization",
+        "budget management",
+        "stakeholder management",
+        "cross-functional collaboration",
+        "content strategy",
+        "copywriting",
+        "brand management",
+        "PR",
+        "event marketing"
+      ]
+    },
+    "medium": {
+      "weight": 1.0,
+      "keywords": [
+        "PowerPoint",
+        "Excel",
+        "Canva",
+        "project management",
+        "team leadership",
+        "presentations",
+        "reporting",
+        "Slack",
+        "Asana",
+        "agile"
+      ]
+    }
+  }
+}

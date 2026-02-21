@@ -1,19 +1,23 @@
 """
 Scorer V3 - Comprehensive ATS Resume Scorer with Full Parameter Integration
 
-Integrates all 11 core scoring parameters (P1.1-P4.2) for production-ready
-resume evaluation based on 4+ days of ATS research.
+Integrates all 23 scoring parameters (P1.1-P7.3) for production-ready
+resume evaluation based on 4+ days of ATS research + Phase 1 enhancements.
 
-Total: 100 points across 4 categories:
-- Keyword Matching (35pts): P1.1-P1.2
-- Content Quality (30pts): P2.1-P2.3
-- Format & Structure (20pts): P3.1-P3.4
-- Professional Polish (15pts): P4.1-P4.2
+Total: 100 points across 7 categories:
+- Keyword Matching (25pts): P1.1-P1.2
+- Content Quality (35pts): P2.1-P2.5 (includes CAR Framework + Impact Scope)
+- Format & Structure (15pts): P3.1-P3.4
+- Professional Polish (10pts): P4.1-P4.2
+- Experience Validation (10pts): P5.1-P5.3
+- Red Flags (0pts, penalties only): P6.1-P6.4
+- Readability (5pts): P7.1-P7.3
 
 Research Foundation:
 - Workday (60% keyword threshold)
 - Greenhouse, Lever, LinkedIn standards
-- ResumeWorded benchmarks
+- ResumeWorded benchmarks (CAR framework scoring)
+- Jobscan achievement analysis
 - Industry best practices
 """
 
@@ -47,7 +51,8 @@ class ScorerV3:
         self,
         resume_data: Dict[str, Any],
         job_requirements: Optional[Dict[str, Any]] = None,
-        experience_level: str = "intermediary"
+        experience_level: str = "intermediary",
+        role: str = "software_engineer"
     ) -> Dict[str, Any]:
         """
         Score a resume across all parameters.
@@ -78,13 +83,13 @@ class ScorerV3:
         # Initialize results structure
         parameter_results = {}
         category_scores = {
-            'Keyword Matching': {'score': 0, 'max': 35, 'parameters': {}},
-            'Content Quality': {'score': 0, 'max': 30, 'parameters': {}},
-            'Format & Structure': {'score': 0, 'max': 20, 'parameters': {}},
-            'Professional Polish': {'score': 0, 'max': 15, 'parameters': {}},
-            'Experience Validation': {'score': 0, 'max': 15, 'parameters': {}},
+            'Keyword Matching': {'score': 0, 'max': 25, 'parameters': {}},
+            'Content Quality': {'score': 0, 'max': 35, 'parameters': {}},
+            'Format & Structure': {'score': 0, 'max': 15, 'parameters': {}},
+            'Professional Polish': {'score': 0, 'max': 10, 'parameters': {}},
+            'Experience Validation': {'score': 0, 'max': 10, 'parameters': {}},
             'Red Flags': {'score': 0, 'max': 0, 'parameters': {}},  # Penalties only
-            'Readability': {'score': 0, 'max': 10, 'parameters': {}}
+            'Readability': {'score': 0, 'max': 5, 'parameters': {}}
         }
 
         # Score all parameters
@@ -97,7 +102,8 @@ class ScorerV3:
                     param_info,
                     resume_data,
                     job_requirements,
-                    experience_level
+                    experience_level,
+                    role  # Pass role for default keyword matching
                 )
 
                 parameter_results[code] = result
@@ -108,7 +114,7 @@ class ScorerV3:
                 category_scores[category]['parameters'][code] = result
 
             except Exception as e:
-                # Handle scoring errors gracefully
+                # Handle scoring errors gracefully (log but don't crash)
                 parameter_results[code] = {
                     'score': 0,
                     'max_score': param_info['max_score'],
@@ -118,11 +124,27 @@ class ScorerV3:
                     'details': {}
                 }
 
-        # Calculate total score
-        total_score = sum(
+        # Calculate total score and available maximum
+        raw_score = sum(
             category['score']
             for category in category_scores.values()
         )
+
+        # Calculate max available points (exclude skipped parameters)
+        max_available = 0
+        for code, result in parameter_results.items():
+            if result.get('status') != 'skipped':
+                max_available += result.get('max_score', 0)
+
+        # Normalize to 100-point scale based on available points
+        # If max_available is 0, default to 100 to avoid division by zero
+        if max_available > 0:
+            # Scale the score: (raw_score / max_available) * 100
+            total_score = (raw_score / max_available) * 100
+            # Cap at 100 (some parameters can give bonuses)
+            total_score = min(total_score, 100)
+        else:
+            total_score = 0
 
         # Determine overall rating
         rating = self._calculate_rating(total_score)
@@ -137,7 +159,9 @@ class ScorerV3:
         return {
             'total_score': round(total_score, 1),
             'max_score': 100,
-            'percentage': round((total_score / 100) * 100, 1),
+            'raw_score': round(raw_score, 1),
+            'max_available': max_available,
+            'percentage': round(total_score, 1),
             'rating': rating,
             'experience_level': experience_level,
             'category_scores': category_scores,
@@ -152,34 +176,46 @@ class ScorerV3:
         param_info: Dict[str, Any],
         resume_data: Dict[str, Any],
         job_requirements: Optional[Dict[str, Any]],
-        experience_level: str
+        experience_level: str,
+        role: str = "software_engineer"
     ) -> Dict[str, Any]:
         """
         Score a single parameter.
 
         Routes to appropriate scorer method based on parameter code.
+        Uses role for default keyword matching when no JD provided.
         """
         scorer = self.scorers[code]
         max_score = param_info['max_score']
 
         # P1.1: Required Keywords Match (25pts)
         if code == 'P1.1':
+            # Use role-specific default keywords if no JD provided
             if not job_requirements or 'required_keywords' not in job_requirements:
-                return self._missing_data_result(max_score, 'No required keywords provided')
+                from backend.services.role_keywords import get_role_keywords
+                role_keywords = get_role_keywords(role)
+                keywords = role_keywords['required']
+            else:
+                keywords = job_requirements['required_keywords']
 
             result = scorer.score(
-                keywords=job_requirements['required_keywords'],
+                keywords=keywords,
                 resume_text=resume_data.get('text', ''),
                 level=experience_level
             )
 
         # P1.2: Preferred Keywords Match (10pts)
         elif code == 'P1.2':
+            # Use role-specific default keywords if no JD provided
             if not job_requirements or 'preferred_keywords' not in job_requirements:
-                return self._missing_data_result(max_score, 'No preferred keywords provided')
+                from backend.services.role_keywords import get_role_keywords
+                role_keywords = get_role_keywords(role)
+                preferred = role_keywords['preferred']
+            else:
+                preferred = job_requirements['preferred_keywords']
 
             result = scorer.score(
-                preferred_keywords=job_requirements['preferred_keywords'],
+                preferred_keywords=preferred,
                 resume_text=resume_data.get('text', ''),
                 experience_level=experience_level
             )
@@ -208,6 +244,22 @@ class ScorerV3:
 
             result = scorer.score(bullets=bullets)
 
+        # P2.4: CAR/STAR Framework (15pts)
+        elif code == 'P2.4':
+            bullets = resume_data.get('bullets', [])
+            if not bullets:
+                return self._missing_data_result(max_score, 'No bullet points found')
+
+            result = scorer.score(bullets=bullets, level=experience_level)
+
+        # P2.5: Impact Scope (10pts)
+        elif code == 'P2.5':
+            bullets = resume_data.get('bullets', [])
+            if not bullets:
+                return self._missing_data_result(max_score, 'No bullet points found')
+
+            result = scorer.score(bullets=bullets)
+
         # P3.1: Page Count (5pts)
         elif code == 'P3.1':
             page_count = resume_data.get('page_count', 0)
@@ -218,15 +270,12 @@ class ScorerV3:
 
         # P3.2: Word Count (3pts)
         elif code == 'P3.2':
-            # Can score from sections or raw text
-            if 'sections' in resume_data:
-                result = scorer.score_from_sections(
-                    sections=resume_data['sections'],
-                    level=experience_level
-                )
-            else:
-                text = resume_data.get('text', '')
-                result = scorer.score(content=text, level=experience_level)
+            # Use full text for accurate word count (includes all sections + contact)
+            text = resume_data.get('text', '')
+            if not text:
+                return self._missing_data_result(max_score, 'No text provided')
+
+            result = scorer.score(content=text, level=experience_level)
 
         # P3.3: Section Balance (5pts)
         elif code == 'P3.3':
@@ -351,11 +400,14 @@ class ScorerV3:
         else:
             return self._missing_data_result(max_score, f'Unknown parameter: {code}')
 
-        # Standardize result format
+        # Standardize result format and CAP score at registry max
+        raw_score = result.get('score', 0)
+        capped_score = min(raw_score, max_score)  # CRITICAL: Cap at registry max
+
         return {
-            'score': result.get('score', 0),
+            'score': capped_score,
             'max_score': max_score,
-            'percentage': round((result.get('score', 0) / max_score) * 100, 1) if max_score > 0 else 0,
+            'percentage': round((capped_score / max_score) * 100, 1) if max_score > 0 else 0,
             'status': 'success',
             'details': result
         }

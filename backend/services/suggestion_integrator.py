@@ -73,10 +73,14 @@ class SuggestionIntegrator:
         missing = []
 
         # From keyword_details in ATS mode
-        keyword_details = score_result.get('keyword_details', {})
+        keyword_details = score_result.get('keyword_details')
 
-        if 'missing_keywords' in keyword_details:
-            missing.extend(keyword_details['missing_keywords'])
+        # Check if keyword_details exists and is not None
+        if keyword_details and isinstance(keyword_details, dict):
+            if 'missing_keywords' in keyword_details:
+                missing.extend(keyword_details['missing_keywords'])
+            elif 'missingKeywords' in keyword_details:
+                missing.extend(keyword_details['missingKeywords'])
 
         # From breakdown issues
         for category, data in score_result.get('breakdown', {}).items():
