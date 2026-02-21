@@ -1,18 +1,21 @@
 """
 Section Balance Analyzer
 
-Detects keyword stuffing and poor section balance by analyzing resume section proportions.
+Detects disproportionate resume sections indicating:
+- Keyword stuffing (Skills section >25%)
+- Insufficient detail (Experience section <40%)
+- Verbosity (Summary section >15%)
 
 Research basis:
-- Greenhouse ATS: Skills sections >25% flagged as keyword stuffing
-- ResumeWorded: Ideal resume is 50-60% experience, <25% skills, <15% summary
-- Career coaches: Experience should dominate (40%+ minimum)
+- ResumeWorded analysis: Top resumes have 50-60% experience, <25% skills
+- ATS systems flag keyword stuffing when skills section dominates
+- Career coaches recommend 10-15% max for summary/objective
 
 Penalty structure:
-- Skills section >25%: -2 points (keyword stuffing indicator)
-- Experience section <40%: -2 points (insufficient detail)
-- Summary section >15%: -1 point (too verbose)
-- Maximum cumulative penalty: -5 points
+- Skills >25%: -2 pts (keyword stuffing)
+- Experience <40%: -2 pts (insufficient detail)
+- Summary >15%: -1 pt (too verbose)
+- Maximum penalty: -5 pts total
 """
 
 from typing import Dict, List
@@ -20,172 +23,156 @@ from typing import Dict, List
 
 class SectionBalanceAnalyzer:
     """
-    Analyze resume section balance to detect keyword stuffing and poor structure.
+    Analyze resume section balance to detect imbalances.
 
-    Ideal proportions:
-    - Experience: 50-60% (minimum 40%)
-    - Skills: 15-20% (maximum 25%)
-    - Education: 10-15%
-    - Summary: 5-10% (maximum 15%)
+    Thresholds:
+    - Experience: Should be 40-60% of resume
+    - Skills: Should be <25% of resume
+    - Summary: Should be <15% of resume
     """
 
-    # Thresholds for penalties
+    # Section balance thresholds
     THRESHOLDS = {
         'experience': {
-            'min': 40.0,  # Below this: -2 points
-            'ideal_min': 50.0,
-            'ideal_max': 60.0,
-            'penalty': -2
+            'min': 40,  # Below 40% = insufficient detail
+            'max': 100,
+            'penalty_below': -2
         },
         'skills': {
-            'max': 25.0,  # Above this: -2 points
-            'ideal_max': 20.0,
-            'penalty': -2
+            'min': 0,
+            'max': 25,  # Above 25% = keyword stuffing
+            'penalty_above': -2
         },
         'summary': {
-            'max': 15.0,  # Above this: -1 point
-            'ideal_max': 10.0,
-            'penalty': -1
+            'min': 0,
+            'max': 15,  # Above 15% = too verbose
+            'penalty_above': -1
         }
     }
 
     MAX_PENALTY = -5
 
     def __init__(self):
-        """Initialize analyzer with thresholds."""
+        """Initialize analyzer with default thresholds."""
         pass
 
-    def _calculate_percentages(self, sections: Dict[str, int]) -> Dict[str, float]:
+    def _get_section_percentage(self, sections: Dict, section_name: str) -> float:
         """
-        Calculate percentage of total for each section.
+        Calculate what percentage of resume a section represents.
 
         Args:
-            sections: Dict mapping section name to word/character count
+            sections: Dict of section_name -> {'content': str, 'word_count': int}
+            section_name: Name of section to calculate percentage for
 
         Returns:
-            Dict mapping section name to percentage (0-100)
+            Percentage (0-100)
         """
-        total = sum(sections.values())
+        if section_name not in sections:
+            return 0.0
 
-        if total == 0:
-            return {section: 0.0 for section in sections}
+        total_words = sum(sec.get('word_count', 0) for sec in sections.values())
 
-        percentages = {}
-        for section, count in sections.items():
-            percentages[section] = (count / total) * 100.0
+        if total_words == 0:
+            return 0.0
 
-        return percentages
+        section_words = sections[section_name].get('word_count', 0)
 
-    def _check_violations(self, percentages: Dict[str, float]) -> List[Dict]:
+        return (section_words / total_words) * 100
+
+    def _check_section(self, section_name: str, percentage: float) -> Dict:
         """
-        Check for section balance violations.
+        Check if a section violates balance thresholds.
 
         Args:
-            percentages: Section percentages
-
-        Returns:
-            List of violation dictionaries
-        """
-        violations = []
-
-        # Check experience section (too small)
-        if 'experience' in percentages:
-            exp_pct = percentages['experience']
-            exp_threshold = self.THRESHOLDS['experience']
-
-            if exp_pct < exp_threshold['min']:
-                violations.append({
-                    'section': 'experience',
-                    'actual_percentage': exp_pct,
-                    'threshold': f">={exp_threshold['min']}%",
-                    'penalty': exp_threshold['penalty'],
-                    'message': f"Experience section is {exp_pct:.1f}% (should be >={exp_threshold['min']}%)"
-                })
-
-        # Check skills section (too large - keyword stuffing indicator)
-        if 'skills' in percentages:
-            skills_pct = percentages['skills']
-            skills_threshold = self.THRESHOLDS['skills']
-
-            if skills_pct > skills_threshold['max']:
-                violations.append({
-                    'section': 'skills',
-                    'actual_percentage': skills_pct,
-                    'threshold': f"<={skills_threshold['max']}%",
-                    'penalty': skills_threshold['penalty'],
-                    'message': f"Skills section is {skills_pct:.1f}% (should be <={skills_threshold['max']}%) - possible keyword stuffing"
-                })
-
-        # Check summary section (too large - too verbose)
-        if 'summary' in percentages:
-            summary_pct = percentages['summary']
-            summary_threshold = self.THRESHOLDS['summary']
-
-            if summary_pct > summary_threshold['max']:
-                violations.append({
-                    'section': 'summary',
-                    'actual_percentage': summary_pct,
-                    'threshold': f"<={summary_threshold['max']}%",
-                    'penalty': summary_threshold['penalty'],
-                    'message': f"Summary section is {summary_pct:.1f}% (should be <={summary_threshold['max']}%) - too verbose"
-                })
-
-        return violations
-
-    def analyze(self, sections: Dict[str, int]) -> Dict:
-        """
-        Analyze section balance and calculate penalties.
-
-        Args:
-            sections: Dict mapping section name to word/character count
-                     e.g., {'experience': 500, 'skills': 200, 'education': 150, 'summary': 150}
+            section_name: Name of section
+            percentage: Percentage of resume this section represents
 
         Returns:
             {
-                'section_percentages': Dict[str, float],
-                'violations': List[Dict],
+                'section': str,
+                'percentage': float,
+                'issue': str (description),
+                'penalty': int
+            } or None if no issue
+        """
+        if section_name not in self.THRESHOLDS:
+            return None
+
+        threshold = self.THRESHOLDS[section_name]
+
+        # Check if below minimum
+        if 'min' in threshold and 'penalty_below' in threshold:
+            if percentage < threshold['min']:
+                return {
+                    'section': section_name,
+                    'percentage': percentage,
+                    'issue': f"{section_name.capitalize()} section too small ({percentage:.1f}% < {threshold['min']}%)",
+                    'penalty': threshold['penalty_below']
+                }
+
+        # Check if above maximum
+        if 'max' in threshold and 'penalty_above' in threshold:
+            if percentage > threshold['max']:
+                return {
+                    'section': section_name,
+                    'percentage': percentage,
+                    'issue': f"{section_name.capitalize()} section too large ({percentage:.1f}% > {threshold['max']}%)",
+                    'penalty': threshold['penalty_above']
+                }
+
+        return None
+
+    def analyze(self, sections: Dict) -> Dict:
+        """
+        Analyze section balance and return penalty assessment.
+
+        Args:
+            sections: Dict of section_name -> {'content': str, 'word_count': int}
+
+        Returns:
+            {
                 'penalty_score': int (0 to -5),
-                'is_balanced': bool,
+                'issues': List[Dict] (details of imbalances),
+                'section_percentages': Dict[str, float],
+                'total_words': int,
                 'max_penalty': int (-5)
             }
         """
         if not sections:
             return {
-                'section_percentages': {},
-                'violations': [],
                 'penalty_score': 0,
-                'is_balanced': True,
+                'issues': [],
+                'section_percentages': {},
+                'total_words': 0,
                 'max_penalty': self.MAX_PENALTY
             }
 
-        # Calculate percentages
-        percentages = self._calculate_percentages(sections)
+        # Calculate percentages for all sections
+        section_percentages = {}
+        for section_name in sections.keys():
+            section_percentages[section_name] = self._get_section_percentage(sections, section_name)
 
-        # Check for violations
-        violations = self._check_violations(percentages)
+        # Check each section against thresholds
+        issues = []
+        total_penalty = 0
 
-        # Calculate total penalty (with cap)
-        total_penalty = sum(v['penalty'] for v in violations)
+        for section_name, percentage in section_percentages.items():
+            issue = self._check_section(section_name, percentage)
+            if issue:
+                issues.append(issue)
+                total_penalty += issue['penalty']
+
+        # Apply penalty cap
         penalty_score = max(total_penalty, self.MAX_PENALTY)
 
-        # Determine if balanced
-        is_balanced = len(violations) == 0
+        total_words = sum(sec.get('word_count', 0) for sec in sections.values())
 
         return {
-            'section_percentages': percentages,
-            'violations': violations,
             'penalty_score': penalty_score,
-            'is_balanced': is_balanced,
+            'issues': issues,
+            'section_percentages': section_percentages,
+            'total_words': total_words,
             'max_penalty': self.MAX_PENALTY
-        }
-
-    def get_ideal_balance(self) -> Dict[str, str]:
-        """Get ideal section balance guidelines."""
-        return {
-            'experience': '50-60% (minimum 40%)',
-            'skills': '15-20% (maximum 25%)',
-            'education': '10-15%',
-            'summary': '5-10% (maximum 15%)'
         }
 
 
