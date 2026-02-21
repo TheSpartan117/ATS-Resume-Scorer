@@ -21,19 +21,19 @@ from typing import Dict, Any, Union
 class WordCountScorer:
     """Scores resume word count based on experience level."""
 
-    # Level-specific ranges
+    # Level-specific ranges (more lenient to avoid penalizing good CVs)
     LEVEL_RANGES = {
         'beginner': {
-            'optimal': (300, 400),
-            'acceptable': (250, 500)
+            'optimal': (250, 450),
+            'acceptable': (200, 550)
         },
         'intermediary': {
-            'optimal': (400, 600),
-            'acceptable': (300, 700)
+            'optimal': (350, 650),
+            'acceptable': (250, 750)
         },
         'senior': {
-            'optimal': (500, 700),
-            'acceptable': (400, 800)
+            'optimal': (400, 750),  # Lowered from 500 to accommodate compact professional CVs
+            'acceptable': (350, 850)
         }
     }
 

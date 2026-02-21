@@ -6,12 +6,17 @@ Uses QuantificationClassifier to assess metric quality (HIGH/MEDIUM/LOW).
 
 Scoring Formula:
 - Weighted Rate = (HIGH_count * 1.0 + MEDIUM_count * 0.7 + LOW_count * 0.3) / total_bullets * 100%
-- Points awarded based on level-specific thresholds
+- Points awarded based on tiered thresholds (applies to all experience levels)
 
-Level-Specific Thresholds:
-- Beginner: ≥30% = 10 pts, ≥20% = 6 pts
-- Intermediary: ≥50% = 10 pts, ≥35% = 6 pts
-- Senior: ≥60% = 10 pts, ≥45% = 6 pts
+Tiered Scoring Thresholds:
+- ≥80% weighted = 10 pts (excellent - mostly HIGH-value metrics)
+- ≥60% weighted = 8 pts (very good - strong mix of HIGH/MEDIUM)
+- ≥40% weighted = 6 pts (good - decent quantification with quality)
+- ≥25% weighted = 4 pts (fair - some quantification present)
+- ≥10% weighted = 2 pts (weak - minimal quantification)
+- <10% weighted = 0-2 pts (very weak - linear scaling)
+
+Interpolation: Linear scoring between tier boundaries for smooth gradation
 
 Research Basis:
 - ResumeWorded: 70%+ quantification for senior roles
@@ -36,7 +41,7 @@ class QuantificationScorer:
 
     def __init__(self):
         self.classifier = QuantificationClassifier()
-        self.max_score = 10
+        self.max_score = 10  # Registry max is 10 pts
 
     def score(self, bullets: List[str], level: str) -> Dict[str, Any]:
         """
@@ -48,7 +53,7 @@ class QuantificationScorer:
 
         Returns:
             {
-                'score': int (0-10),
+                'score': float (0-10),
                 'max_score': int (10),
                 'weighted_quantification_rate': float (0-100),
                 'quantified_count': int,
@@ -117,9 +122,9 @@ class QuantificationScorer:
             'level': level
         }
 
-    def _calculate_score(self, weighted_rate: float, level: str, thresholds: Dict) -> int:
+    def _calculate_score(self, weighted_rate: float, level: str, thresholds: Dict) -> float:
         """
-        Calculate score based on weighted quantification rate and level.
+        Calculate score based on weighted quantification rate using tiered thresholds.
 
         Args:
             weighted_rate: Weighted quantification rate (0-100)
@@ -127,30 +132,34 @@ class QuantificationScorer:
             thresholds: Level-specific threshold configuration
 
         Returns:
-            Score from 0-10
+            Score from 0-10 (tiered scoring)
         """
-        # Get level-specific thresholds
-        if level.lower() == 'beginner':
-            excellent_threshold = 30.0
-            good_threshold = 20.0
-        elif level.lower() == 'intermediary':
-            excellent_threshold = 50.0
-            good_threshold = 35.0
-        elif level.lower() == 'senior':
-            excellent_threshold = 60.0
-            good_threshold = 45.0
-        else:
-            # Default to intermediary
-            excellent_threshold = 50.0
-            good_threshold = 35.0
+        # Tiered scoring based on weighted quantification rate
+        # Rewards quality quantification more generously than linear scaling
 
-        # Award points based on thresholds
-        if weighted_rate >= excellent_threshold:
-            return 10
-        elif weighted_rate >= good_threshold:
-            return 6
+        if weighted_rate >= 80.0:
+            # Excellent - mostly HIGH-value metrics
+            return 10.0
+        elif weighted_rate >= 60.0:
+            # Very good - strong mix of HIGH/MEDIUM metrics
+            # Linear interpolation between 60% (8pts) and 80% (10pts)
+            return 8.0 + ((weighted_rate - 60.0) / 20.0) * 2.0
+        elif weighted_rate >= 40.0:
+            # Good - decent quantification with some quality
+            # Linear interpolation between 40% (6pts) and 60% (8pts)
+            return 6.0 + ((weighted_rate - 40.0) / 20.0) * 2.0
+        elif weighted_rate >= 25.0:
+            # Fair - some quantification present
+            # Linear interpolation between 25% (4pts) and 40% (6pts)
+            return 4.0 + ((weighted_rate - 25.0) / 15.0) * 2.0
+        elif weighted_rate >= 10.0:
+            # Weak - minimal quantification
+            # Linear interpolation between 10% (2pts) and 25% (4pts)
+            return 2.0 + ((weighted_rate - 10.0) / 15.0) * 2.0
         else:
-            return 0
+            # Very weak - almost no quantification
+            # Linear scaling from 0% (0pts) to 10% (2pts)
+            return (weighted_rate / 10.0) * 2.0
 
     def _generate_feedback(
         self,
@@ -198,25 +207,35 @@ class QuantificationScorer:
                 f"{low_count} LOW-value (bare numbers)."
             )
 
-        # Performance assessment
-        if score == 10:
+        # Performance assessment (tiered scoring)
+        if weighted_rate >= 80.0:
             feedback_parts.append(
-                f"\nExcellent quantification! Your {weighted_rate:.1f}% rate meets "
-                f"{level} standards (≥{excellent_threshold}%)."
+                f"\nExcellent quantification! Your {weighted_rate:.1f}% weighted rate shows "
+                f"strong use of HIGH-value metrics (%, $, multipliers)."
             )
-        elif score == 6:
+        elif weighted_rate >= 60.0:
             feedback_parts.append(
-                f"\nGood quantification at {weighted_rate:.1f}%, but can improve. "
-                f"Aim for {excellent_threshold}% weighted rate to reach full points for {level} level."
+                f"\nVery good quantification at {weighted_rate:.1f}%. "
+                f"Strong mix of quality metrics. Aim for 80%+ to reach full points."
+            )
+        elif weighted_rate >= 40.0:
+            feedback_parts.append(
+                f"\nGood quantification at {weighted_rate:.1f}%. "
+                f"Decent use of metrics. Add more HIGH-value metrics to improve."
+            )
+        elif weighted_rate >= 25.0:
+            feedback_parts.append(
+                f"\nFair quantification at {weighted_rate:.1f}%. "
+                f"Some metrics present, but need more quality quantification."
             )
         else:
             feedback_parts.append(
                 f"\nQuantification needs improvement. Current rate: {weighted_rate:.1f}%. "
-                f"Target: ≥{good_threshold}% for {level} level."
+                f"Target: Add quantifiable metrics with context (%, $, scale indicators)."
             )
 
         # Specific improvement suggestions
-        if score < 10:
+        if score < self.max_score:
             suggestions = []
 
             if high_count == 0:

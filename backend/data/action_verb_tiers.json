@@ -5,17 +5,31 @@
     "verbs": [
       "pioneered", "revolutionized", "transformed", "spearheaded", "architected",
       "scaled", "innovated", "reimagined", "founded", "invented",
-      "disrupted", "overhauled", "modernized", "engineered", "established"
-    ]
+      "disrupted", "overhauled", "modernized", "established", "repositioned",
+      "restructured", "conceptualized", "envisioned", "originated", "chartered"
+    ],
+    "stats": {
+      "corpus_frequency": "Low (high-impact strategic verbs)",
+      "examples_from_corpus": "architected (73), established (123), spearheaded (30), transformed (10)"
+    }
   },
   "tier_3": {
     "description": "Leadership - Team leadership, initiative ownership, strategic execution",
     "points": 3,
     "verbs": [
-      "led", "directed", "orchestrated", "established", "launched",
-      "championed", "drove", "initiated", "headed", "steered",
-      "commanded", "supervised", "mentored", "guided", "coached"
-    ]
+      "led", "directed", "orchestrated", "launched", "championed",
+      "drove", "initiated", "headed", "steered", "commanded",
+      "supervised", "mentored", "guided", "coached", "influenced",
+      "aligned", "strategized", "defined", "shaped", "prioritized",
+      "cultivated", "fostered", "empowered", "mobilized", "governed",
+      "chaired", "oversaw", "facilitated", "coordinated", "administered",
+      "managed", "delegated", "motivated", "recruited", "hired",
+      "trained", "educated", "instructed", "advised", "consulted"
+    ],
+    "stats": {
+      "corpus_frequency": "High to Medium",
+      "examples_from_corpus": "managed (1018), supervised (95), directed (56), facilitated (47), coordinated (252)"
+    }
   },
   "tier_2": {
     "description": "Execution - Individual contribution, implementation, delivery",
@@ -24,17 +38,48 @@
       "developed", "implemented", "created", "built", "designed",
       "executed", "delivered", "engineered", "programmed", "coded",
       "automated", "optimized", "integrated", "deployed", "configured",
-      "analyzed", "improved", "enhanced", "streamlined", "refactored"
-    ]
+      "analyzed", "improved", "enhanced", "streamlined", "refactored",
+      "collaborated", "partnered", "enabled", "accelerated", "achieved",
+      "increased", "reduced", "generated", "produced", "resolved",
+      "identified", "assessed", "validated", "launched", "rolled out",
+      "migrated", "consolidated", "standardized", "customized", "upgraded",
+      "installed", "converted", "diagnosed", "debugged", "fixed",
+      "solved", "restructured", "reformulated", "devised", "constructed",
+      "authored", "drafted", "scripted", "edited", "published",
+      "presented", "communicated", "negotiated", "secured", "acquired",
+      "gathered", "collected", "compiled", "extracted", "derived",
+      "formulated", "determined", "evaluated", "audited", "verified",
+      "tested", "proven", "demonstrated", "showcased", "leveraged",
+      "utilized", "applied", "employed", "operated", "administered",
+      "introduced", "added", "extended", "expanded", "boosted",
+      "maximized", "minimized", "synchronized", "tuned", "refined"
+    ],
+    "stats": {
+      "corpus_frequency": "Very High",
+      "examples_from_corpus": "created (1415), developed (1138), designed (727), configured (343), migrated (264), automated (158), delivered (49)"
+    }
   },
   "tier_1": {
     "description": "Support - Operational support, coordination, maintenance",
     "points": 1,
     "verbs": [
-      "managed", "coordinated", "maintained", "assisted", "supported",
-      "organized", "facilitated", "monitored", "tracked", "documented",
-      "updated", "reviewed", "tested", "debugged", "troubleshot"
-    ]
+      "maintained", "assisted", "supported", "organized", "monitored",
+      "tracked", "documented", "updated", "reviewed", "tested",
+      "debugged", "troubleshot", "performed", "conducted", "prepared",
+      "processed", "handled", "researched", "investigated", "examined",
+      "checked", "audited", "inspected", "assessed", "evaluated",
+      "reported", "recorded", "logged", "entered", "stored",
+      "retrieved", "accessed", "searched", "queried", "filtered",
+      "sorted", "arranged", "scheduled", "planned", "coordinated",
+      "facilitated", "liaised", "interfaced", "responded", "answered",
+      "addressed", "provided", "supplied", "distributed", "shared",
+      "transferred", "moved", "loaded", "uploaded", "downloaded",
+      "backed up", "archived", "recovered", "restored", "refreshed"
+    ],
+    "stats": {
+      "corpus_frequency": "Very High",
+      "examples_from_corpus": "performed (873), assisted (530), maintained (506), supported (327), monitored (265), analyzed (209), prepared (178)"
+    }
   },
   "tier_0": {
     "description": "Weak - Vague, passive, unclear contribution",
@@ -42,7 +87,16 @@
     "verbs": [
       "responsible for", "worked on", "involved in", "participated in",
       "helped with", "contributed to", "exposure to", "familiar with",
-      "knowledge of", "tasked with", "duties included", "handled"
-    ]
+      "knowledge of", "tasked with", "duties included", "handled",
+      "dealt with", "engaged in", "associated with", "related to",
+      "worked with", "worked", "provided", "served", "acted",
+      "included", "based", "focused", "specialized", "dedicated",
+      "tasked", "assigned", "experienced", "gained", "received",
+      "attended", "participated", "involved", "engaged", "interacted"
+    ],
+    "stats": {
+      "corpus_frequency": "Extremely High (weak/filler verbs)",
+      "examples_from_corpus": "worked (1294), provided (888), participated (171), involved (295), engaged (16)"
+    }
   }
 }

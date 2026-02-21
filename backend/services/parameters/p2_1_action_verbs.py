@@ -1,24 +1,36 @@
 """
 P2.1: Action Verb Quality & Coverage (15 points)
 
-Evaluates resume bullets based on:
-1. Coverage % (what % of bullets have action verbs)
-2. Average tier quality (Tier 0-4)
+Evaluates resume bullets based on incremental tier-based scoring.
 
-Level-Specific Thresholds:
-- Beginner: 70% coverage, 1.5+ avg tier
-- Intermediary: 80% coverage, 2.0+ avg tier
-- Senior: 90% coverage, 2.5+ avg tier
+Each bullet point's action verb contributes points based on tier:
+- Tier 4 (Strategic): 1.0 points per bullet
+- Tier 3 (Leadership): 0.8 points per bullet
+- Tier 2 (Achievement): 0.6 points per bullet
+- Tier 1 (Operational): 0.4 points per bullet
+- Tier 0 (Weak/None): 0 points
 
-Scoring:
-- Both thresholds met: 15 points
-- One threshold met: 8 points
-- Neither met: 0 points
+Total score = sum of all bullet points' contributions, capped at 15 points.
+
+Examples:
+- 10 bullets with Tier 4 verbs = 10 * 1.0 = 10 points
+- 20 bullets with Tier 2 verbs = 20 * 0.6 = 12 points
+- 5 Tier 4 + 10 Tier 3 + 10 Tier 1 = 5 + 8 + 4 = 15 points (capped)
 """
 
 from typing import List, Dict, Any
 from backend.services.action_verb_classifier import ActionVerbClassifier, VerbTier
 from backend.config.scoring_thresholds import get_thresholds_for_level
+
+
+# Tier point values for incremental scoring
+TIER_POINTS = {
+    4: 1.0,  # Strategic/Transformational
+    3: 0.8,  # Leadership
+    2: 0.6,  # Achievement/Execution
+    1: 0.4,  # Operational/Support
+    0: 0.0   # Weak/None
+}
 
 
 class ActionVerbScorer:
@@ -90,17 +102,19 @@ class ActionVerbScorer:
         coverage_percentage = (verbs_found / total_bullets) * 100
         average_tier = tier_sum / total_bullets
 
-        # Check thresholds
+        # Check thresholds (for informational purposes)
         coverage_met = coverage_percentage >= coverage_threshold
         tier_met = average_tier >= tier_threshold
 
-        # Calculate score
-        if coverage_met and tier_met:
-            score = 15
-        elif coverage_met or tier_met:
-            score = 8
-        else:
-            score = 0
+        # Calculate score using incremental tier-based scoring
+        # Each bullet contributes points based on its tier
+        score = 0.0
+        for bullet_detail in bullet_details:
+            tier_value = bullet_detail['tier']
+            score += TIER_POINTS.get(tier_value, 0.0)
+
+        # Cap at 15 points maximum
+        score = min(score, 15.0)
 
         return {
             'score': score,

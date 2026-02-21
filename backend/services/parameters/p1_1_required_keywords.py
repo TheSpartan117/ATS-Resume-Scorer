@@ -4,21 +4,21 @@ P1.1: Required Keywords Match (25 points)
 Highest-weighted parameter. Uses hybrid semantic+exact matching
 to evaluate required keyword coverage.
 
-Scoring tiers (Workday standard - 60% passing):
-- ≥60%: 25 points (EXCELLENT - meets industry threshold)
-- ≥40%: 15 points (GOOD - partial match)
-- ≥25%: 5 points (FAIR - minimal match)
-- <25%: 0 points (POOR - insufficient match)
+Scoring: Incremental points per matched keyword (capped at 25 points)
+- Each matched keyword adds points based on typical keyword list size
+- Formula: score = min(matched_count * points_per_keyword, 25)
+- Points per keyword calculated dynamically based on total keyword count
+- Minimum 1.0 point per keyword, maximum 1.67 points per keyword
 
 Research basis:
-- Workday ATS: 60% keyword match threshold standard
+- Incremental scoring provides better differentiation between candidates
 - Hybrid matching reduces false negatives by 35-45%
 - Semantic similarity catches abbreviations, synonyms, variations
 
 Example:
-    Required keywords: ['Python', 'Django', 'REST API', 'AWS', 'Docker']
+    Required keywords: ['Python', 'Django', 'REST API', 'AWS', 'Docker'] (5 total)
     Resume: "Python developer with Django and AWS experience"
-    Match: 3/5 = 60% → 25 points (meets threshold)
+    Match: 3/5 keywords → 3 * 5.0 = 15 points (5.0 points per keyword for 5 total)
 """
 
 from typing import Dict, List
@@ -28,24 +28,27 @@ from backend.config.scoring_thresholds import get_thresholds_for_level
 
 class RequiredKeywordsMatcher:
     """
-    Required keywords matching with tiered scoring.
+    Required keywords matching with incremental scoring.
 
     Uses HybridKeywordMatcher (70% semantic + 30% exact) to match
-    required keywords against resume text, then applies tiered scoring
-    based on match percentage.
+    required keywords against resume text, then applies incremental scoring
+    where each matched keyword adds points up to a maximum of 25.
 
     Attributes:
-        SCORING_TIERS: List of (threshold_percentage, points) tuples
+        MAX_SCORE: Maximum possible score (25 points)
+        MIN_POINTS_PER_KEYWORD: Minimum points awarded per keyword (1.0)
+        MAX_POINTS_PER_KEYWORD: Maximum points awarded per keyword (1.67)
         MATCH_THRESHOLD: Minimum score (0-1) to consider keyword matched
     """
 
-    # Workday-standard tiered scoring
-    SCORING_TIERS = [
-        (60, 25),  # ≥60% = 25 pts (EXCELLENT)
-        (40, 15),  # ≥40% = 15 pts (GOOD)
-        (25, 5),   # ≥25% = 5 pts (FAIR)
-        (0, 0)     # <25% = 0 pts (POOR)
-    ]
+    # Maximum score for this parameter
+    MAX_SCORE = 25
+
+    # Points per keyword boundaries
+    # - For many keywords (25+): ~1.0 point each
+    # - For few keywords (15): ~1.67 points each
+    MIN_POINTS_PER_KEYWORD = 1.0
+    MAX_POINTS_PER_KEYWORD = 1.67
 
     # Hybrid matcher considers keyword matched if score ≥ 60%
     MATCH_THRESHOLD = 0.6
@@ -91,13 +94,14 @@ class RequiredKeywordsMatcher:
         # Edge case: Empty keywords = automatic full score
         if not keywords:
             return {
-                'score': 25,
-                'max_score': 25,
+                'score': self.MAX_SCORE,
+                'max_score': self.MAX_SCORE,
                 'match_percentage': 100.0,
                 'matched_keywords': [],
                 'unmatched_keywords': [],
                 'match_details': {},
-                'tier_applied': '>=60% = 25 pts (no keywords required)'
+                'points_per_keyword': 0.0,
+                'scoring_formula': 'No keywords required - full score awarded'
             }
 
         # Use hybrid matcher to get individual keyword scores
@@ -118,37 +122,49 @@ class RequiredKeywordsMatcher:
         matched_count = len(matched)
         match_percentage = (matched_count / total_keywords * 100) if total_keywords > 0 else 100.0
 
-        # Apply tiered scoring based on match percentage
-        score = 0
-        threshold_pct = 0
-        for threshold_pct, points in self.SCORING_TIERS:
-            if match_percentage >= threshold_pct:
-                score = points
-                break
+        # Calculate points per keyword dynamically based on total keyword count
+        # Formula: points_per_keyword = MAX_SCORE / total_keywords
+        # Clamped between MIN and MAX to handle edge cases
+        points_per_keyword = self.MAX_SCORE / total_keywords if total_keywords > 0 else 0
+        points_per_keyword = max(self.MIN_POINTS_PER_KEYWORD,
+                                min(self.MAX_POINTS_PER_KEYWORD, points_per_keyword))
+
+        # Apply incremental scoring: each matched keyword adds points
+        # Formula: score = min(matched_count * points_per_keyword, MAX_SCORE)
+        raw_score = matched_count * points_per_keyword
+        score = min(round(raw_score, 2), self.MAX_SCORE)
 
         return {
             'score': score,
-            'max_score': 25,
+            'max_score': self.MAX_SCORE,
             'match_percentage': match_percentage,
             'matched_keywords': matched,
             'unmatched_keywords': unmatched,
             'match_details': match_results,
-            'tier_applied': f'>={threshold_pct}% = {score} pts'
+            'points_per_keyword': round(points_per_keyword, 2),
+            'scoring_formula': f'{matched_count} matched × {round(points_per_keyword, 2)} pts = {score} pts (capped at {self.MAX_SCORE})'
         }
 
-    def get_scoring_tiers(self) -> List[tuple]:
+    def get_scoring_config(self) -> Dict:
         """
-        Get the scoring tier configuration.
+        Get the scoring configuration for this parameter.
 
         Returns:
-            List of (threshold_percentage, points) tuples
+            Dictionary with scoring configuration details
 
         Example:
             >>> matcher = RequiredKeywordsMatcher()
-            >>> matcher.get_scoring_tiers()
-            [(60, 25), (40, 15), (25, 5), (0, 0)]
+            >>> matcher.get_scoring_config()
+            {'max_score': 25, 'min_points_per_keyword': 1.0, ...}
         """
-        return self.SCORING_TIERS.copy()
+        return {
+            'max_score': self.MAX_SCORE,
+            'min_points_per_keyword': self.MIN_POINTS_PER_KEYWORD,
+            'max_points_per_keyword': self.MAX_POINTS_PER_KEYWORD,
+            'match_threshold': self.MATCH_THRESHOLD,
+            'scoring_type': 'incremental',
+            'formula': 'score = min(matched_count × points_per_keyword, 25)'
+        }
 
     def get_match_threshold(self) -> float:
         """

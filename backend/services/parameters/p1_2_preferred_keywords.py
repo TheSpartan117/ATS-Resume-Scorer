@@ -4,16 +4,16 @@ P1.2 - Preferred Keywords Match (10 points)
 Matches "nice-to-have" preferred keywords from job description against resume.
 More lenient than required keywords (P1.1) to reflect optional nature.
 
-Scoring Tiers:
-- ≥50% match: 10 points (excellent coverage)
-- ≥30% match: 6 points (good coverage)
-- ≥15% match: 3 points (minimal coverage)
-- <15% match: 0 points (insufficient)
+Scoring: Incremental points per matched keyword (capped at 10 points)
+- Each matched keyword adds points based on typical keyword list size
+- Formula: score = min(matched_count * points_per_keyword, 10)
+- Points per keyword calculated dynamically based on total keyword count
+- Minimum 0.5 point per keyword, maximum 1.0 point per keyword
 
 Research basis:
 - Preferred keywords are optional but valuable differentiators
-- More lenient thresholds vs. required keywords (60% → 50%)
-- Still significant point value (10 pts) when well-matched
+- Incremental scoring provides better differentiation between candidates
+- Hybrid matching reduces false negatives and handles synonyms/variations
 - Based on Workday/Greenhouse ATS analysis
 
 Usage:
@@ -36,28 +36,27 @@ from typing import Dict, List, Any
 
 class PreferredKeywordsMatcher:
     """
-    Matches preferred (nice-to-have) keywords with tiered scoring.
+    Matches preferred (nice-to-have) keywords with incremental scoring.
 
     Uses hybrid semantic + exact matching (70%/30%) via HybridKeywordMatcher
     to reduce false negatives and handle synonyms/variations.
 
-    Scoring Tiers:
-    - Tier 1 (≥50%): 10 points - Excellent keyword coverage
-    - Tier 2 (≥30%): 6 points - Good keyword coverage
-    - Tier 3 (≥15%): 3 points - Minimal keyword coverage
-    - Below Threshold (<15%): 0 points - Insufficient coverage
+    Scoring: Each matched keyword adds points up to maximum of 10
+    - Points per keyword calculated dynamically: MAX_SCORE / total_keywords
+    - Clamped between MIN_POINTS_PER_KEYWORD and MAX_POINTS_PER_KEYWORD
+    - Formula: score = min(matched_count × points_per_keyword, 10)
 
     More lenient than required keywords to reflect "nice-to-have" nature.
     """
 
-    # Scoring tiers: (min_percentage, points)
-    # Ordered from highest to lowest threshold for efficient matching
-    SCORING_TIERS = [
-        (50, 10, "Tier 1 (≥50%)"),
-        (30, 6, "Tier 2 (≥30%)"),
-        (15, 3, "Tier 3 (≥15%)"),
-        (0, 0, "Below Threshold (<15%)")
-    ]
+    # Maximum score for this parameter
+    MAX_SCORE = 10
+
+    # Points per keyword boundaries
+    # - For many keywords (20+): ~0.5 point each
+    # - For few keywords (10): ~1.0 point each
+    MIN_POINTS_PER_KEYWORD = 0.5
+    MAX_POINTS_PER_KEYWORD = 1.0
 
     # Hybrid matching threshold (60% similarity considered a match)
     MATCH_THRESHOLD = 0.6
@@ -113,7 +112,8 @@ class PreferredKeywordsMatcher:
                 'match_percentage': 0.0,
                 'matched_count': 0,
                 'total_keywords': len(preferred_keywords) if preferred_keywords else 0,
-                'tier': "Below Threshold (<15%)",
+                'points_per_keyword': 0.0,
+                'scoring_formula': 'No keywords or resume text',
                 'matched_keywords': [],
                 'unmatched_keywords': list(preferred_keywords) if preferred_keywords else [],
                 'experience_level': experience_level
@@ -136,7 +136,8 @@ class PreferredKeywordsMatcher:
                 'match_percentage': 0.0,
                 'matched_count': 0,
                 'total_keywords': 0,
-                'tier': "Below Threshold (<15%)",
+                'points_per_keyword': 0.0,
+                'scoring_formula': 'No keywords provided',
                 'matched_keywords': [],
                 'unmatched_keywords': [],
                 'experience_level': experience_level
@@ -154,42 +155,30 @@ class PreferredKeywordsMatcher:
         matched_keywords = match_summary['matched']
         unmatched_keywords = match_summary['unmatched']
 
-        # Determine tier and score
-        score, tier = self._get_score_for_percentage(match_percentage)
+        # Calculate points per keyword dynamically based on total keyword count
+        # Formula: points_per_keyword = MAX_SCORE / total_keywords
+        # Clamped between MIN and MAX to handle edge cases
+        points_per_keyword = self.MAX_SCORE / total_keywords if total_keywords > 0 else 0
+        points_per_keyword = max(self.MIN_POINTS_PER_KEYWORD,
+                                min(self.MAX_POINTS_PER_KEYWORD, points_per_keyword))
+
+        # Apply incremental scoring: each matched keyword adds points
+        # Formula: score = min(matched_count * points_per_keyword, MAX_SCORE)
+        raw_score = matched_count * points_per_keyword
+        score = min(round(raw_score, 2), self.MAX_SCORE)
 
         return {
             'score': score,
             'match_percentage': round(match_percentage, 2),
             'matched_count': matched_count,
             'total_keywords': total_keywords,
-            'tier': tier,
+            'points_per_keyword': round(points_per_keyword, 2),
+            'scoring_formula': f'{matched_count} matched × {round(points_per_keyword, 2)} pts = {score} pts (capped at {self.MAX_SCORE})',
             'matched_keywords': matched_keywords,
             'unmatched_keywords': unmatched_keywords,
             'experience_level': experience_level
         }
 
-    def _get_score_for_percentage(self, match_percentage: float) -> tuple:
-        """
-        Get score and tier name for given match percentage.
-
-        Args:
-            match_percentage: Match percentage (0-100)
-
-        Returns:
-            Tuple of (score, tier_name)
-
-        Example:
-            >>> self._get_score_for_percentage(65.0)
-            (10, "Tier 1 (≥50%)")
-            >>> self._get_score_for_percentage(35.0)
-            (6, "Tier 2 (≥30%)")
-        """
-        for min_percentage, points, tier_name in self.SCORING_TIERS:
-            if match_percentage >= min_percentage:
-                return points, tier_name
-
-        # Fallback (should never reach here due to 0% tier)
-        return 0, "Below Threshold (<15%)"
 
     def score(
         self,
@@ -204,21 +193,26 @@ class PreferredKeywordsMatcher:
         """
         return self.calculate_score(preferred_keywords, resume_text, experience_level)
 
-    def get_scoring_tiers(self) -> List[Dict[str, Any]]:
+    def get_scoring_config(self) -> Dict[str, Any]:
         """
-        Get all scoring tiers for documentation/display purposes.
+        Get the scoring configuration for this parameter.
 
         Returns:
-            List of tier dictionaries with threshold, points, and name
+            Dictionary with scoring configuration details
+
+        Example:
+            >>> matcher = PreferredKeywordsMatcher()
+            >>> matcher.get_scoring_config()
+            {'max_score': 10, 'min_points_per_keyword': 0.5, ...}
         """
-        return [
-            {
-                'min_percentage': min_pct,
-                'points': points,
-                'tier_name': tier_name
-            }
-            for min_pct, points, tier_name in self.SCORING_TIERS
-        ]
+        return {
+            'max_score': self.MAX_SCORE,
+            'min_points_per_keyword': self.MIN_POINTS_PER_KEYWORD,
+            'max_points_per_keyword': self.MAX_POINTS_PER_KEYWORD,
+            'match_threshold': self.MATCH_THRESHOLD,
+            'scoring_type': 'incremental',
+            'formula': 'score = min(matched_count × points_per_keyword, 10)'
+        }
 
 
 # Singleton instance for efficiency
