@@ -22,12 +22,14 @@ export default function UploadPage() {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
+        console.log('Fetching roles...')
         const data = await getRoles()
+        console.log('Roles fetched successfully:', data)
         setRolesData(data)
       } catch (err) {
-        if (import.meta.env.DEV) {
-          console.error('Failed to fetch roles:', err)
-        }
+        console.error('Failed to fetch roles:', err)
+        // Set empty data as fallback
+        setRolesData({ categories: {}, levels: [] })
       }
     }
 

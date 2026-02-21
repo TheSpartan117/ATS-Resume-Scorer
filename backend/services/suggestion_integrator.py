@@ -6,8 +6,8 @@ by analyzing the scoring results and resume data.
 """
 
 from typing import Dict, List
-from services.parser import ResumeData
-from services.suggestion_generator import EnhancedSuggestionGenerator
+from backend.services.parser import ResumeData
+from backend.services.suggestion_generator import EnhancedSuggestionGenerator
 
 
 class SuggestionIntegrator:

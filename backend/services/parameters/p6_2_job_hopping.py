@@ -17,7 +17,7 @@ Calculation: penalty = -min(short_stints_count, 3)
 """
 
 from typing import List, Dict, Any
-from services.job_hopping_detector import get_job_hopping_detector
+from backend.services.job_hopping_detector import get_job_hopping_detector
 
 
 class JobHoppingPenaltyScorer:

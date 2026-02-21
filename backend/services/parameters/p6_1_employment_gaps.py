@@ -25,7 +25,7 @@ Example:
 """
 
 from typing import Dict, List, Optional
-from services.gap_detector import get_gap_detector
+from backend.services.gap_detector import get_gap_detector
 
 
 class EmploymentGapsPenalty:

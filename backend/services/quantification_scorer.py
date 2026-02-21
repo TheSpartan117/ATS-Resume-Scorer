@@ -27,8 +27,8 @@ Tiered scoring:
 """
 
 from typing import Dict, List, Any
-from services.quantification_classifier import QuantificationClassifier, MetricQuality
-from config.scoring_thresholds import get_thresholds_for_level
+from backend.services.quantification_classifier import QuantificationClassifier, MetricQuality
+from backend.config.scoring_thresholds import get_thresholds_for_level
 
 
 class QuantificationScorer:

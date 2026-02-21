@@ -7,7 +7,7 @@ from docx import Document
 import shutil
 import logging
 from datetime import datetime
-from services.section_detector import SectionDetector
+from backend.services.section_detector import SectionDetector
 
 logger = logging.getLogger(__name__)
 

@@ -14,14 +14,14 @@ Main Scorer Orchestrator:
 
 import re
 from typing import Dict, List, Optional, Any
-from services.keyword_extractor import extract_keywords_from_jd, match_with_synonyms
-from services.role_taxonomy import ExperienceLevel, get_role_scoring_data, get_role_scoring_data_enhanced
-from services.parser import ResumeData
-from services.content_impact_analyzer import ContentImpactAnalyzer
-from services.writing_quality_analyzer import WritingQualityAnalyzer
-from services.context_aware_scorer import ContextAwareScorer
-from services.feedback_generator import FeedbackGenerator
-from services.benchmark_tracker import BenchmarkTracker
+from backend.services.keyword_extractor import extract_keywords_from_jd, match_with_synonyms
+from backend.services.role_taxonomy import ExperienceLevel, get_role_scoring_data, get_role_scoring_data_enhanced
+from backend.services.parser import ResumeData
+from backend.services.content_impact_analyzer import ContentImpactAnalyzer
+from backend.services.writing_quality_analyzer import WritingQualityAnalyzer
+from backend.services.context_aware_scorer import ContextAwareScorer
+from backend.services.feedback_generator import FeedbackGenerator
+from backend.services.benchmark_tracker import BenchmarkTracker
 
 
 class AdaptiveScorer:
@@ -641,7 +641,7 @@ class AdaptiveScorer:
         details = []
 
         # Grammar and spelling check with severity weighting (up to 10 points)
-        from services.red_flags_validator import RedFlagsValidator
+        from backend.services.red_flags_validator import RedFlagsValidator
         validator = RedFlagsValidator()
         grammar_issues = validator.validate_grammar(resume_data)
 

@@ -38,7 +38,7 @@ class HybridKeywordMatcher:
 
     def __init__(self):
         """Initialize with semantic matcher from existing service."""
-        from services.semantic_matcher import get_semantic_matcher
+        from backend.services.semantic_matcher import get_semantic_matcher
 
         self.semantic_matcher_service = get_semantic_matcher()
         self.semantic_weight = 0.7

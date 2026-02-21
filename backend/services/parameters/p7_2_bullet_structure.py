@@ -18,7 +18,7 @@ Research Basis:
 
 from typing import List, Dict, Any
 import re
-from services.action_verb_classifier import ActionVerbClassifier, VerbTier
+from backend.services.action_verb_classifier import ActionVerbClassifier, VerbTier
 
 
 class BulletStructureScorer:

@@ -15,7 +15,7 @@ Implementation:
 """
 
 from typing import Dict, List
-from services.grammar_checker import get_grammar_checker
+from backend.services.grammar_checker import get_grammar_checker
 
 
 class GrammarScorer:

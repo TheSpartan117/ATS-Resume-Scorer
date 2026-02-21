@@ -23,8 +23,8 @@ Source: ATS Research Comprehensive Report (Workday, Greenhouse, Lever analysis)
 """
 
 from typing import Dict, List, Any
-from services.hybrid_keyword_matcher import get_hybrid_matcher
-from config.scoring_thresholds import get_thresholds_for_level
+from backend.services.hybrid_keyword_matcher import get_hybrid_matcher
+from backend.config.scoring_thresholds import get_thresholds_for_level
 
 
 class RequiredKeywordsMatcher:

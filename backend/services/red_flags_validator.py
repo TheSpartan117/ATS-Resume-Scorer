@@ -7,7 +7,7 @@ import re
 import hashlib
 from datetime import datetime
 from typing import Dict, List, Optional
-from services.parser import ResumeData
+from backend.services.parser import ResumeData
 
 try:
     from spellchecker import SpellChecker
@@ -17,7 +17,7 @@ except ImportError:
 
 # Import LanguageTool for advanced grammar checking
 try:
-    from services.grammar_checker import get_grammar_checker
+    from backend.services.grammar_checker import get_grammar_checker
     LANGUAGETOOL_AVAILABLE = True
 except ImportError:
     LANGUAGETOOL_AVAILABLE = False

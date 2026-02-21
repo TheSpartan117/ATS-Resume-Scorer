@@ -10,14 +10,14 @@ Scoring breakdown (100 points):
 """
 
 from typing import Dict, List, Optional
-from services.parser import ResumeData
-from services.keyword_matcher import KeywordMatcher
-from services.red_flags_validator import RedFlagsValidator
-from services.role_taxonomy import get_role_scoring_data
+from backend.services.parser import ResumeData
+from backend.services.keyword_matcher import KeywordMatcher
+from backend.services.red_flags_validator import RedFlagsValidator
+from backend.services.role_taxonomy import get_role_scoring_data
 
 # Phase 1.2: Semantic matching support
 try:
-    from services.semantic_matcher import get_semantic_matcher
+    from backend.services.semantic_matcher import get_semantic_matcher
     SEMANTIC_MATCHING_AVAILABLE = True
 except ImportError:
     SEMANTIC_MATCHING_AVAILABLE = False
