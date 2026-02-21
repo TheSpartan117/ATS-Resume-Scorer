@@ -50,10 +50,10 @@ def test_perfect_structure_both_pass(scorer):
 def test_perfect_structure_exactly_80_percent(scorer):
     """Exactly 80% pass both checks = 3 pts"""
     bullets = [
-        "Developed comprehensive REST API with robust authentication and authorization systems for enterprise clients",  # 15 words, Tier 2
-        "Led diverse team of engineers to successfully deliver high quality software products on schedule",  # 15 words, Tier 3
-        "Implemented efficient caching layer significantly reducing server load and improving overall application performance",  # 14 words → 15, Tier 2
-        "Optimized complex algorithms achieving much faster execution times across all critical business operations",  # 14 words → 15, Tier 2
+        "Developed comprehensive REST API with robust authentication and authorization systems for all enterprise clients worldwide",  # 15 words, Tier 2
+        "Led diverse team of engineers to successfully deliver high quality software products on schedule every quarter",  # 17 words, Tier 3
+        "Implemented efficient caching layer significantly reducing server load and improving overall application performance across all services",  # 16 words, Tier 2
+        "Optimized complex algorithms achieving much faster execution times across all critical business operations for customers globally",  # 16 words, Tier 2
         "This is a very short bullet",  # 6 words, Tier 0 - fails both
     ]
     # 4/5 = 80% in length range
@@ -72,18 +72,18 @@ def test_perfect_structure_exactly_80_percent(scorer):
 def test_both_checks_pass_with_variety(scorer):
     """Mix of word counts and verb tiers, both pass = 3 pts"""
     bullets = [
-        "Pioneered innovative machine learning pipeline processing millions of data points efficiently at scale",  # 14 words → 15, Tier 4
-        "Managed and coordinated comprehensive cross team efforts to deliver strategic business objectives successfully",  # 14 words → 15, Tier 1 - has verb
-        "Developed comprehensive automated testing suite covering all critical user workflows and edge cases",  # 14 words → 15, Tier 2
-        "Led key engineering initiatives to significantly improve code quality and boost team productivity metrics",  # 15 words, Tier 3
-        "Built highly scalable microservices architecture supporting rapid feature development and seamless deployment cycles",  # 14 words → 15, Tier 2
-        "Implemented robust CI CD pipeline automating testing deployment and continuous monitoring processes company-wide",  # 14 words → 15, Tier 2
-        "Optimized complex database schema reducing query times significantly and improving overall system performance",  # 14 words → 15, Tier 2
-        "Architected cloud native solutions enabling seamless scaling capabilities and ensuring high availability standards",  # 14 words → 15, Tier 4
-        "Drove comprehensive technical strategy for platform modernization and critical infrastructure improvements across teams",  # 14 words → 15, Tier 3
-        "Enhanced security protocols protecting sensitive customer data and ensuring strict regulatory compliance requirements"  # 13 words → 15, Tier 2
+        "Pioneered innovative machine learning pipeline processing millions of data points efficiently at scale across regions",  # 15 words, Tier 4
+        "Managed and coordinated comprehensive cross team efforts to deliver strategic business objectives successfully every quarter",  # 16 words, Tier 1
+        "Developed comprehensive automated testing suite covering all critical user workflows and edge cases for customers",  # 15 words, Tier 2
+        "Led key engineering initiatives to significantly improve code quality and boost team productivity metrics across departments",  # 16 words, Tier 3
+        "Built highly scalable microservices architecture supporting rapid feature development and seamless deployment cycles for teams",  # 15 words, Tier 2
+        "Implemented robust CI CD pipeline automating testing deployment and continuous monitoring processes company-wide for efficiency",  # 15 words, Tier 2
+        "Optimized complex database schema reducing query times significantly and improving overall system performance for all users",  # 16 words, Tier 2
+        "Architected cloud native solutions enabling seamless scaling capabilities and ensuring high availability standards across systems",  # 15 words, Tier 4
+        "Drove comprehensive technical strategy for platform modernization and critical infrastructure improvements across all engineering teams",  # 15 words, Tier 3
+        "Enhanced security protocols protecting sensitive customer data and ensuring strict regulatory compliance requirements for enterprise"  # 15 words, Tier 2
     ]
-    # 10/10 = 100% in length range (15 words each)
+    # 10/10 = 100% in length range (15-16 words each)
     # 10/10 = 100% start with strong verbs
     # Both pass threshold
 
@@ -101,13 +101,13 @@ def test_both_checks_pass_with_variety(scorer):
 def test_length_pass_verb_fail(scorer):
     """Length check passes but verb check fails = 2 pts"""
     bullets = [
-        "Responsible for developing and maintaining various complex software applications tools and integration services",  # 15 words, Tier 0
-        "Worked on multiple important projects involving frontend backend and database components across platforms",  # 14 words → 15, Tier 0
-        "Developed comprehensive REST API with detailed documentation and thorough testing coverage for all endpoints",  # 15 words, Tier 2 - only strong verb
-        "Participated in regular code reviews and team meetings to discuss important technical decisions and approaches",  # 16 words, Tier 0
-        "Involved in implementing new features and fixing critical bugs across the entire codebase for customers"  # 16 words, Tier 0
+        "Responsible for developing and maintaining various complex software applications tools and integration services for customers",  # 15 words, Tier 0
+        "Worked on multiple important projects involving frontend backend and database components across platforms and environments",  # 15 words, Tier 0
+        "Developed comprehensive REST API with detailed documentation and thorough testing coverage for all endpoints across systems",  # 16 words, Tier 2 - only strong verb
+        "Participated in regular code reviews and team meetings to discuss important technical decisions and approaches for projects",  # 17 words, Tier 0
+        "Involved in implementing new features and fixing critical bugs across the entire codebase for customers and stakeholders"  # 17 words, Tier 0
     ]
-    # 5/5 = 100% in length range (all 15-16 words)
+    # 5/5 = 100% in length range (all 15-17 words)
     # 1/5 = 20% start with strong verbs (below 80%)
 
     result = scorer.score(bullets)
@@ -122,16 +122,16 @@ def test_length_pass_verb_fail(scorer):
 def test_length_pass_verb_just_below_threshold(scorer):
     """87.5% verbs and length both pass = 3 pts"""
     bullets = [
-        "Developed scalable REST API for mobile and web applications using modern technologies",  # 13 words → 15, Tier 2
-        "Implemented automated testing framework with comprehensive coverage across all critical user workflows",  # 13 words → 15, Tier 2
-        "Built responsive web applications using modern frameworks and best practices for performance",  # 13 words → 15, Tier 2
-        "Created detailed technical documentation for all projects including architecture and deployment guides",  # 13 words → 15, Tier 2
-        "Optimized complex database queries significantly improving performance and reducing response times",  # 11 words → 15, Tier 2
-        "Enhanced security protocols protecting sensitive customer data and ensuring regulatory compliance",  # 11 words → 15, Tier 2
-        "Integrated third party APIs and services seamlessly into existing platform architecture",  # 12 words → 15, Tier 2
+        "Developed scalable REST API for mobile and web applications using modern technologies and frameworks across teams",  # 16 words, Tier 2
+        "Implemented automated testing framework with comprehensive coverage across all critical user workflows for quality assurance teams",  # 17 words, Tier 2
+        "Built responsive web applications using modern frameworks and best practices for performance and user experience",  # 16 words, Tier 2
+        "Created detailed technical documentation for all projects including architecture and deployment guides for teams and stakeholders",  # 17 words, Tier 2
+        "Optimized complex database queries significantly improving performance and reducing response times across all systems and environments",  # 17 words, Tier 2
+        "Enhanced security protocols protecting sensitive customer data and ensuring regulatory compliance for all services and platforms",  # 17 words, Tier 2
+        "Integrated third party APIs and services seamlessly into existing platform architecture for improved functionality and performance",  # 17 words, Tier 2
         "Responsible for maintaining production systems"  # 5 words, Tier 0 - weak verb, short
     ]
-    # 7/8 = 87.5% in length range (15+ words)
+    # 7/8 = 87.5% in length range (16-17 words)
     # 7/8 = 87.5% start with strong verbs
 
     result = scorer.score(bullets)
@@ -247,7 +247,7 @@ def test_empty_bullets(scorer):
 def test_single_bullet_perfect(scorer):
     """Single perfect bullet = 3 pts"""
     bullets = [
-        "Developed scalable microservices architecture serving millions of active users across three geographic regions"  # 15 words, Tier 2
+        "Developed scalable microservices architecture serving millions of active users across three geographic regions successfully worldwide"  # 15 words, Tier 2
     ]
     # 1/1 = 100% in length range
     # 1/1 = 100% start with strong verb
@@ -306,13 +306,13 @@ def test_exact_word_count_boundaries(scorer):
 def test_all_tier_1_verbs_count_as_strong(scorer):
     """Tier 1 verbs (managed, coordinated, etc.) count as strong verbs"""
     bullets = [
-        "Managed cross functional team delivering high quality software products successfully to stakeholders",  # 13 words → 15, Tier 1
-        "Coordinated with multiple stakeholders to gather detailed requirements and define comprehensive project scope",  # 14 words → 15, Tier 1
-        "Maintained production systems ensuring maximum uptime and reliability for critical customer facing services",  # 14 words → 15, Tier 1
-        "Assisted senior engineers in developing and testing new features for major product releases",  # 14 words → 15, Tier 1
-        "Supported deployment processes and monitored system performance metrics across all production environments"  # 13 words → 15, Tier 1
+        "Managed cross functional team delivering high quality software products successfully to stakeholders every quarter across teams",  # 16 words, Tier 1
+        "Coordinated with multiple stakeholders to gather detailed requirements and define comprehensive project scope for teams",  # 16 words, Tier 1
+        "Maintained production systems ensuring maximum uptime and reliability for critical customer facing services every day",  # 16 words, Tier 1
+        "Assisted senior engineers in developing and testing new features for major product releases across all platforms",  # 17 words, Tier 1
+        "Supported deployment processes and monitored system performance metrics across all production environments for reliability and uptime"  # 17 words, Tier 1
     ]
-    # 5/5 = 100% in length range (15 words)
+    # 5/5 = 100% in length range (16-17 words)
     # 5/5 = 100% strong verbs (Tier 1 counts)
 
     result = scorer.score(bullets)
@@ -366,21 +366,21 @@ def test_various_bullet_lengths(scorer):
         "Developed comprehensive testing framework",  # 4 words, Tier 2
         "Implemented automated CI CD deployment pipeline successfully",  # 7 words, Tier 2
         "Built scalable microservices architecture serving millions of active users daily worldwide",  # 11 words, Tier 2
-        "Optimized database queries improving application performance by reducing response times significantly across all critical customer facing operations",  # 18 words, Tier 2
-        "Architected cloud native infrastructure enabling seamless scaling high availability disaster recovery and cost optimization for enterprise applications",  # 18 words, Tier 4
-        "Created detailed technical documentation covering architecture design patterns implementation details deployment procedures monitoring strategies troubleshooting guides and best practices",  # 19 words, Tier 2
-        "Pioneered innovative machine learning pipeline processing analyzing and transforming massive datasets to generate actionable business insights and drive strategic decision making",  # 22 words, Tier 4
-        "Established comprehensive testing framework including unit integration end to end performance and security tests ensuring high quality reliable and maintainable codebase",  # 22 words, Tier 3
-        "Led cross functional team of engineers designers product managers and stakeholders through entire software development lifecycle from requirements gathering to production deployment and ongoing maintenance",  # 27 words, Tier 3 - too long
+        "Optimized database queries improving application performance by reducing response times significantly across all customer facing operations",  # 17 words, Tier 2
+        "Architected cloud native infrastructure enabling seamless scaling high availability disaster recovery and cost optimization for applications",  # 17 words, Tier 4
+        "Created detailed technical documentation covering architecture design patterns implementation details deployment procedures monitoring strategies troubleshooting guides and practices",  # 19 words, Tier 2
+        "Pioneered innovative machine learning pipeline processing analyzing and transforming massive datasets to generate actionable business insights driving strategic decisions",  # 21 words, Tier 4
+        "Established comprehensive testing framework including unit integration end to end performance and security tests ensuring high quality reliable maintainable code",  # 21 words, Tier 3
+        "Led cross functional team of engineers designers product managers and stakeholders through entire software development lifecycle from requirements to deployment",  # 22 words, Tier 3
     ]
-    # Count bullets in 15-25 range: bullets 5-9 (18, 18, 19, 22, 22) = 5/10 = 50%
-    # Bullet 10 is 27 words (too long), bullets 1-4 too short
+    # Count bullets in 15-25 range: bullets 5-10 (17, 17, 19, 21, 21, 22) = 6/10 = 60%
+    # Bullets 1-4 too short (1, 4, 7, 11 words)
     # All start with strong verbs: 10/10 = 100%
 
     result = scorer.score(bullets)
 
     assert result['total_bullets'] == 10
-    assert result['length_check']['percentage'] == 50.0
+    assert result['length_check']['percentage'] == 60.0
     assert result['verb_check']['percentage'] == 100.0
     assert result['score'] == 2  # Only verb check passes
 
@@ -390,11 +390,11 @@ def test_bullets_with_numbers_and_special_chars(scorer):
     bullets = [
         "Developed 3 scalable REST APIs with OAuth2.0 authentication and comprehensive testing coverage for enterprise clients",  # 16 words, Tier 2
         "Led high performing team of 12+ engineers to deliver high-quality software products on schedule",  # 15 words, Tier 3
-        "Implemented CI/CD pipeline reducing deployment time by 60% for all projects across multiple environments",  # 15 words, Tier 2
-        "Optimized SQL queries improving performance by 3x across all database operations for customer transactions",  # 15 words, Tier 2
-        "Built e-commerce platform handling $2M+ in daily transactions with 99.9% uptime and reliability"  # 14 words → 15, Tier 2
+        "Implemented CI/CD pipeline reducing deployment time by 60% for all projects across multiple environments worldwide",  # 16 words, Tier 2
+        "Optimized SQL queries improving performance by 3x across all database operations for customer transactions daily",  # 16 words, Tier 2
+        "Built e-commerce platform handling $2M+ in daily transactions with 99.9% uptime and reliability for customers"  # 17 words, Tier 2
     ]
-    # All in range (15-16 words), all strong verbs
+    # All in range (15-17 words), all strong verbs
 
     result = scorer.score(bullets)
 
