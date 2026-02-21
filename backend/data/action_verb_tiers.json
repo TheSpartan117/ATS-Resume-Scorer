@@ -1,0 +1,48 @@
+{
+  "tier_4": {
+    "description": "Transformational - Strategic impact, innovation, large-scale change",
+    "points": 4,
+    "verbs": [
+      "pioneered", "revolutionized", "transformed", "spearheaded", "architected",
+      "scaled", "innovated", "reimagined", "founded", "invented",
+      "disrupted", "overhauled", "modernized", "engineered", "established"
+    ]
+  },
+  "tier_3": {
+    "description": "Leadership - Team leadership, initiative ownership, strategic execution",
+    "points": 3,
+    "verbs": [
+      "led", "directed", "orchestrated", "established", "launched",
+      "championed", "drove", "initiated", "headed", "steered",
+      "commanded", "supervised", "mentored", "guided", "coached"
+    ]
+  },
+  "tier_2": {
+    "description": "Execution - Individual contribution, implementation, delivery",
+    "points": 2,
+    "verbs": [
+      "developed", "implemented", "created", "built", "designed",
+      "executed", "delivered", "engineered", "programmed", "coded",
+      "automated", "optimized", "integrated", "deployed", "configured",
+      "analyzed", "improved", "enhanced", "streamlined", "refactored"
+    ]
+  },
+  "tier_1": {
+    "description": "Support - Operational support, coordination, maintenance",
+    "points": 1,
+    "verbs": [
+      "managed", "coordinated", "maintained", "assisted", "supported",
+      "organized", "facilitated", "monitored", "tracked", "documented",
+      "updated", "reviewed", "tested", "debugged", "troubleshot"
+    ]
+  },
+  "tier_0": {
+    "description": "Weak - Vague, passive, unclear contribution",
+    "points": 0,
+    "verbs": [
+      "responsible for", "worked on", "involved in", "participated in",
+      "helped with", "contributed to", "exposure to", "familiar with",
+      "knowledge of", "tasked with", "duties included", "handled"
+    ]
+  }
+}
