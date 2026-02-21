@@ -261,6 +261,86 @@ class ScorerV3:
 
             result = scorer.score(text=text, sections=sections)
 
+        # P5.1: Years Alignment (10pts)
+        elif code == 'P5.1':
+            experience = resume_data.get('experience', [])
+            if not experience:
+                return self._missing_data_result(max_score, 'No experience data provided')
+
+            result = scorer.score(experience=experience, level=experience_level)
+
+        # P5.2: Career Recency (3pts)
+        elif code == 'P5.2':
+            experience = resume_data.get('experience', [])
+            if not experience:
+                return self._missing_data_result(max_score, 'No experience data provided')
+
+            result = scorer.score(experience=experience, level=experience_level)
+
+        # P5.3: Experience Depth (2pts)
+        elif code == 'P5.3':
+            experience = resume_data.get('experience', [])
+            if not experience:
+                return self._missing_data_result(max_score, 'No experience data provided')
+
+            result = scorer.score(experience=experience, level=experience_level)
+
+        # P6.1: Employment Gaps (penalty -5pts max)
+        elif code == 'P6.1':
+            experience = resume_data.get('experience', [])
+            if not experience:
+                return self._missing_data_result(max_score, 'No experience data provided')
+
+            result = scorer.score(employment_history=experience)
+
+        # P6.2: Job Hopping (penalty -3pts max)
+        elif code == 'P6.2':
+            experience = resume_data.get('experience', [])
+            if not experience:
+                return self._missing_data_result(max_score, 'No experience data provided')
+
+            result = scorer.score(experience=experience)
+
+        # P6.3: Word Repetition (penalty -5pts max)
+        elif code == 'P6.3':
+            text = resume_data.get('text', '')
+            if not text:
+                return self._missing_data_result(max_score, 'No text provided')
+
+            result = scorer.score(text=text)
+
+        # P6.4: Formatting Errors (penalty -2pts max)
+        elif code == 'P6.4':
+            experience = resume_data.get('experience', [])
+            if not experience:
+                return self._missing_data_result(max_score, 'No experience data provided')
+
+            result = scorer.score(experience=experience)
+
+        # P7.1: Readability Score (5pts)
+        elif code == 'P7.1':
+            text = resume_data.get('text', '')
+            if not text:
+                return self._missing_data_result(max_score, 'No text provided')
+
+            result = scorer.score(text=text)
+
+        # P7.2: Bullet Structure (3pts)
+        elif code == 'P7.2':
+            bullets = resume_data.get('bullets', [])
+            if not bullets:
+                return self._missing_data_result(max_score, 'No bullet points found')
+
+            result = scorer.score(bullets=bullets)
+
+        # P7.3: Passive Voice (2pts)
+        elif code == 'P7.3':
+            bullets = resume_data.get('bullets', [])
+            if not bullets:
+                return self._missing_data_result(max_score, 'No bullet points found')
+
+            result = scorer.score(bullets=bullets)
+
         else:
             return self._missing_data_result(max_score, f'Unknown parameter: {code}')
 

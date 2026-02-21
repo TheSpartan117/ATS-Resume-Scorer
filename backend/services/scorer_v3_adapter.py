@@ -190,6 +190,7 @@ class ScorerV3Adapter:
             'bullets': bullets,
             'page_count': page_count,
             'format': file_format,
+            'experience': resume_data.experience if resume_data.experience else [],  # For P5-P6 parameters
             'docx_structure': None  # TODO: Add if needed for P3.4
         }
 
