@@ -1,0 +1,32 @@
+{
+  "vague_phrases": [
+    "responsible for",
+    "worked on",
+    "helped with",
+    "involved in",
+    "participated in",
+    "contributed to",
+    "assisted with",
+    "exposure to",
+    "familiar with",
+    "knowledge of",
+    "tasked with",
+    "duties included",
+    "handled",
+    "dealt with",
+    "supported",
+    "was part of",
+    "engaged in",
+    "associated with",
+    "worked with",
+    "worked alongside",
+    "collaborated on"
+  ],
+  "description": "Vague, passive phrases that indicate weak achievement descriptions. Penalized in achievement depth scoring.",
+  "penalty_structure": {
+    "0_instances": 5,
+    "1_to_2_instances": 4,
+    "3_to_4_instances": 2,
+    "5_plus_instances": 0
+  }
+}
