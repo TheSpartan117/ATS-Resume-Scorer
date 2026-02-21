@@ -81,7 +81,10 @@ class ScorerV3:
             'Keyword Matching': {'score': 0, 'max': 35, 'parameters': {}},
             'Content Quality': {'score': 0, 'max': 30, 'parameters': {}},
             'Format & Structure': {'score': 0, 'max': 20, 'parameters': {}},
-            'Professional Polish': {'score': 0, 'max': 15, 'parameters': {}}
+            'Professional Polish': {'score': 0, 'max': 15, 'parameters': {}},
+            'Experience Validation': {'score': 0, 'max': 15, 'parameters': {}},
+            'Red Flags': {'score': 0, 'max': 0, 'parameters': {}},  # Penalties only
+            'Readability': {'score': 0, 'max': 10, 'parameters': {}}
         }
 
         # Score all parameters
@@ -235,12 +238,11 @@ class ScorerV3:
 
         # P3.4: ATS Formatting (7pts)
         elif code == 'P3.4':
-            docx_structure = resume_data.get('docx_structure')
-            file_format = resume_data.get('format', 'docx')
-
+            # P3.4 expects the full resume object, not individual fields
             result = scorer.score(
-                docx_structure=docx_structure,
-                file_format=file_format
+                resume=resume_data,
+                docx_structure=resume_data.get('docx_structure'),
+                file_format=resume_data.get('format', 'docx')
             )
 
         # P4.1: Grammar & Spelling (10pts)
@@ -254,12 +256,17 @@ class ScorerV3:
         # P4.2: Professional Standards (5pts)
         elif code == 'P4.2':
             text = resume_data.get('text', '')
-            sections = resume_data.get('sections', {})
+            bullets = resume_data.get('bullets', [])
+            contact = resume_data.get('contact', {})
 
             if not text:
                 return self._missing_data_result(max_score, 'No text provided')
 
-            result = scorer.score(text=text, sections=sections)
+            result = scorer.score(
+                contact=contact,
+                bullets=bullets,
+                full_text=text
+            )
 
         # P5.1: Years Alignment (10pts)
         elif code == 'P5.1':
@@ -275,7 +282,7 @@ class ScorerV3:
             if not experience:
                 return self._missing_data_result(max_score, 'No experience data provided')
 
-            result = scorer.score(experience=experience, level=experience_level)
+            result = scorer.score(experience=experience)  # No level parameter
 
         # P5.3: Experience Depth (2pts)
         elif code == 'P5.3':
@@ -283,7 +290,7 @@ class ScorerV3:
             if not experience:
                 return self._missing_data_result(max_score, 'No experience data provided')
 
-            result = scorer.score(experience=experience, level=experience_level)
+            result = scorer.score(experiences=experience, level=experience_level)  # Note: 'experiences' plural
 
         # P6.1: Employment Gaps (penalty -5pts max)
         elif code == 'P6.1':
@@ -299,15 +306,15 @@ class ScorerV3:
             if not experience:
                 return self._missing_data_result(max_score, 'No experience data provided')
 
-            result = scorer.score(experience=experience)
+            result = scorer.score(employment_history=experience)  # Parameter name is employment_history
 
         # P6.3: Word Repetition (penalty -5pts max)
         elif code == 'P6.3':
-            text = resume_data.get('text', '')
-            if not text:
-                return self._missing_data_result(max_score, 'No text provided')
+            bullets = resume_data.get('bullets', [])
+            if not bullets:
+                return self._missing_data_result(max_score, 'No bullet points found')
 
-            result = scorer.score(text=text)
+            result = scorer.score(bullets=bullets)
 
         # P6.4: Formatting Errors (penalty -2pts max)
         elif code == 'P6.4':

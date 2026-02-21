@@ -52,9 +52,17 @@ class SemanticKeywordMatcher:
 
             # Use all-MiniLM-L6-v2 (80MB, fast, accurate)
             # This model is optimized for semantic similarity tasks
-            self._model = SentenceTransformer('all-MiniLM-L6-v2')
-            self._keybert = KeyBERT(self._model)
-            self._initialized = True
+            try:
+                self._model = SentenceTransformer('all-MiniLM-L6-v2')
+                self._keybert = KeyBERT(self._model)
+                self._initialized = True
+            except (OSError, ConnectionError, Exception) as e:
+                # Network failure or model not cached - operate in offline mode
+                print(f"Warning: Could not load sentence-transformers model: {e}")
+                print("Falling back to exact keyword matching only (no semantic similarity)")
+                self._model = None
+                self._keybert = None
+                self._initialized = True  # Mark as initialized to prevent retry loops
         except ImportError as e:
             raise ImportError(
                 "Required packages not installed. Run: "
@@ -86,6 +94,10 @@ class SemanticKeywordMatcher:
 
         if not job_description or len(job_description.strip()) < 10:
             return []
+
+        # If model failed to load, use fallback immediately
+        if self._keybert is None:
+            return self._fallback_keyword_extraction(job_description, top_n)
 
         try:
             # Extract keywords using KeyBERT
@@ -134,6 +146,10 @@ class SemanticKeywordMatcher:
                 'matches': [],
                 'missing': job_keywords or []
             }
+
+        # If model failed to load, use exact matching fallback
+        if self._model is None:
+            return self._fallback_exact_matching(resume_text, job_keywords, similarity_threshold)
 
         try:
             from sentence_transformers import util
@@ -274,6 +290,26 @@ class SemanticKeywordMatcher:
         normalized = [(word, freq / max_freq) for word, freq in sorted_words[:top_n]]
 
         return normalized
+
+    def _fallback_exact_matching(
+        self,
+        resume_text: str,
+        job_keywords: List[str],
+        similarity_threshold: float = 0.7
+    ) -> Dict:
+        """
+        Fallback exact string matching when semantic model is unavailable.
+        Ignores similarity_threshold since exact matching is binary (match or no match).
+
+        Args:
+            resume_text: Full resume text
+            job_keywords: List of keywords to match
+            similarity_threshold: Ignored (for API compatibility)
+
+        Returns:
+            Dictionary with match_rate, matches, and missing
+        """
+        return self._fallback_exact_match(resume_text, job_keywords)
 
     def _fallback_exact_match(
         self,

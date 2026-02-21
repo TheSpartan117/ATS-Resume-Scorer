@@ -191,6 +191,7 @@ class ScorerV3Adapter:
             'page_count': page_count,
             'format': file_format,
             'experience': resume_data.experience if resume_data.experience else [],  # For P5-P6 parameters
+            'contact': resume_data.contact if resume_data.contact else {},  # For P4.2
             'docx_structure': None  # TODO: Add if needed for P3.4
         }
 
