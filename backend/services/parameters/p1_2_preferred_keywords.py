@@ -191,6 +191,19 @@ class PreferredKeywordsMatcher:
         # Fallback (should never reach here due to 0% tier)
         return 0, "Below Threshold (<15%)"
 
+    def score(
+        self,
+        preferred_keywords: List[str],
+        resume_text: str,
+        experience_level: str = "intermediary"
+    ) -> Dict[str, Any]:
+        """
+        Alias for calculate_score() to maintain consistency with other scorers.
+
+        This method provides a consistent interface across all parameter scorers.
+        """
+        return self.calculate_score(preferred_keywords, resume_text, experience_level)
+
     def get_scoring_tiers(self) -> List[Dict[str, Any]]:
         """
         Get all scoring tiers for documentation/display purposes.
