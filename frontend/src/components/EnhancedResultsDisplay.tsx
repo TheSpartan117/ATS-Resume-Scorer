@@ -4,6 +4,82 @@
  */
 import { useState } from 'react'
 
+// Fallback mapping for cryptic parameter codes returned by the backend.
+// If the backend is later fixed to return human-readable strings the display
+// function below will pass them through unchanged.
+const PARAMETER_NAMES: Record<string, { name: string; tip: string }> = {
+  'P1.1': { name: 'Required Keywords', tip: 'Add keywords from the job description to your resume' },
+  'P1.2': { name: 'Preferred Keywords', tip: 'Include preferred skills mentioned in the job posting' },
+  'P2.1': { name: 'Action Verbs', tip: 'Start bullet points with strong verbs like Led, Built, Drove, Increased' },
+  'P2.2': { name: 'Quantification', tip: 'Add numbers to achievements (e.g., "increased sales by 30%")' },
+  'P2.3': { name: 'Achievement Depth', tip: 'Replace vague phrases with specific accomplishments' },
+  'P3.1': { name: 'Page Count', tip: 'Keep resume to 1 page (junior) or 2 pages (senior)' },
+  'P3.2': { name: 'Word Count', tip: 'Aim for 400–800 words for optimal ATS scanning' },
+  'P3.3': { name: 'Section Balance', tip: 'Distribute content evenly — avoid cramming all detail in one section' },
+  'P3.4': { name: 'ATS Formatting', tip: 'Remove tables, graphics, and text boxes — use plain text' },
+  'P4.1': { name: 'Grammar & Spelling', tip: 'Fix grammar and spelling errors — use Grammarly or similar' },
+  'P4.2': { name: 'Professional Tone', tip: 'Use formal, professional language throughout' },
+  'P5.1': { name: 'Years of Experience', tip: 'Ensure listed experience matches your declared seniority level' },
+  'P5.2': { name: 'Career Recency', tip: 'Highlight recent roles — older experience matters less' },
+  'P5.3': { name: 'Experience Depth', tip: 'Add 3–5 detailed bullet points per role with context and impact' },
+  'P6.1': { name: 'Employment Gaps', tip: 'Add dates for all positions or briefly explain career breaks' },
+  'P6.2': { name: 'Job Hopping', tip: 'Group short stints or explain contract/freelance work' },
+  'P6.3': { name: 'Repetition', tip: 'Vary your language — avoid repeating the same verbs or phrases' },
+  'P6.4': { name: 'Date Formatting', tip: 'Use consistent date format throughout (e.g., "Jan 2022 – Mar 2023")' },
+  'P7.1': { name: 'Readability', tip: 'Use shorter sentences and simpler words for easier scanning' },
+  'P7.2': { name: 'Bullet Structure', tip: 'Format experience as bullet points, not paragraphs' },
+  'P7.3': { name: 'Passive Voice', tip: 'Replace "was responsible for" with active verbs like "managed", "led"' },
+}
+
+// Pattern that matches backend codes like "P6.1: Score 0%"
+const CRYPTIC_CODE_PATTERN = /^(P\d+\.\d+):\s*Score\s*(\d+)%$/
+
+interface ParsedIssue {
+  code: string | null
+  name: string
+  score: string | null
+  tip: string | null
+  raw: string
+}
+
+/**
+ * Parses a single issue string from the backend.
+ * - If it matches the old "P6.1: Score 0%" format, look up a human-readable name
+ *   and tip from PARAMETER_NAMES and extract the score value.
+ * - Otherwise treat the whole string as a human-readable message with no extra tip.
+ */
+function parseIssue(issue: string): ParsedIssue {
+  const match = issue.match(CRYPTIC_CODE_PATTERN)
+  if (match) {
+    const code = match[1]
+    const score = match[2] + '%'
+    const info = PARAMETER_NAMES[code]
+    return {
+      code,
+      name: info ? info.name : code,
+      score,
+      tip: info ? info.tip : null,
+      raw: issue,
+    }
+  }
+  // Human-readable string from a fixed backend — display as-is
+  return { code: null, name: issue, score: null, tip: null, raw: issue }
+}
+
+/**
+ * Resolves a strength string — if it looks like a raw code ("P2.1: Score 80%")
+ * return the human-readable name, otherwise return the string unchanged.
+ */
+function resolveStrengthLabel(strength: string): { name: string; tip: string | null } {
+  const match = strength.match(CRYPTIC_CODE_PATTERN)
+  if (match) {
+    const code = match[1]
+    const info = PARAMETER_NAMES[code]
+    return { name: info ? info.name : code, tip: info ? info.tip : null }
+  }
+  return { name: strength, tip: null }
+}
+
 interface CategoryScore {
   score: number
   maxScore: number
@@ -221,14 +297,32 @@ export default function EnhancedResultsDisplay({ overallScore, breakdown, issues
                     <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                       <span>🔍</span> What to improve:
                     </h4>
-                    <ul className="space-y-2">
-                      {category.issues.map((issue, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm">
-                          <span className="text-gray-400 mt-1">•</span>
-                          <span className="text-gray-700">{issue}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="space-y-3">
+                      {category.issues.map((issue, idx) => {
+                        const parsed = parseIssue(issue)
+                        return (
+                          <div
+                            key={idx}
+                            className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-3"
+                          >
+                            <span className="text-amber-500 mt-0.5 flex-shrink-0 text-base">⚠️</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <span className="font-semibold text-gray-900 text-sm">{parsed.name}</span>
+                                {parsed.score !== null && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
+                                    Score: {parsed.score}
+                                  </span>
+                                )}
+                              </div>
+                              {parsed.tip && (
+                                <p className="text-xs text-gray-500 leading-relaxed">{parsed.tip}</p>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 )}
 
@@ -252,13 +346,25 @@ export default function EnhancedResultsDisplay({ overallScore, breakdown, issues
             <span>💪</span> Your Strengths
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {categoryStrengths.map(([categoryName, category]) => (
-              <div key={categoryName} className="flex items-center gap-2 text-sm">
-                <span className="text-green-500 text-xl">✓</span>
-                <span className="font-medium text-gray-800">{categoryName}</span>
-                <span className="text-green-600">({getCategoryPercentage(category)}%)</span>
-              </div>
-            ))}
+            {categoryStrengths.map(([categoryName, category]) => {
+              const resolved = resolveStrengthLabel(categoryName)
+              return (
+                <div key={categoryName} className="flex items-start gap-3 bg-white rounded-lg border border-green-200 p-3 shadow-sm">
+                  <span className="text-green-500 text-xl flex-shrink-0">✓</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-gray-900 text-sm">{resolved.name}</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+                        {getCategoryPercentage(category)}%
+                      </span>
+                    </div>
+                    {resolved.tip && (
+                      <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{resolved.tip}</p>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
@@ -272,35 +378,65 @@ export default function EnhancedResultsDisplay({ overallScore, breakdown, issues
 
           {issues.critical.length > 0 && (
             <div className="mb-4">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-3">
                 <span className="text-red-500 text-xl">🔴</span>
                 <h4 className="font-semibold text-red-800">Critical ({issues.critical.length})</h4>
               </div>
-              <ul className="space-y-2 ml-7">
-                {issues.critical.slice(0, 5).map((issue, idx) => (
-                  <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
-                    <span className="text-red-400 font-bold">→</span>
-                    <span>{issue}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="space-y-2">
+                {issues.critical.slice(0, 5).map((issue, idx) => {
+                  const parsed = parseIssue(issue)
+                  return (
+                    <div key={idx} className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                      <span className="text-red-500 flex-shrink-0 mt-0.5">⚠️</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                          <span className="font-semibold text-gray-900 text-sm">{parsed.name}</span>
+                          {parsed.score !== null && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
+                              Score: {parsed.score}
+                            </span>
+                          )}
+                        </div>
+                        {parsed.tip && (
+                          <p className="text-xs text-gray-500 leading-relaxed">{parsed.tip}</p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
 
           {issues.warnings.length > 0 && (
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-3">
                 <span className="text-yellow-500 text-xl">🟡</span>
                 <h4 className="font-semibold text-yellow-800">Warnings ({issues.warnings.length})</h4>
               </div>
-              <ul className="space-y-2 ml-7">
-                {issues.warnings.slice(0, 5).map((issue, idx) => (
-                  <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
-                    <span className="text-yellow-400 font-bold">→</span>
-                    <span>{issue}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="space-y-2">
+                {issues.warnings.slice(0, 5).map((issue, idx) => {
+                  const parsed = parseIssue(issue)
+                  return (
+                    <div key={idx} className="flex items-start gap-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                      <span className="text-yellow-500 flex-shrink-0 mt-0.5">⚠️</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                          <span className="font-semibold text-gray-900 text-sm">{parsed.name}</span>
+                          {parsed.score !== null && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-200">
+                              Score: {parsed.score}
+                            </span>
+                          )}
+                        </div>
+                        {parsed.tip && (
+                          <p className="text-xs text-gray-500 leading-relaxed">{parsed.tip}</p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
         </div>

@@ -142,7 +142,7 @@ export default function CategoryBreakdown({ breakdown }: CategoryBreakdownProps)
               </div>
               <div className="text-right ml-4">
                 <div className="text-2xl font-bold text-gray-900">
-                  {categoryData.score}
+                  {Number(categoryData.score).toFixed(1)}
                   <span className="text-sm text-gray-400 font-medium">/{categoryData.maxScore}</span>
                 </div>
                 <div className="text-xs text-gray-500 mt-0.5">{percentage}%</div>

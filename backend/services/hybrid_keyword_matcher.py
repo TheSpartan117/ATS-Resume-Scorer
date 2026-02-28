@@ -176,7 +176,13 @@ class HybridKeywordMatcher:
         semantic_score = self._semantic_match_score(keyword, resume_text)
         hybrid_score = (semantic_score * self.semantic_weight) + (exact_score * self.exact_weight)
 
-        return hybrid_score
+        # If the keyword appears verbatim in the resume, guarantee a match.
+        # Cosine similarity of a short keyword against a long document is
+        # naturally low (~0.3-0.4), which would make exact matches fail the
+        # 0.6 threshold despite the keyword being present. Taking the max
+        # of the exact score and the hybrid score ensures verbatim matches
+        # always pass while still using semantics for synonym/abbreviation cases.
+        return max(exact_score, hybrid_score)
 
     def match_keywords(self, keywords: List[str], resume_text: str) -> Dict[str, float]:
         """

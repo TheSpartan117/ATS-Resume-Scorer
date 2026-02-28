@@ -222,7 +222,7 @@ export const ModeIndicator: React.FC<ModeIndicatorProps> = ({
                   {category.replace(/_/g, ' ')}
                 </span>
                 <span className="font-semibold text-gray-900">
-                  {scoreVal}/{maxScore}
+                  {Number(scoreVal).toFixed(1)}/{maxScore}
                 </span>
               </div>
               {maxScore > 0 && (
