@@ -195,79 +195,84 @@ def parse_experience_entry(text: str) -> Dict:
                       'coordinator', 'specialist', 'consultant', 'lead', 'senior', 'junior',
                       'associate', 'intern', 'executive', 'officer', 'head', 'chief', 'architect']
 
+    date_pattern = r'(\w+\.?\s+\d{4}|\d{4})\s*[-–—]\s*(\w+\.?\s+\d{4}|\d{4}|Present|Current|Now)'
+
     first_line = lines[0]
     second_line = lines[1] if len(lines) > 1 else ""
+    third_line = lines[2] if len(lines) > 2 else ""
 
-    # Check if first line looks like a company (mostly uppercase or has location info)
-    first_is_company = (
-        first_line.isupper() or  # All caps like "AIR INDIA"
-        sum(1 for c in first_line if c.isupper()) > len(first_line) * 0.5 or  # More than 50% caps
-        ',' in first_line  # Has location separator
-    )
+    def _parse_company_location(raw: str):
+        """Split 'COMPANY: Location' or 'COMPANY, Location' or 'COMPANY - Location'."""
+        for sep in (':', ' - ', ','):
+            if sep in raw:
+                parts = raw.split(sep, 1)
+                return parts[0].strip(), parts[1].strip()
+        return raw.strip(), ''
 
-    # Check if second line looks like a job title
+    # Detect whether a line is a date range
+    def _is_date_line(line: str) -> bool:
+        return bool(re.search(date_pattern, line, re.IGNORECASE))
+
+    # Detect whether a line looks like a company name (mostly uppercase before any separator)
+    def _is_company_line(line: str) -> bool:
+        first_part = re.split(r'[:\-,]', line.strip())[0].strip()
+        if not first_part:
+            first_part = line.strip()
+        alpha = [c for c in first_part if c.isalpha()]
+        return len(alpha) > 2 and sum(1 for c in alpha if c.isupper()) / len(alpha) > 0.6
+
+    # Check if second line looks like a job title keyword
     second_is_title = any(keyword in second_line.lower() for keyword in title_keywords)
 
-    # Determine format
-    if first_is_company or second_is_title:
-        # Format: Company + Location on line 1, Job Title on line 2
-        # Parse company and location from first line
-        if ',' in first_line:
-            parts = first_line.split(',', 1)
-            entry['company'] = parts[0].strip()
-            entry['location'] = parts[1].strip() if len(parts) > 1 else ''
-        else:
-            entry['company'] = first_line
+    # --- Format A: COMPANY / DATES / TITLE / bullets ---
+    # Line 1: company (mostly uppercase), Line 2: date range, Line 3: title
+    if _is_company_line(first_line) and _is_date_line(second_line):
+        company, location = _parse_company_location(first_line)
+        entry['company'] = company
+        entry['location'] = location
+        date_match = re.search(date_pattern, second_line, re.IGNORECASE)
+        if date_match:
+            entry['startDate'] = date_match.group(1)
+            entry['endDate'] = date_match.group(2)
+        entry['title'] = third_line
+        entry['description'] = '\n'.join(lines[3:]) if len(lines) > 3 else ''
 
-        # Job title on second line
+    # --- Format B: COMPANY / TITLE / DATES / bullets  (date on line 3) ---
+    elif _is_company_line(first_line) or second_is_title:
+        company, location = _parse_company_location(first_line)
+        entry['company'] = company
+        entry['location'] = location
         entry['title'] = second_line
-
-        # Look for dates in third line
-        if len(lines) > 2:
-            third_line = lines[2]
-            date_pattern = r'(\w+\s+\d{4}|\d{4})\s*[-–]\s*(\w+\s+\d{4}|\d{4}|Present|Current)'
+        if _is_date_line(third_line):
             date_match = re.search(date_pattern, third_line, re.IGNORECASE)
             if date_match:
                 entry['startDate'] = date_match.group(1)
                 entry['endDate'] = date_match.group(2)
+            entry['description'] = '\n'.join(lines[3:]) if len(lines) > 3 else ''
+        else:
+            entry['description'] = '\n'.join(lines[2:]) if len(lines) > 2 else ''
 
-        # Description starts from line 3 or 4
-        if len(lines) > 3:
-            entry['description'] = '\n'.join(lines[3:])
-        elif len(lines) > 2:
-            entry['description'] = '\n'.join(lines[2:])
+    # --- Format C: TITLE / COMPANY / DATES / bullets  (standard) ---
     else:
-        # Format: Job Title on line 1, Company on line 2
         entry['title'] = first_line
-
-        # Parse company and location from second line
         if ' - ' in second_line:
-            parts = second_line.split(' - ')
+            parts = second_line.split(' - ', 1)
             entry['company'] = parts[0].strip()
-            if len(parts) > 1:
-                entry['location'] = parts[1].strip()
+            entry['location'] = parts[1].strip()
         elif ',' in second_line:
-            parts = second_line.split(',')
+            parts = second_line.split(',', 1)
             entry['company'] = parts[0].strip()
-            if len(parts) > 1:
-                entry['location'] = parts[1].strip()
+            entry['location'] = parts[1].strip()
         else:
             entry['company'] = second_line
-
-        # Look for dates in third line
-        if len(lines) > 2:
-            third_line = lines[2]
-            date_pattern = r'(\w+\s+\d{4}|\d{4})\s*[-–]\s*(\w+\s+\d{4}|\d{4}|Present|Current)'
+        if _is_date_line(third_line):
             date_match = re.search(date_pattern, third_line, re.IGNORECASE)
             if date_match:
                 entry['startDate'] = date_match.group(1)
                 entry['endDate'] = date_match.group(2)
-
-        # Description starts from line 3
-        if len(lines) > 3:
-            entry['description'] = '\n'.join(lines[3:])
-        elif len(lines) > 2:
-            entry['description'] = '\n'.join(lines[2:])
+            entry['description'] = '\n'.join(lines[3:]) if len(lines) > 3 else ''
+        else:
+            entry['description'] = '\n'.join(lines[2:]) if len(lines) > 2 else ''
 
     return entry
 
@@ -390,6 +395,64 @@ def split_education_entries(text: str) -> List[str]:
     return entries
 
 
+def split_experience_entries(text: str) -> List[str]:
+    """
+    Split a block of experience text into individual job entries.
+
+    Detects new job boundaries by looking for lines that are mostly
+    uppercase (company name pattern) followed by a date range on the
+    next non-empty line, OR a date range line immediately after a
+    mostly-uppercase company line.
+    """
+    date_re = re.compile(
+        r'(\w+\.?\s+\d{4}|\d{4})\s*[-–—]\s*(\w+\.?\s+\d{4}|\d{4}|Present|Current|Now)',
+        re.IGNORECASE
+    )
+
+    def is_company_line(ln: str) -> bool:
+        stripped = ln.strip()
+        if not stripped or len(stripped) < 3:
+            return False
+        # Check only the part before any separator (colon, comma, dash)
+        # so "AMERICAN EXPRESS: Gurgaon" checks "AMERICAN EXPRESS" alone
+        first_part = re.split(r'[:\-,]', stripped)[0].strip()
+        if not first_part:
+            first_part = stripped
+        alpha = [c for c in first_part if c.isalpha()]
+        return len(alpha) > 2 and sum(1 for c in alpha if c.isupper()) / len(alpha) > 0.6
+
+    lines = text.split('\n')
+    entry_starts = []
+
+    for i, line in enumerate(lines):
+        if not line.strip():
+            continue
+        # A new entry starts when:
+        # 1. Line is mostly uppercase AND next non-empty line is a date range, OR
+        # 2. Line is mostly uppercase AND contains a date range itself
+        if is_company_line(line):
+            if date_re.search(line):
+                entry_starts.append(i)
+                continue
+            # Look ahead for a date range within the next 2 lines
+            for j in range(i + 1, min(i + 3, len(lines))):
+                if lines[j].strip() and date_re.search(lines[j]):
+                    entry_starts.append(i)
+                    break
+
+    if not entry_starts:
+        return [text]
+
+    entries = []
+    for idx, start in enumerate(entry_starts):
+        end = entry_starts[idx + 1] if idx + 1 < len(entry_starts) else len(lines)
+        chunk = '\n'.join(lines[start:end]).strip()
+        if chunk:
+            entries.append(chunk)
+
+    return entries if entries else [text]
+
+
 def is_likely_section_header(line: str) -> bool:
     """
     Check if a line is likely to be a section header (not body text).
@@ -475,7 +538,8 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
             if current_section and current_content:
                 content_text = '\n'.join(current_content)
                 if current_section == 'experience':
-                    sections[current_section].append(parse_experience_entry(content_text))
+                    for exp_chunk in split_experience_entries(content_text):
+                        sections[current_section].append(parse_experience_entry(exp_chunk))
                 elif current_section == 'education':
                     sections[current_section].append(parse_education_entry(content_text))
                 elif current_section == 'skills':
@@ -490,7 +554,8 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
             if current_section and current_content:
                 content_text = '\n'.join(current_content)
                 if current_section == 'experience':
-                    sections[current_section].append(parse_experience_entry(content_text))
+                    for exp_chunk in split_experience_entries(content_text):
+                        sections[current_section].append(parse_experience_entry(exp_chunk))
                 elif current_section == 'education':
                     sections[current_section].append(parse_education_entry(content_text))
                 elif current_section == 'skills':
@@ -506,7 +571,8 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
             if current_section and current_content:
                 content_text = '\n'.join(current_content)
                 if current_section == 'experience':
-                    sections[current_section].append(parse_experience_entry(content_text))
+                    for exp_chunk in split_experience_entries(content_text):
+                        sections[current_section].append(parse_experience_entry(exp_chunk))
                 elif current_section == 'education':
                     sections[current_section].append(parse_education_entry(content_text))
                 elif current_section == 'skills':
@@ -521,7 +587,8 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
             if current_section and current_content:
                 content_text = '\n'.join(current_content)
                 if current_section == 'experience':
-                    sections[current_section].append(parse_experience_entry(content_text))
+                    for exp_chunk in split_experience_entries(content_text):
+                        sections[current_section].append(parse_experience_entry(exp_chunk))
                 elif current_section == 'education':
                     sections[current_section].append(parse_education_entry(content_text))
                 elif current_section == 'skills':
@@ -538,7 +605,8 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
             if current_section and current_content:
                 content_text = '\n'.join(current_content)
                 if current_section == 'experience':
-                    sections[current_section].append(parse_experience_entry(content_text))
+                    for exp_chunk in split_experience_entries(content_text):
+                        sections[current_section].append(parse_experience_entry(exp_chunk))
                 elif current_section == 'education':
                     sections[current_section].append(parse_education_entry(content_text))
                 elif current_section == 'skills':
@@ -556,7 +624,8 @@ def extract_resume_sections(text: str) -> Dict[str, List]:
     if current_section and current_content:
         content_text = '\n'.join(current_content)
         if current_section == 'experience':
-            sections[current_section].append(parse_experience_entry(content_text))
+            for exp_chunk in split_experience_entries(content_text):
+                sections[current_section].append(parse_experience_entry(exp_chunk))
         elif current_section == 'education':
             # Split multiple education entries by blank lines or degree patterns
             edu_entries = split_education_entries(content_text)

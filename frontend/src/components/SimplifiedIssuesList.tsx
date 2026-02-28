@@ -179,7 +179,7 @@ export default function SimplifiedIssuesList({ issues, overallScore, breakdown }
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-700">{category}</span>
                     <span className="font-semibold text-gray-900">
-                      {data.score}/{data.maxScore}
+                      {Number(data.score).toFixed(1)}/{data.maxScore}
                     </span>
                   </div>
                   {data.maxScore > 0 && (

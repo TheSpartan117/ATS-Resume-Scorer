@@ -200,13 +200,12 @@ class ScorerV3Adapter:
                     # Create a copy to avoid modifying original
                     exp_copy = exp.copy()
 
-                    # Add 'dates' field if startDate/endDate exist
-                    start = exp.get('startDate', '')
-                    end = exp.get('endDate', '')
-                    if start or end:
-                        exp_copy['dates'] = f"{start} - {end}".strip(' -')
-                    else:
-                        exp_copy['dates'] = ''
+                    # Add snake_case aliases for gap/job-hopping detectors
+                    start = exp.get('startDate', '') or exp.get('start_date', '')
+                    end = exp.get('endDate', '') or exp.get('end_date', '')
+                    exp_copy['start_date'] = start
+                    exp_copy['end_date'] = end
+                    exp_copy['dates'] = f"{start} - {end}".strip(' -') if (start or end) else ''
 
                     transformed_experience.append(exp_copy)
 
@@ -383,6 +382,112 @@ class ScorerV3Adapter:
         }
         return level_map.get(level.lower(), 'intermediary')
 
+    # Human-readable issue messages for each parameter code.
+    # Two entries per code: (zero_score_message, partial_score_message)
+    # zero_score_message    — used when percentage == 0
+    # partial_score_message — used when 0 < percentage < 60
+    _ISSUE_MESSAGES = {
+        'P1.1': (
+            "Required Keywords Match: Resume is missing key terms from the job description — add the exact keywords listed under 'Requirements'",
+            "Required Keywords Match: Resume is missing several key terms from the job description — review and add missing required keywords",
+        ),
+        'P1.2': (
+            "Preferred Keywords Match: Resume lacks all preferred/bonus keywords from the job description — include at least a few 'nice-to-have' skills",
+            "Preferred Keywords Match: Resume is missing some preferred keywords from the job description — consider adding relevant bonus skills",
+        ),
+        'P2.1': (
+            "Action Verb Quality: Bullet points use no strong action verbs — replace weak phrases like 'responsible for' with verbs like 'led', 'built', 'drove', 'launched'",
+            "Action Verb Quality: Some bullet points use weak or passive verbs — strengthen them with impactful action verbs like 'architected', 'pioneered', 'delivered'",
+        ),
+        'P2.2': (
+            "Quantification Rate: No achievements include numbers or metrics — add specific figures (e.g., 'reduced load time by 40%', 'managed a team of 8')",
+            "Quantification Rate: Most achievements lack numbers or metrics — add measurable results to at least 50% of bullet points",
+        ),
+        'P2.3': (
+            "Achievement Depth: All experience descriptions are vague or generic — replace filler phrases with concrete outcomes and specific contributions",
+            "Achievement Depth: Several experience descriptions are vague — remove generic filler and describe what you actually built, fixed, or improved",
+        ),
+        'P3.1': (
+            "Page Count: Resume page count is well outside the recommended range for your experience level — trim or expand to fit the standard",
+            "Page Count: Resume page count is outside the recommended range — adjust length to match best practices for your experience level",
+        ),
+        'P3.2': (
+            "Word Count: Resume has far too few or too many words — aim for the optimal word count range for your experience level",
+            "Word Count: Resume word count is outside the ideal range — add more detail or condense content to fit recommended length",
+        ),
+        'P3.3': (
+            "Section Balance: Content is extremely unevenly distributed — the experience section should contain the majority of the resume's content",
+            "Section Balance: Content is unevenly distributed across sections — expand thin sections and reduce over-stuffed ones",
+        ),
+        'P3.4': (
+            "ATS Formatting: Resume has ATS-unfriendly formatting — remove all tables, graphics, text boxes, and non-standard fonts",
+            "ATS Formatting: Resume may have some ATS-unfriendly elements — check for tables, graphics, or unusual fonts that could confuse parsers",
+        ),
+        'P4.1': (
+            "Grammar & Spelling: Resume contains numerous grammar or spelling errors — run a full spell-check and proofread carefully",
+            "Grammar & Spelling: Resume contains some grammar or spelling errors — proofread and correct all mistakes before submitting",
+        ),
+        'P4.2': (
+            "Professional Standards: Resume language is informal or unprofessional — remove personal pronouns (I, me, my), slang, and casual tone",
+            "Professional Standards: Resume has some informal or unprofessional language — review tone and remove any casual phrasing or personal pronouns",
+        ),
+        'P5.1': (
+            "Years of Experience: Claimed experience level doesn't match resume history at all — ensure your dates and role history clearly reflect your level",
+            "Years of Experience: Claimed experience level only partially matches resume history — review dates to ensure total experience aligns with your stated level",
+        ),
+        'P5.2': (
+            "Career Recency: Recent experience is entirely missing or all roles are outdated — include current or recent positions to show active career progression",
+            "Career Recency: Recent experience appears thin or outdated — ensure your most recent roles are clearly listed with up-to-date dates",
+        ),
+        'P5.3': (
+            "Experience Depth: All role descriptions lack sufficient detail — add at least 3-5 bullet points per role describing responsibilities and achievements",
+            "Experience Depth: Some role descriptions lack sufficient detail — expand thin job entries with more specific accomplishments and responsibilities",
+        ),
+        'P6.1': (
+            "Employment Gaps: Significant unexplained gaps found between jobs — add dates or a brief note to account for gaps (e.g., freelance work, education, caregiving)",
+            "Employment Gaps: Potential employment gaps detected — review your date ranges and add context for any gaps longer than 3 months",
+        ),
+        'P6.2': (
+            "Job Hopping: Multiple very short-tenure positions detected (under 1 year each) — add context or consolidate contract/freelance roles under one entry",
+            "Job Hopping: Several short-tenure positions detected — consider adding context (e.g., 'contract role') to explain brief stints",
+        ),
+        'P6.3': (
+            "Repetition: The same words or phrases are used excessively throughout — diversify your vocabulary and avoid repeating the same verbs or nouns",
+            "Repetition: Some words or phrases are repeated too often — vary your language to keep the resume engaging and avoid keyword stuffing",
+        ),
+        'P6.4': (
+            "Date Formatting: Employment dates are inconsistently formatted or missing — use a consistent format (e.g., 'Jan 2021 – Mar 2023') for every role",
+            "Date Formatting: Some employment dates are inconsistently formatted — standardise all date formats across the resume",
+        ),
+        'P7.1': (
+            "Readability: Text is extremely difficult to read or scan — use shorter sentences, plain language, and clear section headers",
+            "Readability: Text could be clearer — simplify complex sentences and use plain, direct language that is easy to skim",
+        ),
+        'P7.2': (
+            "Bullet Structure: Bullets are missing or very poorly structured — each role should have 3-5 concise bullets starting with a strong action verb",
+            "Bullet Structure: Some bullets are poorly structured — ensure each bullet is concise, starts with an action verb, and communicates a clear outcome",
+        ),
+        'P7.3': (
+            "Passive Voice: Resume uses passive voice almost exclusively — rewrite sentences to be active (e.g., 'Led a team' instead of 'A team was led by me')",
+            "Passive Voice: Too much passive voice detected — rewrite passive constructions to active voice to sound more direct and confident",
+        ),
+    }
+
+    def _get_issue_message(self, param_code: str, percentage: float) -> str:
+        """
+        Return a human-readable, actionable issue description for a parameter.
+
+        Uses zero-score wording when percentage == 0, and gentler partial-score
+        wording for 0 < percentage < 60.
+        """
+        messages = self._ISSUE_MESSAGES.get(param_code)
+        if messages is None:
+            # Fallback: should not happen for known codes
+            param_name = param_code
+            return f"{param_name}: Score {percentage:.0f}% — review and improve this area"
+        zero_msg, partial_msg = messages
+        return zero_msg if percentage == 0 else partial_msg
+
     def _convert_to_api_format(
         self,
         scorer_result: Dict[str, Any],
@@ -411,12 +516,11 @@ class ScorerV3Adapter:
             # Extract issues from parameter details
             for param_code, param_result in category_data['parameters'].items():
                 if param_result.get('status') == 'success':
-                    details = param_result.get('details', {})
-
                     # Add feedback as issues if score is low
                     if param_result['percentage'] < 60:
-                        param_name = param_code
-                        issues.append(f"{param_name}: Score {param_result['percentage']:.0f}%")
+                        issues.append(
+                            self._get_issue_message(param_code, param_result['percentage'])
+                        )
 
             breakdown[category_name] = {
                 'score': category_data['score'],

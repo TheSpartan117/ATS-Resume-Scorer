@@ -110,7 +110,9 @@ class ScorerV3:
 
                 # Add to category total
                 category = param_info['category']
-                category_scores[category]['score'] += result['score']
+                category_scores[category]['score'] = round(
+                    category_scores[category]['score'] + result['score'], 2
+                )
                 category_scores[category]['parameters'][code] = result
 
             except Exception as e:
@@ -193,8 +195,8 @@ class ScorerV3:
             # Use role-specific default keywords if no JD provided
             if not job_requirements or 'required_keywords' not in job_requirements:
                 from backend.services.role_keywords import get_role_keywords
-                role_keywords = get_role_keywords(role)
-                keywords = role_keywords['required']
+                role_keywords = get_role_keywords(role) or {}
+                keywords = role_keywords.get('required', [])
             else:
                 keywords = job_requirements['required_keywords']
 
@@ -209,8 +211,8 @@ class ScorerV3:
             # Use role-specific default keywords if no JD provided
             if not job_requirements or 'preferred_keywords' not in job_requirements:
                 from backend.services.role_keywords import get_role_keywords
-                role_keywords = get_role_keywords(role)
-                preferred = role_keywords['preferred']
+                role_keywords = get_role_keywords(role) or {}
+                preferred = role_keywords.get('preferred', [])
             else:
                 preferred = job_requirements['preferred_keywords']
 
@@ -346,16 +348,32 @@ class ScorerV3:
             experience = resume_data.get('experience', [])
             if not experience:
                 return self._missing_data_result(max_score, 'No experience data provided')
-
             result = scorer.score(employment_history=experience)
+            penalty = result.get('penalty', 0)  # 0 to -5
+            pct = round(((5 + penalty) / 5) * 100, 1)  # 0 penalty=100%, -5 penalty=0%
+            return {
+                'score': penalty,
+                'max_score': max_score,
+                'percentage': max(0.0, pct),
+                'status': 'success',
+                'details': result
+            }
 
         # P6.2: Job Hopping (penalty -3pts max)
         elif code == 'P6.2':
             experience = resume_data.get('experience', [])
             if not experience:
                 return self._missing_data_result(max_score, 'No experience data provided')
-
-            result = scorer.score(employment_history=experience)  # Parameter name is employment_history
+            result = scorer.score(employment_history=experience)
+            penalty = result.get('penalty', 0)  # 0 to -3
+            pct = round(((3 + penalty) / 3) * 100, 1)  # 0 penalty=100%, -3 penalty=0%
+            return {
+                'score': penalty,
+                'max_score': max_score,
+                'percentage': max(0.0, pct),
+                'status': 'success',
+                'details': result
+            }
 
         # P6.3: Word Repetition (penalty -5pts max)
         elif code == 'P6.3':
@@ -370,8 +388,16 @@ class ScorerV3:
             experience = resume_data.get('experience', [])
             if not experience:
                 return self._missing_data_result(max_score, 'No experience data provided')
-
             result = scorer.score(experience=experience)
+            penalty = result.get('penalty', 0)  # 0 to -2
+            pct = round(((2 + penalty) / 2) * 100, 1)  # 0 penalty=100%, -2 penalty=0%
+            return {
+                'score': penalty,
+                'max_score': max_score,
+                'percentage': max(0.0, pct),
+                'status': 'success',
+                'details': result
+            }
 
         # P7.1: Readability Score (5pts)
         elif code == 'P7.1':
