@@ -31,12 +31,20 @@ def _warmup_models():
     """
     Pre-warm the sentence-transformers model at server startup.
 
-    LanguageTool (JVM) is intentionally excluded: on Render free tier (512 MB)
-    the JVM uses ~250 MB even after a timeout, leaving insufficient RAM for the
-    Python process and causing OOM crashes.  Grammar checking falls back to
-    pyspellchecker at runtime, which is lightweight and reliable.
+    Only runs when ENABLE_SEMANTIC_MATCHING=true.  On Render free tier (512 MB)
+    the model uses ~90 MB at rest + up to 200 MB per encode() call, which
+    combined with the Python process and DOCX-specific operations exceeds the
+    memory limit.  Keyword matching falls back to exact string comparison by
+    default, which is reliable and uses negligible memory.
+
+    LanguageTool (JVM) is also excluded: it uses ~250 MB even after a timeout.
     """
-    logger.info("Starting background model warmup (sentence-transformers only)...")
+    import os
+    if os.getenv("ENABLE_SEMANTIC_MATCHING", "false").lower() != "true":
+        logger.info("Semantic matching disabled (ENABLE_SEMANTIC_MATCHING not set) — skipping warmup")
+        return
+
+    logger.info("Starting background model warmup (sentence-transformers)...")
     try:
         from backend.services.semantic_matcher import get_semantic_matcher
         get_semantic_matcher()._lazy_init()

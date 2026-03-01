@@ -11,6 +11,7 @@ This module provides:
 from typing import List, Dict, Tuple
 import re
 import logging
+import os
 import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from functools import lru_cache
@@ -22,6 +23,13 @@ logger = logging.getLogger(__name__)
 # so at runtime it loads from local cache in ~1-2 seconds.
 # 15 seconds is generous enough for cache load while still protecting against hangs.
 _MODEL_LOAD_TIMEOUT_SECONDS = 15
+
+# Sentence-transformers model uses ~90 MB of weights + up to 200 MB of intermediate
+# tensors per encode() call.  On Render free tier (512 MB) with 4 encode() calls
+# per scoring request the process exceeds the memory limit and OOMs.
+# Set ENABLE_SEMANTIC_MATCHING=true to opt in; default is disabled.
+# Without the model, keyword matching falls back to exact string comparison.
+_SEMANTIC_MATCHING_ENABLED = os.getenv("ENABLE_SEMANTIC_MATCHING", "false").lower() == "true"
 
 # Phase 1.4: Caching support
 try:
@@ -60,6 +68,10 @@ class SemanticKeywordMatcher:
         """
         Lazy initialization with a hard timeout and cooldown-based retry.
 
+        Skipped entirely when ENABLE_SEMANTIC_MATCHING is not set (default), so
+        self._model stays None and all matching uses exact string comparison.
+        Set ENABLE_SEMANTIC_MATCHING=true on servers with ≥1 GB RAM.
+
         Normal path (model pre-downloaded during Render build):
           SentenceTransformer loads from local HuggingFace cache in ~1-2 s.
 
@@ -69,6 +81,9 @@ class SemanticKeywordMatcher:
           after _RETRY_COOLDOWN_SECONDS so the model can eventually load once the
           download completes in the background or on a subsequent deploy.
         """
+        if not _SEMANTIC_MATCHING_ENABLED:
+            return  # Use exact-matching fallback; never load the model
+
         if self._initialized:
             return
 
