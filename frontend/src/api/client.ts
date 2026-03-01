@@ -7,6 +7,37 @@ import { API_TIMEOUT } from '../config/timeouts'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
+/**
+ * Converts an arbitrary `detail` value from a backend error response into a
+ * human-readable string.
+ *
+ * FastAPI returns `detail` as a plain string for most errors but as an array
+ * of objects (e.g. `[{ loc, msg, type }]`) for 422 Unprocessable Entity
+ * responses.  Passing such an array directly to `new Error()` coerces it via
+ * `String()`, which yields "[object Object]".  This helper normalises all
+ * cases into a readable message.
+ */
+function extractErrorMessage(detail: unknown): string | undefined {
+  if (!detail) return undefined
+  if (typeof detail === 'string') return detail
+  if (Array.isArray(detail)) {
+    return detail
+      .map((item: unknown) => {
+        if (item && typeof item === 'object') {
+          const obj = item as Record<string, unknown>
+          return (
+            (typeof obj['msg'] === 'string' ? obj['msg'] : undefined) ||
+            (typeof obj['message'] === 'string' ? obj['message'] : undefined) ||
+            JSON.stringify(item)
+          )
+        }
+        return String(item)
+      })
+      .join('; ')
+  }
+  return JSON.stringify(detail)
+}
+
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -53,7 +84,7 @@ export async function uploadResume(
   } catch (error) {
     const axiosError = error as AxiosError<ApiError>
     throw new Error(
-      axiosError.response?.data?.detail ||
+      extractErrorMessage(axiosError.response?.data?.detail) ||
       axiosError.message ||
       'Failed to upload resume'
     )
@@ -104,7 +135,7 @@ export async function rescoreResume(request: ScoreRequest): Promise<ScoreResult>
     return response.data
   } catch (error) {
     const axiosError = error as AxiosError<ApiError>
-    throw new Error(axiosError.response?.data?.detail || 'Failed to re-score resume')
+    throw new Error(extractErrorMessage(axiosError.response?.data?.detail) || 'Failed to re-score resume')
   }
 }
 
@@ -186,7 +217,7 @@ export async function signup(data: SignupRequest): Promise<AuthResponse> {
     return response.data
   } catch (error) {
     const axiosError = error as AxiosError<ApiError>
-    throw new Error(axiosError.response?.data?.detail || 'Signup failed')
+    throw new Error(extractErrorMessage(axiosError.response?.data?.detail) || 'Signup failed')
   }
 }
 
@@ -199,7 +230,7 @@ export async function login(data: LoginRequest): Promise<AuthResponse> {
     return response.data
   } catch (error) {
     const axiosError = error as AxiosError<ApiError>
-    throw new Error(axiosError.response?.data?.detail || 'Login failed')
+    throw new Error(extractErrorMessage(axiosError.response?.data?.detail) || 'Login failed')
   }
 }
 
@@ -212,7 +243,7 @@ export async function getCurrentUser(): Promise<User> {
     return response.data
   } catch (error) {
     const axiosError = error as AxiosError<ApiError>
-    throw new Error(axiosError.response?.data?.detail || 'Failed to get user info')
+    throw new Error(extractErrorMessage(axiosError.response?.data?.detail) || 'Failed to get user info')
   }
 }
 
@@ -225,7 +256,7 @@ export async function saveResume(data: ScoreRequest): Promise<SavedResume> {
     return response.data
   } catch (error) {
     const axiosError = error as AxiosError<ApiError>
-    throw new Error(axiosError.response?.data?.detail || 'Failed to save resume')
+    throw new Error(extractErrorMessage(axiosError.response?.data?.detail) || 'Failed to save resume')
   }
 }
 
@@ -238,7 +269,7 @@ export async function getSavedResumes(): Promise<SavedResume[]> {
     return response.data
   } catch (error) {
     const axiosError = error as AxiosError<ApiError>
-    throw new Error(axiosError.response?.data?.detail || 'Failed to load resumes')
+    throw new Error(extractErrorMessage(axiosError.response?.data?.detail) || 'Failed to load resumes')
   }
 }
 
@@ -251,7 +282,7 @@ export async function getSavedResume(id: string): Promise<SavedResume> {
     return response.data
   } catch (error) {
     const axiosError = error as AxiosError<ApiError>
-    throw new Error(axiosError.response?.data?.detail || 'Failed to load resume')
+    throw new Error(extractErrorMessage(axiosError.response?.data?.detail) || 'Failed to load resume')
   }
 }
 
@@ -264,7 +295,7 @@ export async function updateResume(id: string, data: ScoreRequest): Promise<Save
     return response.data
   } catch (error) {
     const axiosError = error as AxiosError<ApiError>
-    throw new Error(axiosError.response?.data?.detail || 'Failed to update resume')
+    throw new Error(extractErrorMessage(axiosError.response?.data?.detail) || 'Failed to update resume')
   }
 }
 
@@ -276,7 +307,7 @@ export async function deleteResume(id: string): Promise<void> {
     await apiClient.delete(`/api/resumes/${id}`)
   } catch (error) {
     const axiosError = error as AxiosError<ApiError>
-    throw new Error(axiosError.response?.data?.detail || 'Failed to delete resume')
+    throw new Error(extractErrorMessage(axiosError.response?.data?.detail) || 'Failed to delete resume')
   }
 }
 
@@ -350,7 +381,7 @@ export async function getRoles(): Promise<RolesResponse> {
     return response.data
   } catch (error) {
     const axiosError = error as AxiosError<ApiError>
-    throw new Error(axiosError.response?.data?.detail || axiosError.message || 'Failed to fetch roles')
+    throw new Error(extractErrorMessage(axiosError.response?.data?.detail) || axiosError.message || 'Failed to fetch roles')
   }
 }
 
@@ -363,7 +394,7 @@ export async function getRoleDetails(roleId: string): Promise<RoleDetails> {
     return response.data
   } catch (error) {
     const axiosError = error as AxiosError<ApiError>
-    throw new Error(axiosError.response?.data?.detail || 'Failed to fetch role details')
+    throw new Error(extractErrorMessage(axiosError.response?.data?.detail) || 'Failed to fetch role details')
   }
 }
 

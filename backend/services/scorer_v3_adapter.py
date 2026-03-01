@@ -370,6 +370,10 @@ class ScorerV3Adapter:
         ScorerV3: beginner, intermediary, senior
         """
         level_map = {
+            # New 3-tier vocabulary (from roles API)
+            'beginner': 'beginner',
+            'intermediary': 'intermediary',
+            # Old 5-tier vocabulary (legacy / default values in upload.py)
             'entry': 'beginner',
             'junior': 'beginner',
             'mid': 'intermediary',

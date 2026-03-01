@@ -286,7 +286,7 @@ export default function UploadPage() {
                       <p className="text-xs text-gray-500">Match scoring to your experience</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-5 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {rolesData?.levels.map((level) => (
                       <button
                         key={level.id}
@@ -308,7 +308,7 @@ export default function UploadPage() {
                   </div>
                   <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <p className="text-xs text-gray-600">
-                      Entry (0-2 yrs) • Mid (3-5 yrs) • Senior (6-10 yrs) • Lead (10+ yrs) • Executive (C-level)
+                      Beginner (0-3 yrs) • Intermediary (3-7 yrs) • Senior (7+ yrs)
                     </p>
                   </div>
                 </div>
