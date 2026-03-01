@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface ModeIndicatorProps {
   mode: 'ats_simulation' | 'quality_coach';
@@ -17,6 +17,8 @@ interface ModeIndicatorProps {
   autoReject?: boolean;
 }
 
+const KEYWORDS_PREVIEW = 5;
+
 export const ModeIndicator: React.FC<ModeIndicatorProps> = ({
   mode,
   score,
@@ -25,6 +27,8 @@ export const ModeIndicator: React.FC<ModeIndicatorProps> = ({
   autoReject
 }) => {
   const isATSMode = mode === 'ats_simulation';
+  const [showAllMatched, setShowAllMatched] = useState(false);
+  const [showAllMissing, setShowAllMissing] = useState(false);
 
   const getScoreColor = () => {
     if (score >= 80) return 'text-green-600';
@@ -111,15 +115,23 @@ export const ModeIndicator: React.FC<ModeIndicatorProps> = ({
               <div className="text-sm">
                 <span className="text-gray-700">✅ Matched ({keywordDetails.matchedKeywords.length}):</span>
                 <div className="mt-1 flex flex-wrap gap-1">
-                  {keywordDetails.matchedKeywords.slice(0, 5).map((kw, idx) => (
+                  {(showAllMatched
+                    ? keywordDetails.matchedKeywords
+                    : keywordDetails.matchedKeywords.slice(0, KEYWORDS_PREVIEW)
+                  ).map((kw, idx) => (
                     <span key={idx} className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs">
                       {kw}
                     </span>
                   ))}
-                  {keywordDetails.matchedKeywords.length > 5 && (
-                    <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
-                      +{keywordDetails.matchedKeywords.length - 5} more
-                    </span>
+                  {keywordDetails.matchedKeywords.length > KEYWORDS_PREVIEW && (
+                    <button
+                      onClick={() => setShowAllMatched(prev => !prev)}
+                      className="px-2 py-0.5 bg-green-50 text-green-700 border border-green-300 rounded text-xs hover:bg-green-100 transition-colors cursor-pointer font-medium"
+                    >
+                      {showAllMatched
+                        ? 'Show less ▲'
+                        : `+${keywordDetails.matchedKeywords.length - KEYWORDS_PREVIEW} more ▼`}
+                    </button>
                   )}
                 </div>
               </div>
@@ -130,15 +142,23 @@ export const ModeIndicator: React.FC<ModeIndicatorProps> = ({
               <div className="text-sm">
                 <span className="text-gray-700">❌ Missing ({keywordDetails.missingKeywords.length}):</span>
                 <div className="mt-1 flex flex-wrap gap-1">
-                  {keywordDetails.missingKeywords.slice(0, 5).map((kw, idx) => (
+                  {(showAllMissing
+                    ? keywordDetails.missingKeywords
+                    : keywordDetails.missingKeywords.slice(0, KEYWORDS_PREVIEW)
+                  ).map((kw, idx) => (
                     <span key={idx} className="px-2 py-0.5 bg-red-100 text-red-800 rounded text-xs">
                       {kw}
                     </span>
                   ))}
-                  {keywordDetails.missingKeywords.length > 5 && (
-                    <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
-                      +{keywordDetails.missingKeywords.length - 5} more
-                    </span>
+                  {keywordDetails.missingKeywords.length > KEYWORDS_PREVIEW && (
+                    <button
+                      onClick={() => setShowAllMissing(prev => !prev)}
+                      className="px-2 py-0.5 bg-red-50 text-red-700 border border-red-300 rounded text-xs hover:bg-red-100 transition-colors cursor-pointer font-medium"
+                    >
+                      {showAllMissing
+                        ? 'Show less ▲'
+                        : `+${keywordDetails.missingKeywords.length - KEYWORDS_PREVIEW} more ▼`}
+                    </button>
                   )}
                 </div>
               </div>
