@@ -10,7 +10,18 @@ This module provides:
 """
 
 from typing import Dict, List
+import logging
+import time
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from functools import lru_cache
+
+logger = logging.getLogger(__name__)
+
+# Starting a local LanguageTool JVM can take 60-90s on Render free tier.
+# 20s is enough for a warm JVM (already started by preload) while still
+# protecting against cold-start hangs.
+_GRAMMAR_LOAD_TIMEOUT_SECONDS = 20
+_RETRY_COOLDOWN_SECONDS = 300  # 5 minutes
 
 
 class GrammarChecker:
@@ -33,22 +44,55 @@ class GrammarChecker:
         self._tool = None
         self._language = language
         self._initialized = False
+        self._last_failed_at: float = 0.0
 
     def _lazy_init(self):
-        """Lazy initialization to avoid loading LanguageTool on import"""
+        """
+        Lazy initialization with a hard timeout and cooldown-based retry.
+
+        LanguageTool starts a local JVM which takes 60-90s on Render free tier.
+        We pre-start it in backend/preload_models.py so the JVM is warm at
+        runtime.  The timeout here guards against the cold-start case.
+        """
         if self._initialized:
             return
 
-        try:
+        # Respect retry cooldown
+        if self._last_failed_at and (time.time() - self._last_failed_at) < _RETRY_COOLDOWN_SECONDS:
+            return
+
+        def _load():
             import language_tool_python
-            # Initialize LanguageTool with local server (no remote API calls)
-            self._tool = language_tool_python.LanguageTool(self._language)
-            self._initialized = True
+            return language_tool_python.LanguageTool(self._language)
+
+        try:
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(_load)
+                try:
+                    self._tool = future.result(timeout=_GRAMMAR_LOAD_TIMEOUT_SECONDS)
+                    self._initialized = True
+                    self._last_failed_at = 0.0
+                    logger.info("LanguageTool grammar checker initialized successfully")
+                except FuturesTimeoutError:
+                    logger.warning(
+                        "LanguageTool initialization timed out after %ds — "
+                        "falling back to basic grammar checking. Will retry in %d minutes.",
+                        _GRAMMAR_LOAD_TIMEOUT_SECONDS, _RETRY_COOLDOWN_SECONDS // 60,
+                    )
+                    self._tool = None
+                    self._last_failed_at = time.time()
+                except Exception as e:
+                    logger.warning(
+                        "LanguageTool initialization failed (%s) — "
+                        "falling back to basic grammar checking. Will retry in %d minutes.",
+                        e, _RETRY_COOLDOWN_SECONDS // 60,
+                    )
+                    self._tool = None
+                    self._last_failed_at = time.time()
         except Exception as e:
-            print(f"Warning: LanguageTool initialization failed: {e}")
-            print("Falling back to basic grammar checking")
+            logger.warning("LanguageTool could not be loaded: %s", e)
             self._tool = None
-            self._initialized = True  # Still mark as initialized to use fallback
+            self._last_failed_at = time.time()
 
     def check(self, text: str, max_issues: int = 50) -> Dict:
         """
