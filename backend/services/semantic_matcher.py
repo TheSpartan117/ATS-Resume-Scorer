@@ -10,7 +10,16 @@ This module provides:
 
 from typing import List, Dict, Tuple
 import re
+import logging
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from functools import lru_cache
+
+logger = logging.getLogger(__name__)
+
+# Timeout in seconds for downloading/loading the sentence-transformers model.
+# On Render free tier the download can hang for minutes; 30s is generous enough
+# for a cached model but short enough to avoid blocking requests.
+_MODEL_LOAD_TIMEOUT_SECONDS = 30
 
 # Phase 1.4: Caching support
 try:
@@ -40,29 +49,47 @@ class SemanticKeywordMatcher:
         self._model = None
         self._keybert = None
         self._initialized = False
+        self._init_failed = False  # Permanently skip retries after timeout/failure
 
     def _lazy_init(self):
-        """Lazy initialization to avoid loading models on import"""
-        if self._initialized:
+        """
+        Lazy initialization with a hard timeout.
+
+        On Render free tier, downloading the 80 MB all-MiniLM-L6-v2 model can
+        block for several minutes if the file is not already cached.  We run the
+        download in a background thread and give it _MODEL_LOAD_TIMEOUT_SECONDS
+        to complete.  If it times out or raises any exception we permanently fall
+        back to exact keyword matching so subsequent requests are not affected.
+        """
+        if self._initialized or self._init_failed:
             return
 
-        try:
+        def _load():
             from sentence_transformers import SentenceTransformer
             from keybert import KeyBERT
+            model = SentenceTransformer('all-MiniLM-L6-v2')
+            return model, KeyBERT(model)
 
-            # Use all-MiniLM-L6-v2 (80MB, fast, accurate)
-            # This model is optimized for semantic similarity tasks
-            try:
-                self._model = SentenceTransformer('all-MiniLM-L6-v2')
-                self._keybert = KeyBERT(self._model)
-                self._initialized = True
-            except (OSError, ConnectionError, Exception) as e:
-                # Network failure or model not cached - operate in offline mode
-                print(f"Warning: Could not load sentence-transformers model: {e}")
-                print("Falling back to exact keyword matching only (no semantic similarity)")
-                self._model = None
-                self._keybert = None
-                self._initialized = True  # Mark as initialized to prevent retry loops
+        try:
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(_load)
+                try:
+                    self._model, self._keybert = future.result(timeout=_MODEL_LOAD_TIMEOUT_SECONDS)
+                    self._initialized = True
+                    logger.info("Semantic matcher initialized successfully")
+                except FuturesTimeoutError:
+                    logger.warning(
+                        "Semantic matcher model download timed out after %ds — "
+                        "falling back to exact keyword matching",
+                        _MODEL_LOAD_TIMEOUT_SECONDS,
+                    )
+                    self._init_failed = True
+                except Exception as e:
+                    logger.warning(
+                        "Could not load sentence-transformers model (%s) — "
+                        "falling back to exact keyword matching", e
+                    )
+                    self._init_failed = True
         except ImportError as e:
             raise ImportError(
                 "Required packages not installed. Run: "
@@ -95,8 +122,8 @@ class SemanticKeywordMatcher:
         if not job_description or len(job_description.strip()) < 10:
             return []
 
-        # If model failed to load, use fallback immediately
-        if self._keybert is None:
+        # If model failed to load (or timed out), use fallback immediately
+        if self._keybert is None or self._init_failed:
             return self._fallback_keyword_extraction(job_description, top_n)
 
         try:
@@ -147,8 +174,8 @@ class SemanticKeywordMatcher:
                 'missing': job_keywords or []
             }
 
-        # If model failed to load, use exact matching fallback
-        if self._model is None:
+        # If model failed to load (or timed out), use exact matching fallback
+        if self._model is None or self._init_failed:
             return self._fallback_exact_matching(resume_text, job_keywords, similarity_threshold)
 
         try:
