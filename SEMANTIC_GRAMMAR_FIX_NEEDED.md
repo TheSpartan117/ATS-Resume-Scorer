@@ -1,8 +1,12 @@
 # Semantic Matching & Grammar Checking - Fix Required
 
 **Date**: March 1, 2026
-**Status**: ❌ NOT WORKING - Network connectivity issues
-**Priority**: HIGH
+**Status**: ✅ FIXED (March 1, 2026)
+**Priority**: HIGH — resolved in branch `fix/bug-fixes-and-improvements`
+
+> **Update**: Both issues below have been fixed. See `CHANGES.md` for details.
+> - Semantic matching: model loads correctly from local cache; `max(exact, hybrid)` fix prevents false negatives
+> - Grammar checking: fallback now uses `pyspellchecker` instead of returning a perfect score when Java/LanguageTool is unavailable
 
 ---
 
