@@ -11,15 +11,17 @@ This module provides:
 from typing import List, Dict, Tuple
 import re
 import logging
+import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
-# Timeout in seconds for downloading/loading the sentence-transformers model.
-# On Render free tier the download can hang for minutes; 30s is generous enough
-# for a cached model but short enough to avoid blocking requests.
-_MODEL_LOAD_TIMEOUT_SECONDS = 30
+# Timeout for loading the sentence-transformers model.
+# The model is pre-downloaded during the Render build (see backend/preload_models.py),
+# so at runtime it loads from local cache in ~1-2 seconds.
+# 15 seconds is generous enough for cache load while still protecting against hangs.
+_MODEL_LOAD_TIMEOUT_SECONDS = 15
 
 # Phase 1.4: Caching support
 try:
@@ -44,24 +46,34 @@ class SemanticKeywordMatcher:
     - Hybrid scoring: 70% semantic + 30% exact matching
     """
 
+    # How long to wait before retrying after a failed/timed-out load attempt
+    _RETRY_COOLDOWN_SECONDS = 300  # 5 minutes
+
     def __init__(self):
         """Initialize semantic models (lazy loading for performance)"""
         self._model = None
         self._keybert = None
         self._initialized = False
-        self._init_failed = False  # Permanently skip retries after timeout/failure
+        self._last_failed_at: float = 0.0  # Timestamp of last failed attempt
 
     def _lazy_init(self):
         """
-        Lazy initialization with a hard timeout.
+        Lazy initialization with a hard timeout and cooldown-based retry.
 
-        On Render free tier, downloading the 80 MB all-MiniLM-L6-v2 model can
-        block for several minutes if the file is not already cached.  We run the
-        download in a background thread and give it _MODEL_LOAD_TIMEOUT_SECONDS
-        to complete.  If it times out or raises any exception we permanently fall
-        back to exact keyword matching so subsequent requests are not affected.
+        Normal path (model pre-downloaded during Render build):
+          SentenceTransformer loads from local HuggingFace cache in ~1-2 s.
+
+        Fallback path (cache missing / network issue):
+          If loading takes longer than _MODEL_LOAD_TIMEOUT_SECONDS, we fall back
+          to exact keyword matching for the current request.  A retry is allowed
+          after _RETRY_COOLDOWN_SECONDS so the model can eventually load once the
+          download completes in the background or on a subsequent deploy.
         """
-        if self._initialized or self._init_failed:
+        if self._initialized:
+            return
+
+        # Respect the retry cooldown so we don't block every request
+        if self._last_failed_at and (time.time() - self._last_failed_at) < self._RETRY_COOLDOWN_SECONDS:
             return
 
         def _load():
@@ -76,20 +88,24 @@ class SemanticKeywordMatcher:
                 try:
                     self._model, self._keybert = future.result(timeout=_MODEL_LOAD_TIMEOUT_SECONDS)
                     self._initialized = True
+                    self._last_failed_at = 0.0
                     logger.info("Semantic matcher initialized successfully")
                 except FuturesTimeoutError:
                     logger.warning(
-                        "Semantic matcher model download timed out after %ds — "
-                        "falling back to exact keyword matching",
+                        "Semantic matcher model load timed out after %ds "
+                        "(model not pre-cached?) — falling back to exact matching. "
+                        "Will retry in %d minutes.",
                         _MODEL_LOAD_TIMEOUT_SECONDS,
+                        self._RETRY_COOLDOWN_SECONDS // 60,
                     )
-                    self._init_failed = True
+                    self._last_failed_at = time.time()
                 except Exception as e:
                     logger.warning(
                         "Could not load sentence-transformers model (%s) — "
-                        "falling back to exact keyword matching", e
+                        "falling back to exact matching. Will retry in %d minutes.",
+                        e, self._RETRY_COOLDOWN_SECONDS // 60,
                     )
-                    self._init_failed = True
+                    self._last_failed_at = time.time()
         except ImportError as e:
             raise ImportError(
                 "Required packages not installed. Run: "
@@ -122,8 +138,8 @@ class SemanticKeywordMatcher:
         if not job_description or len(job_description.strip()) < 10:
             return []
 
-        # If model failed to load (or timed out), use fallback immediately
-        if self._keybert is None or self._init_failed:
+        # If model is not ready, use fallback immediately
+        if self._keybert is None:
             return self._fallback_keyword_extraction(job_description, top_n)
 
         try:
@@ -174,8 +190,8 @@ class SemanticKeywordMatcher:
                 'missing': job_keywords or []
             }
 
-        # If model failed to load (or timed out), use exact matching fallback
-        if self._model is None or self._init_failed:
+        # If model is not ready, use exact matching fallback
+        if self._model is None:
             return self._fallback_exact_matching(resume_text, job_keywords, similarity_threshold)
 
         try:
