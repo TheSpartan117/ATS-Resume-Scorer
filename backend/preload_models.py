@@ -27,6 +27,10 @@ def preload_sentence_transformer():
 
 
 def preload_language_tool():
+    """
+    Attempt to pre-load LanguageTool.  Non-fatal: if Java is unavailable in
+    the build environment the app falls back to pyspellchecker at runtime.
+    """
     print("Pre-loading LanguageTool (downloads JAR and starts JVM)...")
     try:
         import language_tool_python
@@ -36,11 +40,10 @@ def preload_language_tool():
         tool.close()
         print(f"✓ LanguageTool loaded and verified ({len(matches)} test matches found)")
     except Exception as e:
-        print(f"✗ Failed to pre-load LanguageTool: {e}")
-        sys.exit(1)
+        print(f"⚠ LanguageTool not available ({e}) — grammar checking will use fallback at runtime")
 
 
 if __name__ == "__main__":
     preload_sentence_transformer()
     preload_language_tool()
-    print("\nAll models pre-loaded successfully.")
+    print("\nPre-load complete.")
