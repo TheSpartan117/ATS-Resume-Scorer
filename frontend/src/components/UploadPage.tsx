@@ -17,18 +17,19 @@ export default function UploadPage() {
   const [rolesData, setRolesData] = useState<RolesResponse | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [rolesError, setRolesError] = useState<string | null>(null)
 
   // Fetch roles on component mount
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        console.log('Fetching roles...')
         const data = await getRoles()
-        console.log('Roles fetched successfully:', data)
         setRolesData(data)
+        setRolesError(null)
       } catch (err) {
-        console.error('Failed to fetch roles:', err)
-        // Set empty data as fallback
+        const msg = err instanceof Error ? err.message : 'Failed to fetch roles'
+        console.error('Failed to fetch roles:', msg)
+        setRolesError(msg)
         setRolesData({ categories: {}, levels: [] })
       }
     }
@@ -250,6 +251,9 @@ export default function UploadPage() {
                     </optgroup>
                   ))}
                 </select>
+                {rolesError && (
+                  <p className="mt-2 text-xs text-red-500">Could not load roles: {rolesError}</p>
+                )}
               </div>
 
               {/* Experience Level (Conditional) */}

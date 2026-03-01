@@ -46,15 +46,17 @@ export async function uploadResume(
 
   try {
     const response = await apiClient.post<UploadResponse>('/api/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      // Do NOT set Content-Type — browser must set it automatically with the correct boundary for multipart
       timeout: 120000, // 2 minutes — accounts for Render cold start + model loading
     })
     return response.data
   } catch (error) {
     const axiosError = error as AxiosError<ApiError>
-    throw new Error(axiosError.response?.data?.detail || 'Failed to upload resume')
+    throw new Error(
+      axiosError.response?.data?.detail ||
+      axiosError.message ||
+      'Failed to upload resume'
+    )
   }
 }
 
@@ -346,7 +348,7 @@ export async function getRoles(): Promise<RolesResponse> {
     return response.data
   } catch (error) {
     const axiosError = error as AxiosError<ApiError>
-    throw new Error(axiosError.response?.data?.detail || 'Failed to fetch roles')
+    throw new Error(axiosError.response?.data?.detail || axiosError.message || 'Failed to fetch roles')
   }
 }
 
