@@ -103,7 +103,7 @@ class SemanticKeywordMatcher:
             # Extract keywords using KeyBERT
             keywords = self._keybert.extract_keywords(
                 job_description,
-                keyphrase_ngram_range=(1, 3),  # 1-3 word phrases
+                keyphrase_ngram_range=(1, 2),  # 1-2 word phrases (trigrams too specific to match)
                 stop_words='english',
                 top_n=top_n,
                 use_mmr=True,  # Use Maximal Marginal Relevance for diversity

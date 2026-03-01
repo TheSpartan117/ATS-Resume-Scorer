@@ -557,17 +557,27 @@ class ScorerV3Adapter:
         for strength in feedback.get('strengths', []):
             strengths.append(f"{strength['parameter']}: {strength['percentage']:.0f}%")
 
-        # Build keyword details if available
+        # Build keyword details from P1.1 result (shown for both JD and role-default paths)
         keyword_details = None
-        if job_requirements and 'P1.1' in scorer_result['parameter_scores']:
+        if 'P1.1' in scorer_result['parameter_scores']:
             p1_1_result = scorer_result['parameter_scores']['P1.1']
             if p1_1_result.get('status') == 'success':
                 details = p1_1_result.get('details', {})
+                # Use actual binary match rate from P1.1 scorer, not score/max percentage
+                actual_match_pct = details.get('match_percentage', p1_1_result.get('percentage', 0))
+                # P1.1 returns matched_keywords / unmatched_keywords (not matched / missing)
+                matched = details.get('matched_keywords', details.get('matched', []))
+                missing = details.get('unmatched_keywords', details.get('missing', []))
+                total_req = (
+                    len(job_requirements.get('required_keywords', []))
+                    if job_requirements
+                    else len(matched) + len(missing)
+                )
                 keyword_details = {
-                    'matchPercentage': p1_1_result.get('percentage', 0),
-                    'matchedKeywords': details.get('matched', []),
-                    'missingKeywords': details.get('missing', []),
-                    'totalRequired': len(job_requirements.get('required_keywords', []))
+                    'matchPercentage': round(actual_match_pct, 1),
+                    'matchedKeywords': matched,
+                    'missingKeywords': missing,
+                    'totalRequired': total_req
                 }
 
         return {
