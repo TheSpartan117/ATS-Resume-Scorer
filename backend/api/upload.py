@@ -126,29 +126,11 @@ async def upload_resume(
             f.write(docx_content)
         logger.info(f"Saved converted DOCX: {docx_file_path}")
 
-    # For DOCX files, also convert to PDF for preview
+    # DOCX → PDF preview disabled: convert_docx_to_pdf() runs in a background
+    # thread (shutdown wait=False) which keeps consuming memory concurrently
+    # with model.encode() during scoring, pushing the 512 MB Render free tier
+    # over its limit.  The original DOCX is already saved and downloadable.
     preview_pdf_url = None
-    if file.content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-        try:
-            logger.info("Converting DOCX to PDF for preview...")
-            _fc = file_content  # local ref for thread safety
-            executor = ThreadPoolExecutor(max_workers=1)
-            try:
-                future = executor.submit(convert_docx_to_pdf, _fc)
-                try:
-                    pdf_bytes = future.result(timeout=30)
-                    preview_pdf_path = UPLOAD_DIR / f"{file_id}_preview.pdf"
-                    with open(preview_pdf_path, "wb") as f:
-                        f.write(pdf_bytes)
-                    preview_pdf_url = f"/api/files/{file_id}_preview.pdf"
-                    logger.info(f"Saved preview PDF: {preview_pdf_path}")
-                except FuturesTimeoutError:
-                    logger.warning("convert_docx_to_pdf timed out after 30s — skipping preview PDF")
-            finally:
-                executor.shutdown(wait=False)
-        except Exception as e:
-            logger.error(f"Failed to convert DOCX to PDF: {str(e)}")
-            # Continue without preview - not critical
 
     # Convert to editable HTML with formatting preserved
     # Use converted DOCX if available for better formatting

@@ -2,13 +2,11 @@
 Advanced DOCX to HTML conversion that preserves images, colors, and layout.
 """
 import io
-import base64
 import logging
 from docx import Document
 from docx.oxml import parse_xml
 from docx.shared import Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from PIL import Image
 
 logger = logging.getLogger(__name__)
 
@@ -46,27 +44,12 @@ def docx_to_html_advanced(docx_bytes: bytes) -> str:
             elif element.tag.endswith('tbl'):  # Table
                 html_parts.append(_process_table(element, doc))
 
-        # Extract and embed images
-        for rel in doc.part.rels.values():
-            if "image" in rel.target_ref:
-                try:
-                    image_data = rel.target_part.blob
-                    # Convert to base64
-                    img_b64 = base64.b64encode(image_data).decode('utf-8')
-
-                    # Determine image type
-                    img_format = 'jpeg'
-                    if image_data[:4] == b'\x89PNG':
-                        img_format = 'png'
-
-                    html_parts.append(f'''
-                    <div style="text-align: center; margin: 10px 0;">
-                        <img src="data:image/{img_format};base64,{img_b64}"
-                             style="max-width: 150px; border-radius: 50%;" />
-                    </div>
-                    ''')
-                except Exception as e:
-                    logger.warning(f"Failed to extract image: {e}")
+        # Image extraction disabled: embedding images as base64 data URIs can
+        # add 1–10 MB to the HTML string (resume headshots are often 1–5 MB).
+        # That memory sits alongside the scoring model tensors (~200 MB peak)
+        # and pushes the 512 MB Render free tier over its limit.  Images are
+        # omitted from the editable HTML; the original DOCX is available for
+        # download if the user needs to see embedded photos.
 
         html_parts.append("</div>")
 
