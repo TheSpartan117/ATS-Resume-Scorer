@@ -49,6 +49,7 @@ export async function uploadResume(
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 120000, // 2 minutes — accounts for Render cold start + model loading
     })
     return response.data
   } catch (error) {
