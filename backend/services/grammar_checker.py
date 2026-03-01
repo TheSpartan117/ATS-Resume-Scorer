@@ -77,15 +77,8 @@ class GrammarChecker:
             }
 
         if not self._initialized or not self._tool:
-            # Fallback to basic checking (disabled for resumes)
-            # Most "errors" are actually normal resume formatting
-            return {
-                'total_issues': 0,
-                'issues': [],
-                'score': 100,
-                'severity_breakdown': {'critical': 0, 'warning': 0, 'info': 0},
-                'message': 'Grammar checking unavailable (LanguageTool not configured)'
-            }
+            # LanguageTool unavailable — use pyspellchecker-based fallback
+            return self._fallback_check(text)
 
         try:
             matches = self._tool.check(text)
@@ -263,8 +256,8 @@ class GrammarChecker:
 
     def _fallback_check(self, text: str) -> Dict:
         """
-        Fallback grammar checking using basic patterns.
-        Used when LanguageTool is not available.
+        Fallback grammar checking using pyspellchecker + basic patterns.
+        Used when LanguageTool (Java) is not available.
 
         Args:
             text: Text to check
@@ -276,7 +269,6 @@ class GrammarChecker:
 
         issues = []
 
-        # Check for common issues
         # 1. Double spaces
         if '  ' in text:
             issues.append({
@@ -285,35 +277,55 @@ class GrammarChecker:
                 'severity': 'info'
             })
 
-        # 2. Missing capitalization at sentence start (DISABLED for resumes)
-        # Resume bullets often don't start with capitals - this is normal formatting
-        # sentences = re.split(r'[.!?]\s+', text)
-        # for sentence in sentences:
-        #     if sentence and sentence[0].islower():
-        #         issues.append({
-        #             'message': 'Sentence should start with capital letter',
-        #             'category': 'capitalization',
-        #             'severity': 'warning'
-        #         })
+        # 2. Spell check using pyspellchecker (installed, works without Java)
+        try:
+            from spellchecker import SpellChecker
+            spell = SpellChecker()
 
-        # 3. Common typos
+            # Extract plain alphabetic words; skip short words and likely proper nouns
+            raw_words = re.findall(r'\b[a-zA-Z]{4,}\b', text)
+
+            # Skip words that are all-caps (acronyms: SQL, AWS, MBA, etc.)
+            # and words starting with uppercase followed by lowercase (proper nouns)
+            words_to_check = [
+                w for w in raw_words
+                if not w.isupper() and not (w[0].isupper() and w[1:].islower())
+            ]
+
+            misspelled = spell.unknown(words_to_check)
+            for word in misspelled:
+                suggestion = spell.correction(word)
+                if suggestion and suggestion != word:
+                    issues.append({
+                        'message': f"Possible spelling error: '{word}' (suggestion: '{suggestion}')",
+                        'category': 'spelling',
+                        'severity': 'critical',
+                        'replacements': [suggestion]
+                    })
+        except ImportError:
+            # pyspellchecker not available — fall through to hardcoded typos only
+            pass
+        except Exception:
+            pass
+
+        # 3. Hardcoded common typos as final backstop
         common_typos = {
-            'teh': 'the',
-            'recieve': 'receive',
-            'occured': 'occurred',
-            'seperate': 'separate',
-            'definately': 'definitely'
+            'teh': 'the', 'recieve': 'receive', 'occured': 'occurred',
+            'seperate': 'separate', 'definately': 'definitely',
+            'managment': 'management', 'developement': 'development',
+            'experiance': 'experience', 'enviroment': 'environment',
         }
-
-        words = re.findall(r'\b\w+\b', text.lower())
-        for word in words:
+        words_lower = re.findall(r'\b\w+\b', text.lower())
+        for word in words_lower:
             if word in common_typos:
-                issues.append({
-                    'message': f"Possible typo: '{word}' -> '{common_typos[word]}'",
-                    'category': 'spelling',
-                    'severity': 'critical',
-                    'replacements': [common_typos[word]]
-                })
+                already_flagged = any(word in i['message'] for i in issues)
+                if not already_flagged:
+                    issues.append({
+                        'message': f"Possible typo: '{word}' -> '{common_typos[word]}'",
+                        'category': 'spelling',
+                        'severity': 'critical',
+                        'replacements': [common_typos[word]]
+                    })
 
         total_issues = len(issues)
         score = max(0, 100 - total_issues * 5)
@@ -327,7 +339,11 @@ class GrammarChecker:
                 'warning': sum(1 for i in issues if i['severity'] == 'warning'),
                 'info': sum(1 for i in issues if i['severity'] == 'info')
             },
-            'message': f"{total_issues} issue(s) found (basic check only)"
+            'message': (
+                f"{total_issues} spelling/formatting issue(s) found (basic check — install Java for full grammar checking)"
+                if total_issues > 0
+                else "No obvious spelling errors detected (basic check — install Java for full grammar checking)"
+            )
         }
 
     def close(self):
