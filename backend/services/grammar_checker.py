@@ -11,15 +11,19 @@ This module provides:
 
 from typing import Dict, List
 import logging
+import os
 import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
-# Starting a local LanguageTool JVM can take 60-90s on Render free tier.
-# 20s is enough for a warm JVM (already started by preload) while still
-# protecting against cold-start hangs.
+# LanguageTool starts a JVM (~200 MB, 60-90 s cold-start) that monopolises the
+# CPU on Render free tier (0.1 vCPU), causing scoring timeouts even after the
+# Python timeout fires (the OS-level Java process keeps running).
+# Set ENABLE_LANGUAGE_TOOL=true to opt in; default is disabled.
+_LANGUAGE_TOOL_ENABLED = os.getenv("ENABLE_LANGUAGE_TOOL", "false").lower() == "true"
+
 _GRAMMAR_LOAD_TIMEOUT_SECONDS = 20
 _RETRY_COOLDOWN_SECONDS = 300  # 5 minutes
 
@@ -50,10 +54,14 @@ class GrammarChecker:
         """
         Lazy initialization with a hard timeout and cooldown-based retry.
 
-        LanguageTool starts a local JVM which takes 60-90s on Render free tier.
-        We pre-start it in backend/preload_models.py so the JVM is warm at
-        runtime.  The timeout here guards against the cold-start case.
+        Skipped entirely when ENABLE_LANGUAGE_TOOL is not set (default), so
+        the JVM is never started and the fallback checker is always used.
+        Set ENABLE_LANGUAGE_TOOL=true on servers that have Java available and
+        enough RAM (≥1 GB recommended).
         """
+        if not _LANGUAGE_TOOL_ENABLED:
+            return  # Use pyspellchecker fallback; never start the JVM
+
         if self._initialized:
             return
 
