@@ -197,19 +197,20 @@ class SemanticKeywordMatcher:
         try:
             from sentence_transformers import util
 
-            # Encode resume text
-            resume_embedding = self._model.encode(
-                resume_text,
-                convert_to_tensor=True,
-                show_progress_bar=False
-            )
+            model = self._model  # local ref for thread safety
 
-            # Encode keywords
-            keyword_embeddings = self._model.encode(
-                job_keywords,
-                convert_to_tensor=True,
-                show_progress_bar=False
-            )
+            def _encode():
+                r_emb = model.encode(resume_text, convert_to_tensor=True, show_progress_bar=False)
+                kw_emb = model.encode(job_keywords, convert_to_tensor=True, show_progress_bar=False)
+                return r_emb, kw_emb
+
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(_encode)
+                try:
+                    resume_embedding, keyword_embeddings = future.result(timeout=30)
+                except FuturesTimeoutError:
+                    logger.warning("Semantic encoding timed out — falling back to exact matching")
+                    return self._fallback_exact_match(resume_text, job_keywords)
 
             # Calculate cosine similarities
             similarities = util.cos_sim(resume_embedding, keyword_embeddings)[0]

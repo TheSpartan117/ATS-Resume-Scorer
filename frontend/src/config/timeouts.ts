@@ -2,8 +2,8 @@
  * Centralized timeout configuration
  */
 
-/** API request timeout in milliseconds (30 seconds) */
-export const API_TIMEOUT = 30000;
+/** API request timeout in milliseconds (90 seconds — accounts for Render cold start) */
+export const API_TIMEOUT = 90000;
 
 /** Auto-dismiss duration for error messages (5 seconds) */
 export const ERROR_AUTO_DISMISS_MS = 5000;

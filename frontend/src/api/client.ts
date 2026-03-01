@@ -87,9 +87,10 @@ export async function uploadResume(
     return response.data
   } catch (error) {
     const axiosError = error as AxiosError<ApiError>
+    const isTimeout = axiosError.code === 'ECONNABORTED' || axiosError.message?.includes('timeout')
     throw new Error(
       extractErrorMessage(axiosError.response?.data?.detail) ||
-      axiosError.message ||
+      (isTimeout ? 'The server took too long to respond. Please try again in a moment.' : axiosError.message) ||
       'Failed to upload resume'
     )
   }
@@ -418,8 +419,13 @@ export interface UpdateSectionResponse {
  * Update section in DOCX template
  */
 export async function updateSection(request: UpdateSectionRequest): Promise<UpdateSectionResponse> {
-  const response = await apiClient.post<UpdateSectionResponse>('/api/preview/update', request);
-  return response.data;
+  try {
+    const response = await apiClient.post<UpdateSectionResponse>('/api/preview/update', request)
+    return response.data
+  } catch (error) {
+    const axiosError = error as AxiosError<ApiError>
+    throw new Error(extractErrorMessage(axiosError.response?.data?.detail) || 'Failed to update section')
+  }
 }
 
 export default apiClient

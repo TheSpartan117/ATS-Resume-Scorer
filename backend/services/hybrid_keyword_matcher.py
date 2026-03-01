@@ -20,6 +20,7 @@ Examples:
 
 import re
 from typing import Dict, List
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 
 
 class HybridKeywordMatcher:
@@ -114,18 +115,19 @@ class HybridKeywordMatcher:
         try:
             from sentence_transformers import util
 
-            # Encode keyword and text into embeddings
-            keyword_embedding = self._model.encode(
-                keyword,
-                convert_to_tensor=True,
-                show_progress_bar=False
-            )
+            model = self._model  # local ref for thread safety
 
-            text_embedding = self._model.encode(
-                text,
-                convert_to_tensor=True,
-                show_progress_bar=False
-            )
+            def _encode():
+                kw_emb = model.encode(keyword, convert_to_tensor=True, show_progress_bar=False)
+                txt_emb = model.encode(text, convert_to_tensor=True, show_progress_bar=False)
+                return kw_emb, txt_emb
+
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(_encode)
+                try:
+                    keyword_embedding, text_embedding = future.result(timeout=10)
+                except FuturesTimeoutError:
+                    return 0.0
 
             # Calculate cosine similarity
             similarity = util.cos_sim(keyword_embedding, text_embedding)[0][0].item()

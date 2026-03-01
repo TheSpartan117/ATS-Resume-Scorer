@@ -125,7 +125,15 @@ class GrammarChecker:
             return self._fallback_check(text)
 
         try:
-            matches = self._tool.check(text)
+            tool = self._tool  # local ref for thread safety
+
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(tool.check, text)
+                try:
+                    matches = future.result(timeout=10)
+                except FuturesTimeoutError:
+                    logger.warning("LanguageTool.check() timed out — falling back to basic checking")
+                    return self._fallback_check(text)
 
             # Filter and categorize issues
             issues = []
