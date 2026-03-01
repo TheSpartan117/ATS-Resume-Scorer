@@ -1,6 +1,6 @@
 {
   "installCommand": "npm install --legacy-peer-deps",
-  "buildCommand": "vite build",
+  "buildCommand": "npm run build:prod",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
