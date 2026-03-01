@@ -77,7 +77,11 @@ export async function uploadResume(
 
   try {
     const response = await apiClient.post<UploadResponse>('/api/upload', formData, {
-      // Do NOT set Content-Type — browser must set it automatically with the correct boundary for multipart
+      headers: {
+        // Setting to undefined removes the default 'application/json' from the axios instance
+        // so the browser sets 'multipart/form-data; boundary=...' automatically
+        'Content-Type': undefined,
+      },
       timeout: 120000, // 2 minutes — accounts for Render cold start + model loading
     })
     return response.data
