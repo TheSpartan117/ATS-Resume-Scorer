@@ -32,3 +32,9 @@ sentence-transformers==2.3.1
 keybert==0.8.3
 language-tool-python==2.7.1
 diskcache==5.6.3
+
+# spaCy model (downloaded directly to avoid CLI dependency on Render)
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
+
+# date parsing
+python-dateutil==2.9.0

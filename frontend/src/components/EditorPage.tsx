@@ -181,7 +181,7 @@ export default function EditorPage() {
             setOnlyOfficeSessionId(sessionId)
 
             // Upload the file
-            const response = await fetch(`http://localhost:8000/api/onlyoffice/upload/${sessionId}`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/onlyoffice/upload/${sessionId}`, {
               method: 'POST',
               body: bytes
             })

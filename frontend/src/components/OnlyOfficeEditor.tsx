@@ -125,7 +125,7 @@ export const OnlyOfficeEditor: React.FC<OnlyOfficeEditorProps> = ({
 
         // Fetch editor configuration from backend
         const response = await axios.post(
-          `http://localhost:8000/api/onlyoffice/config/${sessionId}`
+          `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/onlyoffice/config/${sessionId}`
         );
 
         const config: OnlyOfficeConfig = response.data;
