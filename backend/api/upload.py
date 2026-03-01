@@ -8,6 +8,7 @@ import os
 import uuid
 import logging
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from backend.services.parser import parse_pdf, parse_docx
 # Updated to use ScorerV3 via adapter
 from backend.services.scorer_v3_adapter import ScorerV3Adapter
@@ -130,12 +131,21 @@ async def upload_resume(
     if file.content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
         try:
             logger.info("Converting DOCX to PDF for preview...")
-            pdf_bytes = convert_docx_to_pdf(file_content)
-            preview_pdf_path = UPLOAD_DIR / f"{file_id}_preview.pdf"
-            with open(preview_pdf_path, "wb") as f:
-                f.write(pdf_bytes)
-            preview_pdf_url = f"/api/files/{file_id}_preview.pdf"
-            logger.info(f"Saved preview PDF: {preview_pdf_path}")
+            _fc = file_content  # local ref for thread safety
+            executor = ThreadPoolExecutor(max_workers=1)
+            try:
+                future = executor.submit(convert_docx_to_pdf, _fc)
+                try:
+                    pdf_bytes = future.result(timeout=30)
+                    preview_pdf_path = UPLOAD_DIR / f"{file_id}_preview.pdf"
+                    with open(preview_pdf_path, "wb") as f:
+                        f.write(pdf_bytes)
+                    preview_pdf_url = f"/api/files/{file_id}_preview.pdf"
+                    logger.info(f"Saved preview PDF: {preview_pdf_path}")
+                except FuturesTimeoutError:
+                    logger.warning("convert_docx_to_pdf timed out after 30s — skipping preview PDF")
+            finally:
+                executor.shutdown(wait=False)
         except Exception as e:
             logger.error(f"Failed to convert DOCX to PDF: {str(e)}")
             # Continue without preview - not critical
@@ -146,16 +156,36 @@ async def upload_resume(
     try:
         logger.info("Converting document to editable HTML with advanced converter...")
         if docx_content:
-            # Use converted DOCX for HTML generation with advanced converter
-            editable_html = docx_to_html_advanced(docx_content)
-            logger.info("Generated editable HTML from converted DOCX (advanced)")
+            _bytes_for_html = docx_content
+            def _adv_html(): return docx_to_html_advanced(_bytes_for_html)
+            executor = ThreadPoolExecutor(max_workers=1)
+            try:
+                future = executor.submit(_adv_html)
+                try:
+                    editable_html = future.result(timeout=30)
+                    logger.info("Generated editable HTML from converted DOCX (advanced)")
+                except FuturesTimeoutError:
+                    logger.warning("docx_to_html_advanced timed out (converted DOCX) — will use fallback")
+            finally:
+                executor.shutdown(wait=False)
         elif original_content_type == "application/pdf":
             editable_html = pdf_to_html(file_content)
             logger.info("Generated editable HTML from PDF")
         else:  # Original DOCX
-            editable_html = docx_to_html_advanced(file_content)
-            logger.info("Generated editable HTML from DOCX (advanced)")
-        logger.info(f"Editable HTML length: {len(editable_html)} chars")
+            _bytes_for_html = file_content
+            def _adv_html(): return docx_to_html_advanced(_bytes_for_html)
+            executor = ThreadPoolExecutor(max_workers=1)
+            try:
+                future = executor.submit(_adv_html)
+                try:
+                    editable_html = future.result(timeout=30)
+                    logger.info("Generated editable HTML from DOCX (advanced)")
+                except FuturesTimeoutError:
+                    logger.warning("docx_to_html_advanced timed out (original DOCX) — will use fallback")
+            finally:
+                executor.shutdown(wait=False)
+        if editable_html:
+            logger.info(f"Editable HTML length: {len(editable_html)} chars")
     except Exception as e:
         logger.error(f"Failed to convert to HTML with advanced converter: {str(e)}")
         logger.info("Falling back to basic converter...")

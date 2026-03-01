@@ -345,8 +345,7 @@ class GrammarChecker:
 
         # 2. Spell check using pyspellchecker (installed, works without Java)
         try:
-            from spellchecker import SpellChecker
-            spell = SpellChecker()
+            spell = _get_spell_checker()
 
             # Extract plain alphabetic words; skip short words and likely proper nouns
             raw_words = re.findall(r'\b[a-zA-Z]{4,}\b', text)
@@ -423,6 +422,20 @@ class GrammarChecker:
 
 # Singleton instance
 _grammar_checker_instance = None
+
+# Singleton spell checker — SpellChecker() loads an ~8 MB word-frequency file
+# from disk.  Creating a new instance per _fallback_check() call adds 1-3 s of
+# latency on every request and is especially costly on Render's slow disk I/O.
+_spell_checker_instance = None
+
+
+def _get_spell_checker():
+    """Return module-level singleton SpellChecker, loading it once."""
+    global _spell_checker_instance
+    if _spell_checker_instance is None:
+        from spellchecker import SpellChecker
+        _spell_checker_instance = SpellChecker()
+    return _spell_checker_instance
 
 
 def get_grammar_checker() -> GrammarChecker:
