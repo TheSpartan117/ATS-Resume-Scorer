@@ -28,20 +28,21 @@ logger = logging.getLogger(__name__)
 
 
 def _warmup_models():
-    """Pre-warm ML models in a background thread at server startup."""
-    logger.info("Starting background model warmup...")
+    """
+    Pre-warm the sentence-transformers model at server startup.
+
+    LanguageTool (JVM) is intentionally excluded: on Render free tier (512 MB)
+    the JVM uses ~250 MB even after a timeout, leaving insufficient RAM for the
+    Python process and causing OOM crashes.  Grammar checking falls back to
+    pyspellchecker at runtime, which is lightweight and reliable.
+    """
+    logger.info("Starting background model warmup (sentence-transformers only)...")
     try:
         from backend.services.semantic_matcher import get_semantic_matcher
         get_semantic_matcher()._lazy_init()
         logger.info("Semantic matcher warmed up")
     except Exception as e:
         logger.warning("Semantic matcher warmup failed: %s", e)
-    try:
-        from backend.services.grammar_checker import get_grammar_checker
-        get_grammar_checker()._lazy_init()
-        logger.info("Grammar checker warmed up")
-    except Exception as e:
-        logger.warning("Grammar checker warmup failed: %s", e)
     logger.info("Background model warmup complete")
 
 

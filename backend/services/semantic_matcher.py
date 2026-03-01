@@ -143,18 +143,26 @@ class SemanticKeywordMatcher:
             return self._fallback_keyword_extraction(job_description, top_n)
 
         try:
-            # Extract keywords using KeyBERT
-            keywords = self._keybert.extract_keywords(
-                job_description,
-                keyphrase_ngram_range=(1, 2),  # 1-2 word phrases (trigrams too specific to match)
-                stop_words='english',
-                top_n=top_n,
-                use_mmr=True,  # Use Maximal Marginal Relevance for diversity
-                diversity=diversity
-            )
-            return keywords
+            keybert = self._keybert  # local ref for thread safety
+
+            def _extract():
+                return keybert.extract_keywords(
+                    job_description,
+                    keyphrase_ngram_range=(1, 2),
+                    stop_words='english',
+                    top_n=top_n,
+                    use_mmr=True,
+                    diversity=diversity
+                )
+
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(_extract)
+                try:
+                    return future.result(timeout=20)
+                except FuturesTimeoutError:
+                    logger.warning("KeyBERT extract_keywords() timed out — using fallback")
+                    return self._fallback_keyword_extraction(job_description, top_n)
         except Exception as e:
-            # Fallback to simple extraction if KeyBERT fails
             print(f"KeyBERT extraction failed: {e}")
             return self._fallback_keyword_extraction(job_description, top_n)
 
