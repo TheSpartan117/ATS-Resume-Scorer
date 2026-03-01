@@ -66,7 +66,8 @@ class GrammarChecker:
             return language_tool_python.LanguageTool(self._language)
 
         try:
-            with ThreadPoolExecutor(max_workers=1) as executor:
+            executor = ThreadPoolExecutor(max_workers=1)
+            try:
                 future = executor.submit(_load)
                 try:
                     self._tool = future.result(timeout=_GRAMMAR_LOAD_TIMEOUT_SECONDS)
@@ -89,6 +90,8 @@ class GrammarChecker:
                     )
                     self._tool = None
                     self._last_failed_at = time.time()
+            finally:
+                executor.shutdown(wait=False)  # Don't block on JVM startup
         except Exception as e:
             logger.warning("LanguageTool could not be loaded: %s", e)
             self._tool = None
@@ -127,13 +130,16 @@ class GrammarChecker:
         try:
             tool = self._tool  # local ref for thread safety
 
-            with ThreadPoolExecutor(max_workers=1) as executor:
+            executor = ThreadPoolExecutor(max_workers=1)
+            try:
                 future = executor.submit(tool.check, text)
                 try:
                     matches = future.result(timeout=10)
                 except FuturesTimeoutError:
                     logger.warning("LanguageTool.check() timed out — falling back to basic checking")
                     return self._fallback_check(text)
+            finally:
+                executor.shutdown(wait=False)
 
             # Filter and categorize issues
             issues = []

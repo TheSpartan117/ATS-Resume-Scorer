@@ -122,12 +122,15 @@ class HybridKeywordMatcher:
                 txt_emb = model.encode(text, convert_to_tensor=True, show_progress_bar=False)
                 return kw_emb, txt_emb
 
-            with ThreadPoolExecutor(max_workers=1) as executor:
+            executor = ThreadPoolExecutor(max_workers=1)
+            try:
                 future = executor.submit(_encode)
                 try:
                     keyword_embedding, text_embedding = future.result(timeout=10)
                 except FuturesTimeoutError:
                     return 0.0
+            finally:
+                executor.shutdown(wait=False)
 
             # Calculate cosine similarity
             similarity = util.cos_sim(keyword_embedding, text_embedding)[0][0].item()
@@ -221,13 +224,16 @@ class HybridKeywordMatcher:
                 kw_embs = model.encode(keywords, convert_to_tensor=True, show_progress_bar=False)
                 return r_emb, kw_embs
 
-            with ThreadPoolExecutor(max_workers=1) as executor:
+            executor = ThreadPoolExecutor(max_workers=1)
+            try:
                 future = executor.submit(_batch_encode)
                 try:
                     resume_emb, kw_embs = future.result(timeout=30)
                 except FuturesTimeoutError:
                     # Batch timed out — fall back to exact matching for all keywords
                     return {kw: self._exact_match_score(kw, resume_text) for kw in keywords}
+            finally:
+                executor.shutdown(wait=False)
 
             # Compute per-keyword hybrid scores from batch embeddings
             similarities = util.cos_sim(resume_emb, kw_embs)[0]

@@ -83,7 +83,8 @@ class SemanticKeywordMatcher:
             return model, KeyBERT(model)
 
         try:
-            with ThreadPoolExecutor(max_workers=1) as executor:
+            executor = ThreadPoolExecutor(max_workers=1)
+            try:
                 future = executor.submit(_load)
                 try:
                     self._model, self._keybert = future.result(timeout=_MODEL_LOAD_TIMEOUT_SECONDS)
@@ -106,6 +107,8 @@ class SemanticKeywordMatcher:
                         e, self._RETRY_COOLDOWN_SECONDS // 60,
                     )
                     self._last_failed_at = time.time()
+            finally:
+                executor.shutdown(wait=False)  # Don't block; let download finish in background
         except ImportError as e:
             raise ImportError(
                 "Required packages not installed. Run: "
@@ -155,13 +158,16 @@ class SemanticKeywordMatcher:
                     diversity=diversity
                 )
 
-            with ThreadPoolExecutor(max_workers=1) as executor:
+            executor = ThreadPoolExecutor(max_workers=1)
+            try:
                 future = executor.submit(_extract)
                 try:
                     return future.result(timeout=20)
                 except FuturesTimeoutError:
                     logger.warning("KeyBERT extract_keywords() timed out — using fallback")
                     return self._fallback_keyword_extraction(job_description, top_n)
+            finally:
+                executor.shutdown(wait=False)
         except Exception as e:
             print(f"KeyBERT extraction failed: {e}")
             return self._fallback_keyword_extraction(job_description, top_n)
@@ -212,13 +218,16 @@ class SemanticKeywordMatcher:
                 kw_emb = model.encode(job_keywords, convert_to_tensor=True, show_progress_bar=False)
                 return r_emb, kw_emb
 
-            with ThreadPoolExecutor(max_workers=1) as executor:
+            executor = ThreadPoolExecutor(max_workers=1)
+            try:
                 future = executor.submit(_encode)
                 try:
                     resume_embedding, keyword_embeddings = future.result(timeout=30)
                 except FuturesTimeoutError:
                     logger.warning("Semantic encoding timed out — falling back to exact matching")
                     return self._fallback_exact_match(resume_text, job_keywords)
+            finally:
+                executor.shutdown(wait=False)
 
             # Calculate cosine similarities
             similarities = util.cos_sim(resume_embedding, keyword_embeddings)[0]
