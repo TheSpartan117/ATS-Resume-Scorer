@@ -1,359 +1,724 @@
 """
-Role-specific keywords for ATS scoring.
+Role-specific keywords for ATS scoring - EXPANDED VERSION.
 
-Updated from corpus analysis of 29,783 resumes.
-Source: https://github.com/florex/resume_corpus
+Significantly expanded keyword lists for better coverage:
+- Required: 15-20 core essential skills
+- Preferred: 30-40 advanced/specialized skills
 
-Keywords are categorized as:
-- Required: Core keywords (50%+ frequency in role resumes)
-- Preferred: Advanced/specialized keywords (20-50% frequency)
+Updated: March 1, 2026
 """
 
 ROLE_KEYWORDS = {
+    # ===== FINANCE & ACCOUNTING =====
     'accountant': {
-        # Accountant (411 resumes analyzed)
         'required': [
-            'ai', 'ui', 'data', 'team',
-            'design', 'product', 'database', 'excel',
-            'web', 'ml', 'communication', 'sql',
+            # Core accounting
+            'accounting', 'gaap', 'financial reporting', 'reconciliation',
+            'general ledger', 'accounts payable', 'accounts receivable',
+            'journal entries', 'month-end close', 'financial statements',
+            # Tools & skills
+            'excel', 'accounting software', 'bookkeeping', 'ledger',
+            'balance sheet', 'income statement'
         ],
         'preferred': [
-            'sales',
-        ]
-    },
-    'business_analyst': {
-        # Business Analyst (16194 resumes analyzed)
-        'required': [
-            'ai', 'ui', 'data', 'team',
-            'design', 'database', 'sql', 'web',
-            'product', 'ml', 'windows', 'java',
-            'testing', 'html',
-        ],
-        'preferred': [
-            'ux', 'communication', 'rest', 'javascript',
-            'excel', 'git', 'css', 'linux',
-            'oracle', 'api', 'mysql', 'sql server',
-            'agile', 'analytics', 'cloud', 'unix',
-            'python', 'node', 'scrum', 'aws',
-            'jira', 'sales', 'angular', 'scala',
-        ]
-    },
-    'content_writer': {
-        # Content Writer (89 resumes analyzed)
-        'required': [
-            'ai', 'ui', 'design', 'data',
-            'team', 'web', 'product', 'ml',
-            'communication', 'database', 'html',
-        ],
-        'preferred': [
-            'css', 'git', 'java', 'excel',
-            'javascript', 'sql', 'marketing', 'testing',
-            'analytics', 'sales', 'windows', 'project management',
-            'rest', 'agile', 'ux', 'php',
-            'seo', 'leadership', 'lean', 'api',
-            'stakeholder', 'qa', 'mobile', '.net',
-            'strategy', 'python', 'cloud',
-        ]
-    },
-    'corporate_lawyer': {
-        # Corporate Lawyer (28 resumes analyzed)
-        'required': [
-            'ai', 'ui', 'data', 'database',
-            'team', 'product', 'design', 'web',
-            'excel', 'rest', 'ml', 'testing',
-        ],
-        'preferred': [
-            'communication',
-        ]
-    },
-    'customer_success_manager': {
-        # Customer Success Manager (380 resumes analyzed)
-        'required': [
-            'ai', 'ui', 'team', 'data',
-            'product', 'design', 'communication', 'project management',
-            'sales', 'web', 'excel',
-        ],
-        'preferred': [
-            'agile', 'scrum', 'ml', 'stakeholder',
-            'database', 'leadership', 'sql', 'testing',
-            'analytics', 'marketing', 'jira', 'waterfall',
-            'ux', 'windows', 'git', 'html',
-            'revenue', 'cross-functional', 'rest', 'cloud',
-            'scala', 'java', 'api', 'strategy',
-            'sprint', 'mobile', 'collaboration',
-        ]
-    },
-    'data_engineer': {
-        # Data Engineer (162 resumes analyzed)
-        'required': [
-            'data', 'ai', 'analytics', 'ui',
-            'sql', 'database', 'design', 'team',
-            'python', 'web', 'product', 'ml',
-            'java', 'mysql', 'api', 'oracle',
-            'sql server', 'ux', 'testing', 'rest',
-            'html', 'linux', 'git', 'aws',
-            'cloud', 'etl', 'windows', 'javascript',
-            'agile',
-        ],
-        'preferred': [
-            'spark', 'css', 'excel', 'unix',
-            'hadoop', 'communication', 'scala', 'lean',
-            'node',
-        ]
-    },
-    'data_scientist': {
-        # Data Scientist (175 resumes analyzed)
-        'required': [
-            'analytics', 'data', 'ai', 'sql',
-            'python', 'ui', 'design', 'database',
-            'ml', 'web', 'team', 'git',
-            'java', 'machine learning', 'api', 'product',
-            'rest', 'mysql', 'testing', 'html',
-            'aws', 'pandas', 'excel', 'numpy',
-            'css', 'ux', 'javascript', 'tableau',
-            'spark', 'lean', 'cloud', 'linux',
-        ],
-        'preferred': [
-            'oracle', 'agile', 'hadoop', 'sql server',
-            'windows', 'communication',
-        ]
-    },
-    'devops_engineer': {
-        # DevOps Engineer (703 resumes analyzed)
-        'required': [
-            'ai', 'ui', 'data', 'team',
-            'web', 'devops', 'design', 'sql',
-            'product', 'ux', 'linux', 'database',
-            'git', 'windows', 'ml', 'java',
-            'cloud', 'testing', 'aws',
-        ],
-        'preferred': [
-            'mysql', 'rest', 'api', 'communication',
-            'python', 'agile', 'automation', 'html',
-            'jenkins', 'javascript', 'oracle', 'jira',
-            'css', 'docker', 'unix', 'sql server',
-            'excel', 'scala', 'node',
+            # Software
+            'quickbooks', 'sap', 'erp', 'oracle financials', 'netsuite',
+            'xero', 'sage', 'peachtree', 'microsoft dynamics',
+            # Skills
+            'audit', 'tax', 'tax preparation', 'variance analysis',
+            'budgeting', 'forecasting', 'sox compliance', 'internal controls',
+            'cost accounting', 'ifrs', 'fixed assets', 'accruals',
+            'prepayments', 'depreciation', 'amortization', 'cash flow',
+            'financial analysis', 'ratio analysis', 'account reconciliation',
+            'payroll', 'payroll processing', 'accounts management',
+            'financial reporting', 'monthly close', 'quarterly close',
+            'annual close', 'cpa', 'certified public accountant'
         ]
     },
     'financial_analyst': {
-        # Financial Analyst (98 resumes analyzed)
         'required': [
-            'ai', 'ui', 'data', 'team',
-            'product', 'design', 'excel', 'database',
-            'web', 'ml', 'sql', 'project management',
+            'financial analysis', 'financial modeling', 'excel', 'forecasting',
+            'budgeting', 'financial reporting', 'data analysis', 'valuation',
+            'financial planning', 'modeling', 'variance analysis', 'kpi',
+            'financial statements', 'reporting', 'analytics'
         ],
         'preferred': [
-            'communication',
+            # Analysis
+            'fp&a', 'financial planning and analysis', 'dcf', 'discounted cash flow',
+            'valuation modeling', 'merger modeling', 'lbo', 'leveraged buyout',
+            'investment analysis', 'roi analysis', 'sensitivity analysis',
+            'scenario analysis', 'what-if analysis', 'business case analysis',
+            # Tools
+            'sql', 'tableau', 'power bi', 'bloomberg', 'capital iq',
+            'factset', 'refinitiv', 'python', 'r', 'vba', 'macros',
+            # Skills
+            'kpi tracking', 'dashboard', 'metrics', 'strategic planning',
+            'financial planning', 'business intelligence', 'powerpoint',
+            'presentations', 'board reporting', 'management reporting',
+            'cost analysis', 'profitability analysis', 'pricing analysis'
         ]
     },
+
+    # ===== HR & LEGAL =====
     'hr_manager': {
-        # HR Manager (126 resumes analyzed)
         'required': [
-            'ai', 'ui', 'team', 'data',
-            'excel', 'design', 'communication', 'product',
-            'database', 'sales', 'web', 'leadership',
+            'human resources', 'hr', 'recruitment', 'employee relations',
+            'talent management', 'performance management', 'hris',
+            'hr policy', 'compensation', 'benefits', 'hr strategy',
+            'talent acquisition', 'onboarding', 'employee engagement',
+            'hr compliance'
         ],
         'preferred': [
-            'ml',
-        ]
-    },
-    'marketing_manager': {
-        # Marketing Manager (335 resumes analyzed)
-        'required': [
-            'analytics', 'marketing', 'ai', 'web',
-            'ui', 'design', 'git', 'ml',
-            'team', 'product', 'html', 'data',
-            'seo', 'css', 'sales', 'java',
-            'javascript', 'communication',
-        ],
-        'preferred': [
-            'strategy', 'sql', 'database', 'testing',
-            'php', 'mobile', 'ux', 'project management',
-            'excel', 'rest', 'api', 'leadership',
-            'mysql', 'agile', 'windows',
-        ]
-    },
-    'operations_manager': {
-        # Operations Manager (330 resumes analyzed)
-        'required': [
-            'ai', 'ui', 'team', 'data',
-            'design', 'product', 'communication', 'windows',
-            'project management', 'web', 'excel', 'leadership',
-        ],
-        'preferred': [
-            'sales',
-        ]
-    },
-    'product_designer': {
-        # Product Designer (31 resumes analyzed)
-        'required': [
-            'product', 'design', 'ai', 'web',
-            'ml', 'ux', 'ui', 'team',
-            'html', 'marketing', 'css', 'mobile',
-            'git', 'testing', 'java', 'javascript',
-            'data', 'wireframe', 'prototype',
-        ],
-        'preferred': [
-            'sketch', 'agile', 'analytics', 'communication',
-            'user research', 'strategy', 'stakeholder', 'github',
-            'sql', 'php', 'cloud', 'sales',
-            'seo', 'api', 'qa', 'rest',
-            'collaboration', 'express',
-        ]
-    },
-    'product_manager': {
-        # Product Manager (348 resumes analyzed)
-        'required': [
-            'product', 'ai', 'ui', 'team',
-            'design', 'data', 'web', 'agile',
-            'ml', 'analytics', 'communication', 'testing',
-            'project management', 'git',
-        ],
-        'preferred': [
-            'sql', 'html', 'java', 'scrum',
-            'sales', 'marketing', 'database', 'jira',
-            'stakeholder', 'mobile', 'ux', 'css',
-            'api', 'javascript', 'excel', 'leadership',
-            'strategy', 'rest', 'cloud', 'qa',
-            'windows', 'backlog', 'oracle', 'roadmap',
-        ]
-    },
-    'project_manager': {
-        # Project Manager (4065 resumes analyzed)
-        'required': [
-            'ai', 'ui', 'team', 'data',
-            'design', 'product', 'project management', 'communication',
-            'web', 'excel', 'testing', 'ml',
-        ],
-        'preferred': [
-            'database',
-        ]
-    },
-    'qa_engineer': {
-        # QA Engineer (715 resumes analyzed)
-        'required': [
-            'ai', 'ui', 'data', 'team',
-            'design', 'product', 'testing', 'web',
-            'sql', 'database', 'ml', 'java',
-            'communication', 'html', 'windows',
-        ],
-        'preferred': [
-            'qa', 'excel', 'ux', 'agile',
-            'analytics', 'javascript', 'linux', 'rest',
-            'css', 'automation', 'api', 'oracle',
-            'mysql', 'git', 'scrum', 'python',
-            'project management', 'sql server', 'sales', 'jira',
-            'unix', 'stakeholder', 'selenium',
+            # Systems
+            'workday', 'successfactors', 'adp', 'bamboohr', 'namely',
+            'ultipro', 'peoplesoft', 'oracle hcm', 'sap hr',
+            # Skills
+            'benefits administration', 'compensation planning', 'salary benchmarking',
+            'job evaluation', 'succession planning', 'workforce planning',
+            'organizational development', 'organizational design', 'change management',
+            'training', 'learning and development', 'l&d', 'training programs',
+            'employee development', 'career development', 'performance reviews',
+            'performance appraisal', 'talent review', '9-box', 'talent assessment',
+            # Legal/compliance
+            'labor relations', 'employment law', 'hr law', 'compliance',
+            'diversity', 'inclusion', 'dei', 'diversity equity inclusion',
+            'retention', 'employee retention', 'engagement surveys',
+            'exit interviews', 'terminations', 'disciplinary actions'
         ]
     },
     'recruiter': {
-        # Recruiter (94 resumes analyzed)
         'required': [
-            'ui', 'ai', 'team', 'data',
-            'product', 'excel', 'communication', 'sales',
-            'design', 'database', 'web',
+            'recruiting', 'recruitment', 'talent acquisition', 'sourcing',
+            'screening', 'interviewing', 'applicant tracking', 'ats',
+            'linkedin', 'linkedin recruiter', 'candidate sourcing',
+            'candidate screening', 'job posting', 'hiring'
         ],
         'preferred': [
-            'ml', 'project management', 'sql', 'marketing',
-            'rest', 'leadership', 'java', 'analytics',
-            'api', 'testing', 'windows', 'powerpoint',
-            'html', 'stakeholder', 'agile', 'mobile',
-            'lean', 'javascript', 'git', 'revenue',
-            'css', 'ux',
+            # Sourcing
+            'boolean search', 'x-ray search', 'talent sourcing', 'passive sourcing',
+            'active sourcing', 'social recruiting', 'sourcing strategies',
+            # Process
+            'candidate experience', 'employer branding', 'recruitment marketing',
+            'talent branding', 'pipeline management', 'talent pool',
+            'candidate relationship management', 'crm',
+            # Tools
+            'greenhouse', 'lever', 'workday recruiting', 'taleo', 'icims',
+            'jobvite', 'smartrecruiters', 'bullhorn', 'indeed', 'glassdoor',
+            # Skills
+            'diversity hiring', 'inclusive hiring', 'negotiation',
+            'offer negotiation', 'salary negotiation', 'onboarding',
+            'new hire onboarding', 'recruitment metrics', 'time to hire',
+            'cost per hire', 'quality of hire', 'sourcing metrics',
+            'interview techniques', 'behavioral interviewing',
+            'competency-based interviewing', 'reference checks',
+            'background checks'
         ]
     },
+    'corporate_lawyer': {
+        'required': [
+            'legal', 'law', 'attorney', 'counsel', 'contracts',
+            'compliance', 'corporate law', 'litigation', 'legal counsel',
+            'due diligence', 'legal research', 'legal analysis',
+            'contract negotiation', 'contract drafting'
+        ],
+        'preferred': [
+            # Practice areas
+            'mergers', 'acquisitions', 'm&a', 'mergers and acquisitions',
+            'corporate governance', 'securities law', 'securities',
+            'intellectual property', 'ip', 'patents', 'trademarks',
+            'employment law', 'labor law', 'regulatory compliance',
+            'commercial law', 'corporate transactions', 'finance law',
+            'banking law', 'real estate law', 'tax law',
+            # Tools & research
+            'westlaw', 'lexisnexis', 'legal research platforms',
+            'contract management', 'document management',
+            # Skills
+            'risk management', 'legal risk', 'risk assessment',
+            'legal opinions', 'memoranda', 'legal writing',
+            'litigation management', 'dispute resolution',
+            'arbitration', 'mediation', 'negotiation',
+            'corporate filings', 'sec filings', 'regulatory filings',
+            'board meetings', 'corporate secretary'
+        ]
+    },
+
+    # ===== SALES & MARKETING =====
     'sales_manager': {
-        # Sales Manager (134 resumes analyzed)
         'required': [
-            'ai', 'ui', 'sales', 'team',
-            'product', 'data', 'design', 'web',
-            'marketing', 'analytics', 'communication', 'excel',
+            'sales', 'sales management', 'revenue', 'quota', 'pipeline',
+            'crm', 'salesforce', 'account management', 'forecasting',
+            'business development', 'sales strategy', 'team management',
+            'sales leadership', 'territory management'
         ],
         'preferred': [
-            'ml',
+            # Strategy & process
+            'sales operations', 'sales enablement', 'sales training',
+            'sales coaching', 'sales process', 'sales methodology',
+            'consultative selling', 'solution selling', 'value selling',
+            'challenger sale', 'spin selling', 'sandler', 'miller heiman',
+            # Tools & platforms
+            'hubspot', 'hubspot crm', 'zoho crm', 'pipedrive',
+            'microsoft dynamics', 'sales navigator', 'outreach',
+            'salesloft', 'gong', 'chorus',
+            # Skills & metrics
+            'negotiation', 'closing', 'deal closing', 'contract negotiation',
+            'performance metrics', 'kpi tracking', 'sales kpis',
+            'win rate', 'conversion rate', 'sales cycle',
+            'lead generation', 'prospecting', 'cold calling',
+            'b2b sales', 'b2c sales', 'enterprise sales', 'saas sales',
+            'channel sales', 'partner sales', 'inside sales',
+            'outside sales', 'field sales', 'account planning',
+            'strategic account management', 'key accounts'
         ]
     },
-    'software_engineer': {
-        # Software Engineer (7051 resumes analyzed)
+    'marketing_manager': {
         'required': [
-            'ai', 'ui', 'java', 'web',
-            'sql', 'data', 'design', 'ml',
-            'javascript', 'html', 'team', 'database',
-            'css', 'git', 'product', 'api',
-            'testing', 'rest', 'mysql', 'ux',
-            'agile', 'windows',
+            'marketing', 'digital marketing', 'campaigns', 'campaign management',
+            'content marketing', 'seo', 'social media', 'google analytics',
+            'marketing strategy', 'marketing automation', 'email marketing',
+            'brand management', 'lead generation'
         ],
         'preferred': [
-            'angular', 'oracle', 'linux', 'sql server',
-            'communication', 'python', 'node', 'scrum',
-            'excel', 'analytics', 'cloud', 'jira',
-            'php', 'backend', 'aws', 'c++',
+            # Digital channels
+            'sem', 'ppc', 'pay per click', 'google ads', 'facebook ads',
+            'linkedin ads', 'display advertising', 'programmatic',
+            'retargeting', 'remarketing', 'affiliate marketing',
+            # Tools & platforms
+            'hubspot', 'marketo', 'pardot', 'eloqua', 'mailchimp',
+            'constant contact', 'hootsuite', 'sprout social', 'buffer',
+            'google tag manager', 'google analytics 4', 'ga4',
+            'adobe analytics', 'mixpanel', 'amplitude',
+            # Content & creative
+            'content strategy', 'content creation', 'copywriting',
+            'creative direction', 'design', 'brand strategy',
+            'brand positioning', 'messaging', 'value proposition',
+            # Analytics & optimization
+            'marketing analytics', 'roi', 'roas', 'attribution',
+            'marketing attribution', 'multi-touch attribution',
+            'conversion optimization', 'cro', 'a/b testing',
+            'multivariate testing', 'landing pages', 'funnel optimization',
+            # Operations
+            'marketing operations', 'martech', 'marketing technology',
+            'budget management', 'vendor management', 'agency management',
+            'cms', 'wordpress', 'drupal'
         ]
     },
-    'technical_product_manager': {
-        # Technical Product Manager (11 resumes analyzed)
+
+    # ===== OPERATIONS & CUSTOMER SUCCESS =====
+    'operations_manager': {
         'required': [
-            'ai', 'ui', 'product', 'design',
-            'team', 'sql', 'data', 'ml',
-            'database', 'mobile', 'analytics', 'api',
-            'git', 'agile', 'jira', 'testing',
-            'communication', 'java', 'html', 'mysql',
-            'web', 'windows', 'stakeholder', 'excel',
+            'operations', 'operations management', 'process improvement',
+            'project management', 'team management', 'operations strategy',
+            'efficiency', 'productivity', 'kpi tracking', 'process optimization',
+            'workflow optimization', 'operational excellence'
         ],
         'preferred': [
-            'javascript', 'qa', 'cloud', 'oracle',
-            'sales', 'strategy', 'css', 'node',
-            'sql server', 'ux', 'backlog', 'marketing',
-            'leadership', 'scala',
+            # Supply chain & logistics
+            'supply chain', 'supply chain management', 'logistics',
+            'inventory', 'inventory management', 'warehouse management',
+            'distribution', 'fulfillment', 'procurement', 'vendor management',
+            'supplier management', 'purchasing',
+            # Methodologies
+            'lean', 'lean manufacturing', 'lean principles', 'six sigma',
+            'lean six sigma', 'green belt', 'black belt', 'kaizen',
+            'continuous improvement', 'process mapping', 'value stream mapping',
+            # Tools & systems
+            'erp', 'sap', 'oracle', 'netsuite', 'microsoft dynamics',
+            'wms', 'tms', 'oms', 'project management', 'ms project',
+            # Skills
+            'quality control', 'quality assurance', 'quality management',
+            'cost reduction', 'cost optimization', 'capacity planning',
+            'resource planning', 'production planning', 'scheduling',
+            'change management', 'sop', 'standard operating procedures',
+            'process documentation', 'metrics tracking', 'dashboards',
+            'business analysis', 'root cause analysis', 'problem solving'
+        ]
+    },
+    'customer_success_manager': {
+        'required': [
+            'customer success', 'customer retention', 'account management',
+            'customer satisfaction', 'onboarding', 'customer onboarding',
+            'crm', 'renewals', 'customer engagement', 'relationship management',
+            'customer experience', 'account health'
+        ],
+        'preferred': [
+            # Strategy & metrics
+            'churn reduction', 'churn management', 'retention rate',
+            'nps', 'net promoter score', 'csat', 'customer satisfaction score',
+            'customer health score', 'engagement metrics', 'adoption metrics',
+            'usage metrics', 'success metrics',
+            # Growth
+            'upselling', 'cross-selling', 'expansion', 'expansion revenue',
+            'account expansion', 'customer advocacy', 'customer references',
+            'case studies', 'testimonials', 'customer marketing',
+            # Tools & platforms
+            'gainsight', 'totango', 'planhat', 'salesforce', 'zendesk',
+            'intercom', 'drift', 'helpscout', 'freshdesk',
+            # Process & skills
+            'product adoption', 'user adoption', 'feature adoption',
+            'escalation management', 'issue resolution', 'customer feedback',
+            'voice of customer', 'voc', 'customer insights',
+            'customer journey', 'journey mapping', 'touchpoints',
+            'qbr', 'quarterly business review', 'executive business review',
+            'ebr', 'success planning', 'account planning',
+            'stakeholder management', 'executive relationships'
+        ]
+    },
+
+    # ===== CONTENT & DESIGN =====
+    'content_writer': {
+        'required': [
+            'content writing', 'writing', 'copywriting', 'content strategy',
+            'seo', 'seo writing', 'editing', 'proofreading', 'research',
+            'cms', 'blogging', 'content creation', 'storytelling'
+        ],
+        'preferred': [
+            # Content types
+            'content marketing', 'blog posts', 'articles', 'white papers',
+            'case studies', 'ebooks', 'guides', 'landing pages',
+            'web content', 'website copy', 'product descriptions',
+            'email copy', 'email campaigns', 'social media content',
+            'video scripts', 'podcast scripts',
+            # Tools & platforms
+            'wordpress', 'contentful', 'hubspot', 'drupal', 'medium',
+            'grammarly', 'hemingway', 'yoast', 'surfer seo',
+            'clearscope', 'semrush', 'ahrefs',
+            # Skills
+            'content planning', 'content calendar', 'editorial calendar',
+            'content strategy development', 'audience targeting',
+            'buyer personas', 'tone of voice', 'brand voice',
+            'style guide', 'ap style', 'chicago style',
+            'keyword research', 'search intent', 'content optimization',
+            'content performance', 'analytics', 'engagement metrics',
+            'conversion copywriting', 'persuasive writing',
+            'technical writing', 'ux writing', 'microcopy'
+        ]
+    },
+    'product_designer': {
+        'required': [
+            'product design', 'ux', 'ui', 'user experience', 'user interface',
+            'figma', 'user research', 'wireframing', 'prototyping',
+            'design systems', 'user testing', 'interaction design',
+            'visual design'
+        ],
+        'preferred': [
+            # Tools
+            'sketch', 'adobe xd', 'invision', 'framer', 'principle',
+            'protopie', 'axure', 'balsamiq', 'miro', 'figjam',
+            'zeplin', 'abstract', 'maze', 'optimal workshop',
+            # Research & strategy
+            'user flows', 'user journeys', 'journey mapping',
+            'design thinking', 'design sprint', 'double diamond',
+            'usability testing', 'user interviews', 'personas',
+            'user personas', 'empathy mapping', 'customer journey',
+            'information architecture', 'ia', 'card sorting',
+            'tree testing', 'heuristic evaluation',
+            # Design skills
+            'a/b testing', 'multivariate testing', 'accessibility',
+            'wcag', 'inclusive design', 'responsive design',
+            'mobile design', 'web design', 'design handoff',
+            'developer collaboration', 'design documentation',
+            'design specs', 'redlining', 'design qa',
+            # Process
+            'agile', 'scrum', 'lean ux', 'atomic design',
+            'component library', 'pattern library', 'design tokens',
+            'design ops', 'design process', 'design critique'
         ]
     },
     'ui_designer': {
-        # UI Designer (1184 resumes analyzed)
         'required': [
-            'ui', 'design', 'web', 'ai',
-            'ml', 'html', 'java', 'javascript',
-            'css', 'team', 'git', 'data',
-            'ux', 'product', 'sql', 'testing',
-            'api', 'database', 'angular', 'agile',
-            'rest', 'node', 'react', 'mobile',
-            'mysql', 'communication', 'analytics',
+            'ui design', 'user interface', 'user interface design',
+            'figma', 'visual design', 'design systems', 'prototyping',
+            'html', 'css', 'responsive design', 'mobile design',
+            'web design', 'interface design'
         ],
         'preferred': [
-            'scrum', 'windows', 'php', 'excel',
-            'jira', 'github', 'prototype', 'backend',
-            'oracle', 'wireframe', 'marketing',
+            # Tools & software
+            'sketch', 'adobe xd', 'photoshop', 'illustrator',
+            'after effects', 'principle', 'framer', 'invision',
+            # Technical skills
+            'javascript', 'react', 'vue', 'angular', 'sass', 'less',
+            'tailwind', 'bootstrap', 'material design', 'ant design',
+            # Design skills
+            'typography', 'type design', 'color theory', 'color systems',
+            'layout design', 'grid systems', 'spacing systems',
+            'iconography', 'icon design', 'illustration',
+            'animation', 'micro-interactions', 'motion design',
+            'interaction design', 'interface animation',
+            # Systems & process
+            'design tokens', 'design system architecture',
+            'component library', 'atomic design', 'accessibility',
+            'wcag compliance', 'aria', 'usability', 'responsive',
+            'mobile-first', 'adaptive design', 'cross-browser',
+            'browser compatibility', 'design handoff', 'zeplin',
+            'design specs', 'style guide', 'brand guidelines',
+            'design qa', 'visual qa'
         ]
     },
     'ux_designer': {
-        # UX Designer (679 resumes analyzed)
         'required': [
-            'ui', 'design', 'ai', 'web',
-            'ml', 'html', 'css', 'java',
-            'javascript', 'team', 'ux', 'git',
-            'product', 'data', 'analytics', 'testing',
-            'sql', 'mobile', 'php',
+            'ux design', 'user experience', 'user experience design',
+            'user research', 'figma', 'wireframing', 'prototyping',
+            'usability testing', 'user flows', 'information architecture',
+            'interaction design', 'user-centered design'
         ],
         'preferred': [
-            'communication', 'api', 'agile', 'marketing',
-            'database', 'prototype', 'rest', 'mysql',
-            'react', 'wireframe', 'angular', 'node',
-            'excel', 'sales', 'windows', '.net',
-            'jira', 'seo', 'github',
+            # Tools
+            'sketch', 'adobe xd', 'axure', 'balsamiq', 'miro',
+            'mural', 'optimal workshop', 'maze', 'usertesting',
+            'lookback', 'hotjar', 'fullstory', 'google analytics',
+            # Research methods
+            'personas', 'user personas', 'journey mapping',
+            'customer journey mapping', 'empathy mapping',
+            'service blueprints', 'stakeholder mapping',
+            'user interviews', 'contextual inquiry', 'ethnographic research',
+            'diary studies', 'field studies', 'surveys',
+            'questionnaires', 'card sorting', 'tree testing',
+            'first click testing', 'heuristic evaluation',
+            'cognitive walkthrough', 'expert review',
+            # Strategy & process
+            'design thinking', 'design sprint', 'lean ux',
+            'agile ux', 'jobs to be done', 'jtbd',
+            'problem framing', 'opportunity mapping',
+            # Analysis & testing
+            'a/b testing', 'multivariate testing', 'usability metrics',
+            'quantitative research', 'qualitative research',
+            'analytics', 'user behavior', 'heat maps',
+            'session recordings', 'accessibility', 'wcag',
+            'inclusive design', 'universal design'
+        ]
+    },
+
+    # ===== TECH ROLES =====
+    'software_engineer': {
+        'required': [
+            'programming', 'software development', 'software engineering',
+            'coding', 'algorithms', 'data structures', 'git', 'version control',
+            'api', 'rest', 'testing', 'debugging', 'code review',
+            'software design', 'system design'
+        ],
+        'preferred': [
+            # Languages
+            'python', 'java', 'javascript', 'typescript', 'c++', 'c#',
+            'go', 'golang', 'rust', 'kotlin', 'swift', 'ruby', 'php',
+            'scala', 'r', 'matlab',
+            # Frameworks & libraries
+            'react', 'angular', 'vue', 'node', 'nodejs', 'express',
+            'django', 'flask', 'spring', 'spring boot', '.net', 'asp.net',
+            # Infrastructure & DevOps
+            'docker', 'kubernetes', 'k8s', 'aws', 'azure', 'gcp',
+            'terraform', 'ansible', 'jenkins', 'ci/cd', 'github actions',
+            'gitlab ci', 'circleci',
+            # Databases
+            'sql', 'postgresql', 'mysql', 'mongodb', 'redis', 'elasticsearch',
+            'cassandra', 'dynamodb', 'oracle', 'sql server',
+            # Architecture & patterns
+            'microservices', 'rest api', 'graphql', 'grpc',
+            'event-driven', 'message queues', 'kafka', 'rabbitmq',
+            'design patterns', 'solid principles', 'clean code',
+            'tdd', 'test-driven development', 'bdd',
+            # Tools & practices
+            'linux', 'unix', 'bash', 'shell scripting', 'agile', 'scrum',
+            'jira', 'confluence', 'code quality', 'code coverage',
+            'unit testing', 'integration testing', 'performance testing'
+        ]
+    },
+    'data_scientist': {
+        'required': [
+            'data science', 'machine learning', 'ml', 'python',
+            'data analysis', 'statistics', 'statistical analysis',
+            'sql', 'data visualization', 'modeling', 'analytics',
+            'predictive modeling', 'data mining'
+        ],
+        'preferred': [
+            # ML/DL
+            'deep learning', 'neural networks', 'nlp', 'natural language processing',
+            'computer vision', 'cv', 'image recognition', 'recommendation systems',
+            'time series', 'forecasting', 'classification', 'regression',
+            'clustering', 'dimensionality reduction', 'feature engineering',
+            # Tools & frameworks
+            'tensorflow', 'keras', 'pytorch', 'scikit-learn', 'sklearn',
+            'xgboost', 'lightgbm', 'catboost', 'h2o',
+            # Python libraries
+            'pandas', 'numpy', 'matplotlib', 'seaborn', 'plotly',
+            'scipy', 'statsmodels', 'jupyter', 'jupyter notebook',
+            # Big data & cloud
+            'spark', 'pyspark', 'hadoop', 'hive', 'pig',
+            'aws', 'sagemaker', 'azure ml', 'google cloud ai',
+            # Visualization
+            'tableau', 'power bi', 'looker', 'data studio',
+            # Other languages & tools
+            'r', 'r studio', 'sas', 'matlab',
+            # Techniques
+            'a/b testing', 'hypothesis testing', 'bayesian statistics',
+            'causal inference', 'experimental design'
+        ]
+    },
+    'data_engineer': {
+        'required': [
+            'data engineering', 'etl', 'elt', 'sql', 'python',
+            'data pipeline', 'data pipelines', 'data warehousing',
+            'database', 'big data', 'data modeling', 'data architecture',
+            'data integration'
+        ],
+        'preferred': [
+            # Big data
+            'spark', 'apache spark', 'pyspark', 'hadoop',
+            'hive', 'presto', 'impala', 'pig',
+            # Streaming
+            'kafka', 'apache kafka', 'kinesis', 'pubsub',
+            'stream processing', 'real-time processing', 'flink',
+            # Orchestration & workflow
+            'airflow', 'apache airflow', 'dagster', 'prefect',
+            'luigi', 'oozie', 'azkaban',
+            # Cloud platforms
+            'aws', 'redshift', 'emr', 'glue', 'lambda',
+            'azure', 'synapse', 'data factory', 'databricks',
+            'gcp', 'bigquery', 'dataflow', 'dataproc',
+            # Warehouses & lakes
+            'snowflake', 'redshift', 'bigquery', 'synapse',
+            'data lake', 'delta lake', 'iceberg',
+            # Tools & frameworks
+            'dbt', 'dataform', 'fivetran', 'stitch', 'talend',
+            'scala', 'java', 'docker', 'kubernetes',
+            # Databases
+            'postgresql', 'mysql', 'mongodb', 'cassandra',
+            'elasticsearch', 'dynamodb', 'cosmos db',
+            # Skills
+            'data quality', 'data governance', 'data catalog',
+            'metadata management', 'data lineage', 'schema design',
+            'dimensional modeling', 'star schema', 'snowflake schema',
+            'slowly changing dimensions', 'scd'
+        ]
+    },
+    'devops_engineer': {
+        'required': [
+            'devops', 'ci/cd', 'continuous integration', 'continuous deployment',
+            'docker', 'kubernetes', 'aws', 'linux', 'automation',
+            'infrastructure', 'infrastructure as code', 'iac',
+            'cloud', 'scripting'
+        ],
+        'preferred': [
+            # Cloud platforms
+            'aws', 'ec2', 's3', 'lambda', 'ecs', 'eks', 'cloudformation',
+            'azure', 'azure devops', 'arm templates',
+            'gcp', 'google cloud', 'compute engine', 'gke',
+            # IaC & configuration
+            'terraform', 'terragrunt', 'ansible', 'chef', 'puppet',
+            'cloudformation', 'arm', 'bicep', 'pulumi',
+            # CI/CD
+            'jenkins', 'gitlab ci', 'github actions', 'circleci',
+            'travis ci', 'bamboo', 'teamcity', 'azure pipelines',
+            'codebuild', 'codepipeline',
+            # Containers & orchestration
+            'docker', 'docker-compose', 'dockerfile', 'kubernetes', 'k8s',
+            'helm', 'kustomize', 'istio', 'linkerd', 'argo cd',
+            'flux', 'rancher', 'openshift',
+            # Monitoring & logging
+            'prometheus', 'grafana', 'elk', 'elasticsearch', 'logstash',
+            'kibana', 'splunk', 'datadog', 'new relic', 'cloudwatch',
+            'stackdriver', 'pagerduty', 'opsgenie',
+            # Languages & scripting
+            'python', 'bash', 'shell scripting', 'powershell', 'go',
+            # Networking & security
+            'networking', 'vpc', 'load balancing', 'dns', 'ssl', 'tls',
+            'security', 'iam', 'secrets management', 'vault', 'kms',
+            # Practices
+            'sre', 'site reliability engineering', 'high availability',
+            'disaster recovery', 'backup', 'monitoring', 'observability'
+        ]
+    },
+    'qa_engineer': {
+        'required': [
+            'qa', 'quality assurance', 'testing', 'test automation',
+            'automated testing', 'test cases', 'test plans', 'bug tracking',
+            'manual testing', 'test planning', 'test strategy',
+            'quality control'
+        ],
+        'preferred': [
+            # Automation tools
+            'selenium', 'selenium webdriver', 'appium', 'cypress',
+            'playwright', 'testcafe', 'puppeteer', 'webdriverio',
+            'robot framework', 'cucumber', 'testng', 'junit', 'pytest',
+            # Programming
+            'python', 'java', 'javascript', 'typescript', 'c#',
+            # Testing types
+            'api testing', 'rest api testing', 'postman', 'rest assured',
+            'soapui', 'regression testing', 'smoke testing',
+            'integration testing', 'end-to-end testing', 'e2e',
+            'performance testing', 'load testing', 'stress testing',
+            'security testing', 'penetration testing', 'mobile testing',
+            'cross-browser testing', 'accessibility testing',
+            # Tools & platforms
+            'jira', 'testray', 'testrail', 'zephyr', 'xray',
+            'browserstack', 'sauce labs', 'lambdatest',
+            # Performance
+            'jmeter', 'gatling', 'locust', 'k6', 'blazemeter',
+            # CI/CD
+            'jenkins', 'github actions', 'gitlab ci', 'ci/cd',
+            'docker', 'continuous testing',
+            # Methodologies
+            'agile', 'scrum', 'waterfall', 'tdd', 'test-driven development',
+            'bdd', 'behavior-driven development', 'shift-left testing',
+            # Skills
+            'sql', 'database testing', 'test automation framework',
+            'page object model', 'pom', 'data-driven testing',
+            'keyword-driven testing', 'test coverage', 'defect management',
+            'test metrics', 'quality metrics'
+        ]
+    },
+    'business_analyst': {
+        'required': [
+            'business analysis', 'requirements gathering', 'requirements analysis',
+            'documentation', 'stakeholder management', 'sql', 'data analysis',
+            'agile', 'business requirements', 'functional requirements',
+            'process analysis', 'process improvement'
+        ],
+        'preferred': [
+            # Documentation
+            'user stories', 'use cases', 'business requirements document',
+            'brd', 'functional requirements document', 'frd',
+            'software requirements specification', 'srs',
+            'process flows', 'workflow diagrams', 'wireframes',
+            'mockups', 'prototypes',
+            # Tools
+            'jira', 'confluence', 'azure devops', 'visio',
+            'lucidchart', 'draw.io', 'miro', 'figma', 'axure',
+            # Analysis & modeling
+            'process modeling', 'data modeling', 'gap analysis',
+            'impact analysis', 'feasibility analysis', 'cost-benefit analysis',
+            'swot analysis', 'as-is to-be', 'current state future state',
+            # Data & reporting
+            'sql', 'tableau', 'power bi', 'excel', 'advanced excel',
+            'pivot tables', 'vlookup', 'macros', 'vba',
+            'business intelligence', 'data visualization', 'dashboards',
+            'kpi', 'metrics', 'reporting',
+            # Methodologies
+            'agile', 'scrum', 'kanban', 'waterfall', 'lean',
+            'six sigma', 'babok', 'uml', 'bpmn',
+            # Skills
+            'elicitation', 'requirements elicitation', 'workshops',
+            'facilitation', 'change management', 'user acceptance testing',
+            'uat', 'test cases', 'solution design', 'system design',
+            'vendor management', 'project management'
+        ]
+    },
+
+    # ===== PRODUCT & PROJECT MANAGEMENT =====
+    'product_manager': {
+        'required': [
+            'product management', 'product strategy', 'roadmap',
+            'product roadmap', 'stakeholder management', 'user stories',
+            'agile', 'requirements', 'prioritization', 'product planning',
+            'product development', 'product lifecycle'
+        ],
+        'preferred': [
+            # Agile & methodologies
+            'scrum', 'kanban', 'safe', 'lean', 'product backlog',
+            'sprint planning', 'story mapping', 'impact mapping',
+            # Analytics & metrics
+            'product analytics', 'metrics', 'kpi', 'okr',
+            'product metrics', 'user metrics', 'engagement metrics',
+            'retention metrics', 'cohort analysis', 'funnel analysis',
+            'a/b testing', 'experimentation', 'hypothesis testing',
+            # Research
+            'user research', 'customer research', 'market research',
+            'competitive analysis', 'competitor analysis', 'user interviews',
+            'surveys', 'user testing', 'usability testing',
+            # Tools
+            'jira', 'productboard', 'aha', 'pivotal tracker',
+            'asana', 'trello', 'confluence', 'miro', 'figma',
+            'google analytics', 'mixpanel', 'amplitude', 'heap',
+            # Technical
+            'sql', 'api', 'rest api', 'technical documentation',
+            'system architecture', 'database', 'wireframing',
+            # Strategy
+            'product vision', 'product strategy', 'go-to-market', 'gtm',
+            'product launch', 'launch planning', 'mvp', 'minimum viable product',
+            'product-market fit', 'value proposition', 'positioning',
+            'pricing', 'pricing strategy', 'prd', 'product requirements document',
+            'feature definition', 'feature prioritization',
+            'cross-functional', 'cross-functional leadership',
+            'engineering collaboration', 'design collaboration'
+        ]
+    },
+    'technical_product_manager': {
+        'required': [
+            'product management', 'technical product management',
+            'technical', 'api', 'architecture', 'system architecture',
+            'roadmap', 'agile', 'engineering', 'stakeholder management',
+            'technical requirements', 'system design'
+        ],
+        'preferred': [
+            # Technical skills
+            'sql', 'python', 'rest api', 'graphql', 'grpc',
+            'microservices', 'distributed systems', 'cloud',
+            'aws', 'azure', 'gcp', 'system design', 'data modeling',
+            'database design', 'schema design', 'api design',
+            'technical specifications', 'technical documentation',
+            # Architecture
+            'software architecture', 'solution architecture',
+            'integration', 'integrations', 'third-party integrations',
+            'webhooks', 'event-driven architecture', 'scalability',
+            'performance', 'reliability', 'security',
+            # Platform & infrastructure
+            'platform', 'platform development', 'developer tools',
+            'sdk', 'developer experience', 'dx', 'api documentation',
+            'backend', 'infrastructure', 'devops', 'ci/cd',
+            # Tools & practices
+            'jira', 'confluence', 'github', 'gitlab',
+            'postman', 'swagger', 'openapi', 'technical roadmap',
+            'technical debt', 'code review', 'sprint planning',
+            # Strategy
+            'technical strategy', 'engineering strategy',
+            'build vs buy', 'technical feasibility', 'capacity planning',
+            'resource planning', 'engineering metrics', 'velocity',
+            'technical requirements', 'api strategy', 'data strategy'
+        ]
+    },
+    'project_manager': {
+        'required': [
+            'project management', 'planning', 'project planning',
+            'scheduling', 'stakeholder management', 'risk management',
+            'budget', 'budget management', 'team coordination',
+            'pmp', 'project coordination', 'project execution',
+            'project delivery'
+        ],
+        'preferred': [
+            # Methodologies
+            'agile', 'scrum', 'kanban', 'waterfall', 'hybrid',
+            'safe', 'prince2', 'pmi', 'pmbok', 'lean',
+            # Tools
+            'jira', 'microsoft project', 'ms project', 'smartsheet',
+            'asana', 'monday.com', 'trello', 'basecamp', 'wrike',
+            'confluence', 'sharepoint', 'excel', 'powerpoint',
+            # Planning & scheduling
+            'resource management', 'resource allocation', 'capacity planning',
+            'project scheduling', 'timeline management', 'milestone tracking',
+            'critical path', 'critical path method', 'cpm',
+            'gantt chart', 'pert', 'network diagram',
+            # Management skills
+            'status reporting', 'executive reporting', 'stakeholder communication',
+            'change management', 'scope management', 'time management',
+            'cost management', 'quality management', 'procurement management',
+            'issue management', 'risk mitigation', 'dependency management',
+            # Project artifacts
+            'project charter', 'project plan', 'work breakdown structure',
+            'wbs', 'risk register', 'raid log', 'status reports',
+            'project dashboard', 'project metrics', 'kpi tracking',
+            # Certifications & standards
+            'pmp certified', 'capm', 'csm', 'certified scrum master',
+            'prince2 certified', 'agile certified', 'pmi-acp',
+            # Skills
+            'vendor management', 'contract management', 'negotiation',
+            'team leadership', 'conflict resolution', 'problem solving',
+            'decision making', 'lessons learned', 'post-mortem'
         ]
     },
 }
 
 def get_role_keywords(role_id: str):
-    """
-    Get keywords for a specific role.
-
-    Args:
-        role_id: Role identifier (e.g., 'product_manager')
-
-    Returns:
-        Dictionary with 'required' and 'preferred' keyword lists,
-        or None if role not found.
-    """
+    """Get keywords for a specific role."""
     return ROLE_KEYWORDS.get(role_id)
 
 def get_all_roles():
