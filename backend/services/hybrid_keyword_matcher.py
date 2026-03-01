@@ -190,7 +190,9 @@ class HybridKeywordMatcher:
         """
         Match multiple keywords against resume text efficiently.
 
-        Useful for batch processing job description keywords against a resume.
+        Batch-encodes resume + all keywords in two model.encode() calls with a
+        single 30s timeout, instead of one pair of encode calls per keyword.
+        Falls back to pure exact matching if the model is unavailable or slow.
 
         Args:
             keywords: List of keywords to match (e.g., ["Python", "Django", "React"])
@@ -203,11 +205,42 @@ class HybridKeywordMatcher:
         if not keywords:
             return {}
 
-        results = {}
-        for keyword in keywords:
-            results[keyword] = self.match_keyword(keyword, resume_text)
+        self._lazy_init()
 
-        return results
+        # If model unavailable, use pure exact matching for all keywords at once
+        if self._model is None:
+            return {kw: self._exact_match_score(kw, resume_text) for kw in keywords}
+
+        try:
+            from sentence_transformers import util
+
+            model = self._model  # local ref for thread safety
+
+            def _batch_encode():
+                r_emb = model.encode(resume_text, convert_to_tensor=True, show_progress_bar=False)
+                kw_embs = model.encode(keywords, convert_to_tensor=True, show_progress_bar=False)
+                return r_emb, kw_embs
+
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(_batch_encode)
+                try:
+                    resume_emb, kw_embs = future.result(timeout=30)
+                except FuturesTimeoutError:
+                    # Batch timed out — fall back to exact matching for all keywords
+                    return {kw: self._exact_match_score(kw, resume_text) for kw in keywords}
+
+            # Compute per-keyword hybrid scores from batch embeddings
+            similarities = util.cos_sim(resume_emb, kw_embs)[0]
+            results = {}
+            for i, keyword in enumerate(keywords):
+                exact_score = self._exact_match_score(keyword, resume_text)
+                semantic_score = max(0.0, min(1.0, similarities[i].item()))
+                hybrid = (semantic_score * self.semantic_weight) + (exact_score * self.exact_weight)
+                results[keyword] = max(exact_score, hybrid)
+            return results
+
+        except Exception:
+            return {kw: self._exact_match_score(kw, resume_text) for kw in keywords}
 
     def get_match_summary(
         self,
