@@ -18,22 +18,26 @@ export default function UploadPage() {
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [rolesError, setRolesError] = useState<string | null>(null)
+  const [rolesLoading, setRolesLoading] = useState(true)
+
+  const fetchRoles = async () => {
+    setRolesLoading(true)
+    setRolesError(null)
+    try {
+      const data = await getRoles()
+      setRolesData(data)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to fetch roles'
+      console.error('Failed to fetch roles:', msg)
+      setRolesError(msg)
+      setRolesData({ categories: {}, levels: [] })
+    } finally {
+      setRolesLoading(false)
+    }
+  }
 
   // Fetch roles on component mount
   useEffect(() => {
-    const fetchRoles = async () => {
-      try {
-        const data = await getRoles()
-        setRolesData(data)
-        setRolesError(null)
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Failed to fetch roles'
-        console.error('Failed to fetch roles:', msg)
-        setRolesError(msg)
-        setRolesData({ categories: {}, levels: [] })
-      }
-    }
-
     fetchRoles()
   }, [])
 
@@ -234,13 +238,16 @@ export default function UploadPage() {
                 <select
                   id="role"
                   value={selectedRole}
+                  disabled={rolesLoading}
                   onChange={(e) => {
                     setSelectedRole(e.target.value)
                     setSelectedLevel('')
                   }}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm text-gray-700 font-medium bg-white"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm text-gray-700 font-medium bg-white disabled:opacity-60"
                 >
-                  <option value="">Select your target role...</option>
+                  <option value="">
+                    {rolesLoading ? 'Loading roles...' : 'Select your target role...'}
+                  </option>
                   {rolesData && Object.entries(rolesData.categories).map(([category, roles]) => (
                     <optgroup key={category} label={category.toUpperCase()}>
                       {roles.map((role) => (
@@ -252,7 +259,16 @@ export default function UploadPage() {
                   ))}
                 </select>
                 {rolesError && (
-                  <p className="mt-2 text-xs text-red-500">Could not load roles: {rolesError}</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <p className="text-xs text-red-500">Could not load roles: {rolesError}</p>
+                    <button
+                      type="button"
+                      onClick={fetchRoles}
+                      className="text-xs text-indigo-600 underline hover:text-indigo-800"
+                    >
+                      Retry
+                    </button>
+                  </div>
                 )}
               </div>
 

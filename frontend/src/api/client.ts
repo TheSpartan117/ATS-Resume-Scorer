@@ -344,7 +344,9 @@ export interface RoleDetails {
  */
 export async function getRoles(): Promise<RolesResponse> {
   try {
-    const response = await apiClient.get<RolesResponse>('/api/roles')
+    const response = await apiClient.get<RolesResponse>('/api/roles', {
+      timeout: 90000, // 90 seconds — handles Render free-tier cold start (can take 60+ seconds)
+    })
     return response.data
   } catch (error) {
     const axiosError = error as AxiosError<ApiError>
