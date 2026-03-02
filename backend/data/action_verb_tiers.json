@@ -6,7 +6,8 @@
       "pioneered", "revolutionized", "transformed", "spearheaded", "architected",
       "scaled", "innovated", "reimagined", "founded", "invented",
       "disrupted", "overhauled", "modernized", "established", "repositioned",
-      "restructured", "conceptualized", "envisioned", "originated", "chartered"
+      "restructured", "conceptualized", "envisioned", "originated", "chartered",
+      "roadmapped", "reinvented"
     ],
     "stats": {
       "corpus_frequency": "Low (high-impact strategic verbs)",
@@ -24,7 +25,9 @@
       "cultivated", "fostered", "empowered", "mobilized", "governed",
       "chaired", "oversaw", "facilitated", "coordinated", "administered",
       "managed", "delegated", "motivated", "recruited", "hired",
-      "trained", "educated", "instructed", "advised", "consulted"
+      "trained", "educated", "instructed", "advised", "consulted",
+      "groomed", "evangelized", "socialized", "onboarded", "galvanized",
+      "unified", "arbitrated"
     ],
     "stats": {
       "corpus_frequency": "High to Medium",
@@ -53,7 +56,9 @@
       "utilized", "applied", "employed", "operated", "administered",
       "introduced", "added", "extended", "expanded", "boosted",
       "maximized", "minimized", "synchronized", "tuned", "refined",
-      "redesigned", "sourced", "written"
+      "redesigned", "sourced", "written",
+      "piloted", "prototyped", "shipped", "iterated", "triaged",
+      "wireframed", "dogfooded", "experimented", "demoed"
     ],
     "stats": {
       "corpus_frequency": "Very High",
@@ -76,7 +81,8 @@
       "addressed", "provided", "supplied", "distributed", "shared",
       "transferred", "moved", "loaded", "uploaded", "downloaded",
       "backed up", "archived", "recovered", "restored", "refreshed",
-      "authorized", "certified", "completed", "ensured", "selected"
+      "authorized", "certified", "completed", "ensured", "selected",
+      "catalogued", "cataloged", "filed"
     ],
     "stats": {
       "corpus_frequency": "Very High",

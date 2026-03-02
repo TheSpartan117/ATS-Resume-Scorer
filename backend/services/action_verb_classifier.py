@@ -101,5 +101,26 @@ class ActionVerbClassifier:
                     if part in self.verb_to_tier:
                         return self.verb_to_tier[part]
 
-        # No recognized verb found
+        # No verb found in first 3 words — scan the entire sentence and
+        # return the highest-tier verb found anywhere in the bullet.
+        best_tier: VerbTier = None
+        for word in words[3:]:
+            candidate = None
+
+            if word in self.verb_to_tier:
+                candidate = self.verb_to_tier[word]
+            elif '-' in word:
+                for part in word.split('-'):
+                    if part in self.verb_to_tier:
+                        candidate = self.verb_to_tier[part]
+                        break
+
+            if candidate is not None:
+                if best_tier is None or candidate.points > best_tier.points:
+                    best_tier = candidate
+
+        if best_tier is not None:
+            return best_tier
+
+        # No recognized verb found anywhere
         return VerbTier.TIER_0

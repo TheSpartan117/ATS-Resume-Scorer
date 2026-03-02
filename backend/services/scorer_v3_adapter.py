@@ -229,7 +229,18 @@ class ScorerV3Adapter:
             line = line.strip()
             # Remove common bullet markers
             line = re.sub(r'^[•●○◦▪▫■□‣⁃-]\s*', '', line)
-            if line:
+            if not line:
+                continue
+            # Secondary split on '. ' for clearly concatenated sentences,
+            # but only when every resulting sub-part is longer than 15
+            # characters (avoids splitting abbreviations like "e.g. " or "U.S. ").
+            sub_parts = line.split('. ')
+            if len(sub_parts) > 1 and all(len(p.strip()) > 15 for p in sub_parts):
+                for part in sub_parts:
+                    part = part.strip()
+                    if part:
+                        bullets.append(part)
+            else:
                 bullets.append(line)
         return bullets
 
