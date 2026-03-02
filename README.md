@@ -95,15 +95,6 @@ npm run dev
 **Research Paper**:
 > Jiechieu, K.F.F., Tsopze, N. (2020). "Skills prediction based on multi-label resume classification using CNN". Neural Computing & Applications. https://doi.org/10.1007/s00521-020-05302-x
 
-### Calibration Results
-
-Tested against ResumeWorded benchmarks:
-
-| Resume | Our Score | Target | Gap | Status |
-|--------|-----------|--------|-----|--------|
-| Sabuj PM | 89 | 86 | +3 | ✅ Exceeded |
-| Aishik PM | 81 | 81 | 0 | ✅ Perfect |
-| Swastik PM | 64 | 65 | -1 | ✅ Close |
 
 **Average Gap**: 1.3 points (98.7% accuracy)
 
