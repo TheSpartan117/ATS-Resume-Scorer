@@ -961,6 +961,55 @@ def parse_pdf(file_content: bytes, filename: str) -> ResumeData:
         )
 
 
+def _para_full_text(para_element) -> str:
+    """
+    Return the full text of a paragraph element, including text that is nested
+    inside <w:hyperlink> child elements.  python-docx's Paragraph.text only
+    walks direct <w:r> children and silently drops runs that live inside
+    hyperlinks, causing email addresses (which Word stores as mailto hyperlinks)
+    to be invisible to the normal para.text property.
+
+    This function replicates what python-docx does for normal runs (including
+    the \\n emitted for <w:br> line-breaks) but also descends into <w:hyperlink>
+    elements so that hyperlinked text (e.g. a mailto: email address) is included.
+    """
+    W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+    _W_R = '{%s}r' % W
+    _W_T = '{%s}t' % W
+    _W_BR = '{%s}br' % W
+    _W_HYPERLINK = '{%s}hyperlink' % W
+
+    parts = []
+
+    def _collect_run(run_el):
+        """Collect text from a single <w:r> element, emitting \\n for <w:br>.
+        Also descends into any <w:hyperlink> that is a child of this run,
+        because Word occasionally nests the hyperlink element inside <w:r>.
+        """
+        for child in run_el:
+            if child.tag == _W_T:
+                if child.text:
+                    parts.append(child.text)
+            elif child.tag == _W_BR:
+                parts.append('\n')
+            elif child.tag == _W_HYPERLINK:
+                # Hyperlink nested inside a run — collect all its runs too
+                for grandchild in child:
+                    if grandchild.tag == _W_R:
+                        _collect_run(grandchild)
+
+    for child in para_element:
+        if child.tag == _W_R:
+            _collect_run(child)
+        elif child.tag == _W_HYPERLINK:
+            # Hyperlink as a direct child of the paragraph
+            for grandchild in child:
+                if grandchild.tag == _W_R:
+                    _collect_run(grandchild)
+
+    return ''.join(parts)
+
+
 def parse_docx(file_content: bytes, filename: str) -> ResumeData:
     """
     Parse a DOCX resume and extract structured data including tables.
@@ -987,8 +1036,12 @@ def parse_docx(file_content: bytes, filename: str) -> ResumeData:
             # Find corresponding paragraph object
             for para in doc.paragraphs:
                 if para._element == element:
-                    if para.text.strip():
-                        full_text_parts.append(para.text)
+                    # Use _para_full_text() instead of para.text so that text
+                    # inside <w:hyperlink> elements (e.g. mailto: email addresses)
+                    # is also included.
+                    text = _para_full_text(element)
+                    if text.strip():
+                        full_text_parts.append(text)
                     break
 
         # Check if element is a table

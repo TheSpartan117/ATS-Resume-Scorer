@@ -538,7 +538,7 @@ class ScorerV3Adapter:
                         )
 
             breakdown[category_name] = {
-                'score': category_data['score'],
+                'score': max(0.0, category_data['score']),
                 'maxScore': category_data['max'],
                 'issues': issues
             }
