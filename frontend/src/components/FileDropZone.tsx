@@ -73,6 +73,7 @@ export default function FileDropZone({
   return (
     <div>
       <div
+        data-testid="file-dropzone"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -88,6 +89,7 @@ export default function FileDropZone({
         <input
           type="file"
           id="file-upload"
+          data-testid="file-input"
           accept={accept}
           onChange={handleFileInput}
           className="hidden"

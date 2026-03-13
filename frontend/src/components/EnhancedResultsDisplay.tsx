@@ -200,9 +200,9 @@ export default function EnhancedResultsDisplay({ overallScore, breakdown, issues
   const categoryWeaknesses = sortedCategories.filter(([_, cat]) => getCategoryPercentage(cat) < 60)
 
   return (
-    <div className="space-y-6">
+    <div data-testid="results-display" className="space-y-6">
       {/* Overall Score Card */}
-      <div className={`${rating.bgGradient} rounded-2xl border-2 ${rating.border} p-6 shadow-lg`}>
+      <div data-testid="score-card" className={`${rating.bgGradient} rounded-2xl border-2 ${rating.border} p-6 shadow-lg`}>
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3 mb-2">
@@ -216,7 +216,7 @@ export default function EnhancedResultsDisplay({ overallScore, breakdown, issues
           <div className="flex flex-col items-center">
             <div className={`w-24 h-24 rounded-full ${rating.circleColor} flex items-center justify-center shadow-xl`}>
               <div className="flex flex-col items-center text-white">
-                <span className="text-4xl font-bold">{overallScore}</span>
+                <span data-testid="overall-score" className="text-4xl font-bold">{overallScore}</span>
                 <span className="text-xs font-semibold">/100</span>
               </div>
             </div>

@@ -99,7 +99,7 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div data-testid="upload-page" className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 max-w-7xl flex items-center justify-between">
@@ -212,6 +212,7 @@ export default function UploadPage() {
                 </div>
                 <textarea
                   id="jobDescription"
+                  data-testid="job-description"
                   rows={4}
                   value={jobDescription}
                   onChange={(e) => setJobDescription(e.target.value)}
@@ -237,6 +238,7 @@ export default function UploadPage() {
                 </div>
                 <select
                   id="role"
+                  data-testid="role-select"
                   value={selectedRole}
                   disabled={rolesLoading}
                   onChange={(e) => {
@@ -316,7 +318,7 @@ export default function UploadPage() {
 
               {/* Error Message */}
               {error && (
-                <div className="p-4 bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200 rounded-xl">
+                <div data-testid="upload-error" className="p-4 bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200 rounded-xl">
                   <div className="flex items-start space-x-3">
                     <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
@@ -331,6 +333,7 @@ export default function UploadPage() {
 
               {/* Submit Button */}
               <button
+                data-testid="analyze-btn"
                 type="submit"
                 disabled={!selectedFile || isUploading}
                 className={`

@@ -99,12 +99,13 @@ export default function ResultsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div data-testid="results-page" className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <button
+              data-testid="back-to-upload"
               onClick={() => navigate('/')}
               className="text-blue-600 hover:text-blue-800 font-medium flex items-center"
             >
@@ -132,6 +133,7 @@ export default function ResultsPage() {
                 level={result.level || 'mid'}
               />
               <button
+                data-testid="edit-resume-btn"
                 onClick={() => navigate('/editor', { state: { result } })}
                 className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-semibold"
               >

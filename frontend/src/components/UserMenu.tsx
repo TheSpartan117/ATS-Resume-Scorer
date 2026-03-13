@@ -24,6 +24,7 @@ export default function UserMenu() {
     return (
       <>
         <button
+          data-testid="login-btn"
           onClick={() => setIsModalOpen(true)}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-semibold text-sm"
         >
@@ -35,9 +36,10 @@ export default function UserMenu() {
   }
 
   return (
-    <div className="relative">
+    <div data-testid="user-menu" className="relative">
       {/* User Button */}
       <button
+        data-testid="user-menu-btn"
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
         className="flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
       >
@@ -62,6 +64,7 @@ export default function UserMenu() {
           {/* Menu */}
           <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border border-gray-200">
             <button
+              data-testid="my-resumes-link"
               onClick={() => {
                 navigate('/my-resumes')
                 setIsDropdownOpen(false)
@@ -71,6 +74,7 @@ export default function UserMenu() {
               My Resumes
             </button>
             <button
+              data-testid="logout-btn"
               onClick={() => {
                 logout()
                 setIsDropdownOpen(false)

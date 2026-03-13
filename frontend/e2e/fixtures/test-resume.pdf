@@ -1,0 +1,55 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792]
+/Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 300 >>
+stream
+BT
+/F1 12 Tf
+50 750 Td
+(John Doe) Tj
+0 -20 Td
+(john.doe@example.com | (555) 123-4567 | San Francisco, CA) Tj
+0 -30 Td
+(EXPERIENCE) Tj
+0 -20 Td
+(Software Engineer, Tech Corp | 2020-01 - Present) Tj
+0 -15 Td
+(Developed scalable web applications using Python and React, serving 50K+ users) Tj
+0 -15 Td
+(Improved system performance by 40% through database optimization) Tj
+0 -30 Td
+(EDUCATION) Tj
+0 -20 Td
+(BS Computer Science, Tech University | 2020) Tj
+0 -30 Td
+(SKILLS) Tj
+0 -20 Td
+(Python, JavaScript, React, AWS, Docker, PostgreSQL) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f
+0000000009 00000 n
+0000000068 00000 n
+0000000125 00000 n
+0000000274 00000 n
+0000000625 00000 n
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+714
+%%EOF
