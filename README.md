@@ -1,297 +1,220 @@
 # ATS Resume Scorer
 
-An intelligent resume scoring system that helps job seekers optimize their resumes for Applicant Tracking Systems (ATS).
+An intelligent resume scoring and editing platform that helps job seekers optimize their resumes for Applicant Tracking Systems (ATS).
 
-## 🎯 Features
+## Features
 
-- **21-Parameter Scoring**: Comprehensive evaluation across 6 categories
-- **Role-Specific Optimization**: 19+ job roles with tailored keywords
-- **Experience-Aware**: Adapts scoring to experience level (Beginner/Intermediary/Senior)
-- **Research-Backed**: Keywords and verbs based on analysis of 30,000+ real resumes
-- **Real-Time Feedback**: Actionable suggestions for improvement
-- **98% Accuracy**: Calibrated against ResumeWorded benchmark scores
+- **21-Parameter Scoring** — Comprehensive evaluation across 6 categories
+- **Role-Specific Optimization** — 19+ job roles with tailored keyword sets
+- **Experience-Aware** — Adapts scoring to entry / mid / senior level
+- **Research-Backed** — Keywords and action verbs sourced from 30,000+ real resumes
+- **Real-Time Feedback** — Actionable, prioritized suggestions for improvement
+- **Resume Editor** — In-browser DOCX editing with live re-scoring
+- **Auth & History** — Accounts, saved resumes, premium tier
 
-## 🚀 Quick Start
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Backend | FastAPI 0.110, Python 3.11+ |
+| Database | PostgreSQL 14+ (SQLAlchemy ORM, Alembic migrations) |
+| Auth | JWT (PyJWT 2.8), bcrypt, slowapi rate limiting |
+| Parsing | PyMuPDF, pdfplumber, python-docx, spaCy, sentence-transformers |
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS 3.4, React Router 7 |
+| E2E Tests | Playwright 1.x (34 tests, 4 browsers) |
+| Deployment | Render (API), Vercel (frontend), Supabase (database) |
+
+## Quick Start
 
 ### Prerequisites
 
-- Python 3.10+
-- Node.js 18+
-- Git
+- Python 3.11+
+- Node.js 20+
+- PostgreSQL 14+ (or a Supabase project URL)
 
-### Installation
+### 1. Clone
 
-**1. Clone repository**:
 ```bash
-git clone https://github.com/JoHn11117/ATS-Resume-Scorer.git
+git clone https://github.com/TheSpartan117/ATS-Resume-Scorer.git
 cd ATS-Resume-Scorer
 ```
 
-**2. Start Backend** (Terminal 1):
+### 2. Backend
+
 ```bash
 cd backend
 python3 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+
+# Copy and fill in env vars (see Environment Variables section)
+cp .env.example .env
+# Edit .env — set DATABASE_URL and generate JWT_SECRET_KEY
+
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-**3. Start Frontend** (Terminal 2):
+### 3. Frontend
+
 ```bash
 cd frontend
 npm install
+cp .env.example .env.local      # set VITE_API_URL=http://localhost:8000
 npm run dev
 ```
 
-**4. Open Browser**:
-- Frontend: http://localhost:5173
-- Backend API Docs: http://localhost:8000/docs
+### 4. Open
 
-## 📊 Scoring System
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:5173 |
+| API docs (Swagger) | http://localhost:8000/docs |
+| Health check | http://localhost:8000/health |
 
-### Categories (100 points total, 130 max with bonuses)
+## Environment Variables
 
-| Category | Standard | Max | Bonus |
-|----------|----------|-----|-------|
-| Keyword Matching | 25 pts | 35 pts | +10 |
-| Content Quality | 35 pts | 45 pts | +10 |
-| Format & Structure | 15 pts | 20 pts | +5 |
-| Professional Polish | 10 pts | 15 pts | +5 |
-| Experience Validation | 10 pts | 10 pts | 0 |
-| Readability | 5 pts | 5 pts | 0 |
+### Backend (`backend/.env`)
+
+| Variable | Required | Description |
+|---|---|---|
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `JWT_SECRET_KEY` | Yes | Secret for signing JWTs. Generate: `python -c "import secrets; print(secrets.token_hex(32))"` |
+| `ONLYOFFICE_JWT_SECRET` | Yes | Secret for OnlyOffice Document Server JWT. Same generation command. |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | No | Token lifetime in minutes (default: `30`) |
+| `ENVIRONMENT` | No | `production` (default) or `development`. Controls CORS strictness. |
+| `CORS_ORIGINS` | No | Comma-separated allowed origins (default: localhost ports) |
+| `ONLYOFFICE_SERVER_URL` | No | OnlyOffice server URL (default: `http://localhost:8080`) |
+| `BACKEND_URL` | No | Public backend URL used in OnlyOffice callbacks |
+| `ENABLE_SEMANTIC_MATCHING` | No | `true` to enable sentence-transformers (~90 MB, disabled by default) |
+
+See [`backend/.env.example`](./backend/.env.example) for all variables with descriptions.
+
+### Frontend (`frontend/.env.local`)
+
+| Variable | Required | Description |
+|---|---|---|
+| `VITE_API_URL` | Yes (prod) | Backend API base URL. Leave unset in dev (proxied via Vite). |
+
+## Scoring System
+
+### Categories (100 pts total, up to 130 with bonuses)
+
+| Category | Standard | Max w/ Bonus |
+|---|---|---|
+| Keyword Matching | 25 pts | 35 pts |
+| Content Quality | 35 pts | 45 pts |
+| Format & Structure | 15 pts | 20 pts |
+| Professional Polish | 10 pts | 15 pts |
+| Experience Validation | 10 pts | 10 pts |
+| Readability | 5 pts | 5 pts |
 
 ### Rating Scale
 
-- **85-100**: Excellent (ATS-optimized, highly competitive)
-- **70-84**: Good (Strong resume, minor improvements needed)
-- **50-69**: Fair (Needs significant improvements)
-- **0-49**: Poor (Major overhaul required)
+| Score | Rating |
+|---|---|
+| 85–100 | Excellent — ATS-optimized, highly competitive |
+| 70–84 | Good — strong resume, minor improvements needed |
+| 50–69 | Fair — needs significant improvements |
+| 0–49 | Poor — major overhaul required |
 
-## 📚 Documentation
-
-### Core Documentation
-
-- **[SYSTEM_OVERVIEW.md](./SYSTEM_OVERVIEW.md)** - Architecture and system design
-- **[SCORING_SYSTEM.md](./SCORING_SYSTEM.md)** - Complete scoring methodology (21 parameters explained)
-- **[KEYWORDS_AND_VERBS.md](./KEYWORDS_AND_VERBS.md)** - All 236 action verbs + role keywords
-- **[API_GUIDE.md](./API_GUIDE.md)** - REST API endpoints and usage
-- **[DEVELOPMENT_GUIDE.md](./DEVELOPMENT_GUIDE.md)** - Developer setup and contribution guide
-
-### Improvement Summaries
-
-- **[ACTION_VERB_UPDATE_SUMMARY.md](./ACTION_VERB_UPDATE_SUMMARY.md)** - Verb expansion (87→236)
-- **[KEYWORD_UPDATE_SUMMARY.md](./KEYWORD_UPDATE_SUMMARY.md)** - Keyword expansion details
-- **[KEYWORD_SCORING_EXPLAINED.md](./KEYWORD_SCORING_EXPLAINED.md)** - How P1.1/P1.2 scoring works
-
-## 🔬 Research Foundation
-
-### Data Sources
-
-**Resume Corpus**: https://github.com/florex/resume_corpus.git
-- 29,783 total resumes analyzed
-- 371 PM resumes for keyword extraction
-- 1,000 manager resumes for action verb analysis
-
-**Research Paper**:
-> Jiechieu, K.F.F., Tsopze, N. (2020). "Skills prediction based on multi-label resume classification using CNN". Neural Computing & Applications. https://doi.org/10.1007/s00521-020-05302-x
-
-
-**Average Gap**: 1.3 points (98.7% accuracy)
-
-## 🛠️ Tech Stack
-
-### Backend
-- **Framework**: FastAPI 0.115.0
-- **Language**: Python 3.14
-- **PDF Parser**: PyMuPDF
-- **DOCX Parser**: python-docx
-- **NLP**: sentence-transformers
-- **Grammar**: language-tool-python
-
-### Frontend
-- **Framework**: React 18.3 + TypeScript
-- **Build Tool**: Vite 6.0
-- **Routing**: React Router 7.1
-- **HTTP Client**: Axios
-- **Styling**: Tailwind CSS
-
-## 📁 Project Structure
+## Project Structure
 
 ```
-ats-resume-scorer/
+ATS-Resume-Scorer/
 ├── backend/
-│   ├── services/
-│   │   ├── scorer_v3.py                # Main scoring engine
-│   │   ├── parser.py                   # Document parsing
-│   │   ├── role_keywords.py            # Role-specific keywords
-│   │   └── parameters/                 # 21 scoring parameters
-│   ├── data/
-│   │   └── action_verb_tiers.json      # 236 categorized verbs
-│   ├── api/
-│   │   ├── upload.py                   # Upload endpoint
-│   │   └── roles.py                    # Roles endpoint
-│   └── tests/                          # Backend tests
+│   ├── api/              # FastAPI routers (upload, auth, editor, export …)
+│   ├── auth/             # JWT + bcrypt helpers, FastAPI dependencies
+│   ├── models/           # SQLAlchemy models (User, EditorSession)
+│   ├── services/         # Scoring engine, parsers, NLP, formatters
+│   ├── schemas/          # Pydantic response schemas
+│   ├── alembic/          # DB migrations
+│   └── main.py           # FastAPI app entry point
 ├── frontend/
 │   ├── src/
-│   │   ├── components/
-│   │   │   ├── UploadPage.tsx          # File upload UI
-│   │   │   ├── ResultsPage.tsx         # Score display
-│   │   │   └── FileDropZone.tsx        # Drag-drop upload
-│   │   ├── api/
-│   │   │   └── client.ts               # API client
-│   │   └── types/
-│   │       └── resume.ts               # TypeScript types
-│   └── public/                         # Static assets
-└── docs/                               # Comprehensive documentation
+│   │   ├── components/   # React components (UploadPage, ResultsPage, AuthModal …)
+│   │   ├── api/          # Typed API client
+│   │   └── types/        # TypeScript types
+│   ├── e2e/
+│   │   ├── specs/        # Playwright test specs
+│   │   └── pages/        # Page Object Models
+│   └── playwright.config.ts
+├── docs/
+│   ├── CONTRIBUTING.md
+│   └── RUNBOOK.md
+└── .github/
+    └── workflows/
+        └── e2e.yml       # CI: Playwright E2E on push/PR
 ```
 
-## 🎨 Key Features
+## Running Tests
 
-### 1. Role-Specific Scoring
-- **19+ Roles**: PM, Software Engineer, Data Scientist, DevOps, Designer, etc.
-- **Custom Keywords**: Each role has unique required + preferred keywords
-- **Adaptive Weighting**: Scoring adjusts to role expectations
+### E2E (Playwright)
 
-### 2. Action Verb System (236 verbs)
-- **Tier 4** (Strategic): pioneered, architected, transformed (4 pts)
-- **Tier 3** (Leadership): led, managed, orchestrated (3 pts)
-- **Tier 2** (Achievement): developed, implemented, created (2 pts)
-- **Tier 1** (Operational): maintained, supported, assisted (1 pt)
-- **Tier 0** (Weak): worked, helped, responsible for (0 pts)
+```bash
+cd frontend
 
-### 3. Data-Driven Keywords
+# Run all tests (starts Vite dev server automatically)
+npm run test:e2e
 
-**Product Manager Example** (28 required, 32 preferred):
-- **High-Frequency** (60%+ resumes): product, agile, data, analytics, UI, UX, API
-- **Technical**: ML (80%), AI (95%), testing, platform, integration
-- **Process**: roadmap, backlog, sprint, scrum, stakeholder
+# Interactive UI mode
+npm run test:e2e:ui
 
-### 4. Bonus System
-- Parameters total 130 points (vs 100 standard)
-- Rewards comprehensive excellence
-- Multiple paths to perfect score
+# Smoke tests against a deployed URL
+BASE_URL=https://your-app.vercel.app npm run test:e2e:smoke
+```
 
-## 🚦 Usage
+34 tests across 4 specs: `upload`, `auth`, `results`, `health`.
 
-### Upload Resume
-1. Select PDF or DOCX file (max 10MB)
-2. Choose target role (optional)
-3. Select experience level (optional)
-4. Paste job description (optional)
-5. Click "Get My ATS Score"
+### Backend unit tests
 
-### Review Results
-- **Overall Score**: 0-100 with rating
-- **Category Breakdown**: Score per category
-- **Parameter Details**: 21 individual parameter scores
-- **Actionable Feedback**: Specific improvements per weakness
-- **Strengths Identified**: What you're doing well
+```bash
+cd backend
+python -m pytest tests/
+```
 
-### Improve Resume
-Follow suggestions for priority parameters:
-- Add missing keywords
-- Use stronger action verbs
-- Quantify achievements with metrics
-- Fix formatting issues
-- Improve grammar and spelling
+## API Reference
 
-## 📈 Recent Improvements (Feb 2026)
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/upload` | No | Upload PDF/DOCX and get score |
+| `GET` | `/api/roles` | No | List all roles and levels |
+| `POST` | `/api/signup` | No | Create account |
+| `POST` | `/api/login` | No | Get JWT token |
+| `GET` | `/api/me` | Bearer | Current user info |
+| `POST` | `/api/editor/session` | Bearer | Create editor session |
+| `POST` | `/api/editor/rescore` | Bearer | Re-score after edits |
+| `GET` | `/health` | No | Health check |
 
-### Keyword Expansion
-- Required: 19 → 28 (+47%)
-- Preferred: 14 → 32 (+129%)
-- **Impact**: +3-5 points per resume
+Full interactive docs at `/docs` (Swagger UI) when the backend is running.
 
-### Action Verb Expansion
-- Total: 87 → 236 (+171%)
-- Added high-frequency verbs: managed, performed, configured
-- **Impact**: +0.4-1.0 points per resume
+## Security
 
-### Scoring Algorithm
-- Changed from percentage-based to incremental scoring
-- Better CV differentiation
-- More accurate point allocation
+All security controls are implemented and active:
 
-## 🤝 Contributing
+- **Authentication** — JWT with configurable expiry; app refuses to start without `JWT_SECRET_KEY`
+- **Password validation** — min 8 / max 128 chars, bcrypt hashing
+- **File upload** — magic byte validation (PDF: `%PDF-`, DOCX: `PK\x03\x04`), 10 MB limit, path traversal prevention
+- **Rate limiting** — login: 10 req/min, signup: 5 req/min, upload: 20 req/min (per IP)
+- **Session ownership** — all editor endpoints check `user_id` before read/write
+- **Error responses** — no internal paths or exception messages returned to clients
+- **CORS** — strict methods/headers in production; permissive only when `ENVIRONMENT=development`
+- **SSRF** — OnlyOffice callback URL validated against configured server origin before any outbound request
+- **CVE-2024-33663** — `python-jose` replaced by `pyjwt` throughout
 
-We welcome contributions! See [DEVELOPMENT_GUIDE.md](./DEVELOPMENT_GUIDE.md) for:
-- Setting up development environment
-- Adding new parameters
-- Adding new job roles
-- Code style guidelines
-- Testing procedures
+## Deployment
 
-## 📝 API Endpoints
+See [`docs/RUNBOOK.md`](./docs/RUNBOOK.md) for step-by-step deployment to Render + Vercel + Supabase.
 
-### GET `/api/roles`
-Get all available job roles and experience levels.
+## Contributing
 
-### POST `/api/upload`
-Upload resume file (PDF/DOCX) for scoring.
+See [`docs/CONTRIBUTING.md`](./docs/CONTRIBUTING.md) for dev setup, coding conventions, testing guide, and PR checklist.
 
-**Parameters**:
-- `file`: Resume file (required)
-- `role`: Job role ID (optional)
-- `level`: Experience level (optional)
-- `jobDescription`: Target job description (optional)
+## License
 
-**Returns**: Complete scoring results with feedback
+MIT — see [LICENSE](./LICENSE).
 
-See [API_GUIDE.md](./API_GUIDE.md) for full API documentation.
+## Acknowledgments
 
-## 🐛 Troubleshooting
-
-### Backend Issues
-**Problem**: Import errors
-**Solution**: Ensure you're in the backend directory and virtual environment is activated
-
-**Problem**: PDF parsing fails
-**Solution**: Install PyMuPDF: `pip install pymupdf`
-
-### Frontend Issues
-**Problem**: API requests fail
-**Solution**: Check backend is running on port 8000, verify proxy config in `vite.config.ts`
-
-**Problem**: Upload fails with localStorage error
-**Solution**: Fixed in latest version - localStorage now optional for large files
-
-See [DEVELOPMENT_GUIDE.md](./DEVELOPMENT_GUIDE.md) for more troubleshooting.
-
-## 📊 Performance
-
-- **Average Processing Time**: ~3 seconds per resume
-- **File Size Limit**: 10MB
-- **Supported Formats**: PDF, DOCX
-- **Accuracy**: 98.7% vs ResumeWorded benchmarks
-
-## 🔒 Security
-
-Current:
-- File size validation (10MB max)
-- File type validation (PDF/DOCX only)
-- CORS enabled for localhost
-
-Planned:
-- User authentication (JWT tokens)
-- API rate limiting
-- File malware scanning
-- Data encryption
-
-## 📄 License
-
-MIT License - See LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- Resume corpus from Jiechieu & Tsopze (2020) research
+- Resume corpus: [Jiechieu & Tsopze (2020)](https://doi.org/10.1007/s00521-020-05302-x) — 29,783 resumes analyzed
 - ResumeWorded for calibration benchmarks
 - FastAPI and React communities
-
-## 📞 Support
-
-- **GitHub Issues**: https://github.com/JoHn11117/ATS-Resume-Scorer/issues
-- **Discussions**: https://github.com/JoHn11117/ATS-Resume-Scorer/discussions
-
----
-
-**Built with ❤️ to help job seekers land their dream jobs**
