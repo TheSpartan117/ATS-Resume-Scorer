@@ -9,6 +9,7 @@ An intelligent resume scoring system that helps job seekers optimize their resum
 - **Experience-Aware**: Adapts scoring to experience level (Beginner/Intermediary/Senior)
 - **Research-Backed**: Keywords and verbs based on analysis of 30,000+ real resumes
 - **Real-Time Feedback**: Actionable suggestions for improvement
+- **Dual Native Viewers**: Pixel-perfect rendering for PDFs (`react-pdf`) and DOCXs (`docx-preview`) with interactive highlights
 - **98% Accuracy**: Calibrated against ResumeWorded benchmark scores
 
 ## 🚀 Quick Start
@@ -102,9 +103,10 @@ npm run dev
 
 ### Backend
 - **Framework**: FastAPI 0.115.0
-- **Language**: Python 3.14
+- **Language**: Python 3.10+
 - **PDF Parser**: PyMuPDF
 - **DOCX Parser**: python-docx
+- **Conversion Engine**: LibreOffice (headless)
 - **NLP**: sentence-transformers
 - **Grammar**: language-tool-python
 
@@ -112,6 +114,7 @@ npm run dev
 - **Framework**: React 18.3 + TypeScript
 - **Build Tool**: Vite 6.0
 - **Routing**: React Router 7.1
+- **Document Rendering**: `react-pdf`, `docx-preview`
 - **HTTP Client**: Axios
 - **Styling**: Tailwind CSS
 
@@ -195,7 +198,13 @@ Follow suggestions for priority parameters:
 - Fix formatting issues
 - Improve grammar and spelling
 
-## 📈 Recent Improvements (Feb 2026)
+## 📈 Recent Improvements (Feb/March 2026)
+
+### Dual Native Viewer Support
+- Added `react-pdf` for 100% accurate native PDF rendering.
+- Added `docx-preview` for faithful DOCX rendering.
+- Replaced basic HTML string extraction with a unified UI that injects interactive highlighting directly into the native document layouts.
+- Integrated LibreOffice headless for robust backend PDF-to-DOCX extraction.
 
 ### Keyword Expansion
 - Required: 19 → 28 (+47%)
