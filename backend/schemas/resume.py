@@ -111,6 +111,7 @@ class UploadResponse(BaseModel):
     originalFileUrl: Optional[str] = None  # URL to access original file
     previewPdfUrl: Optional[str] = None  # URL to preview PDF (for DOCX files)
     editableHtml: Optional[str] = None  # Rich HTML for WYSIWYG editing
+    docxFileUrl: Optional[str] = None   # URL to converted/original DOCX for preview
     contact: ContactInfoResponse
     summary: Optional[str] = None  # Professional summary/objective section
     experience: List[Dict] = []

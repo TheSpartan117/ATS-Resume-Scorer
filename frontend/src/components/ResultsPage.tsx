@@ -1,310 +1,315 @@
 /**
- * Results page component
+ * Results page — split-screen layout.
+ *
+ * Left 70 %: DOCX resume viewer with annotated highlights.
+ * Right 30 %: Scoring sidebar (score card + category breakdown).
  */
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import type { UploadResponse } from '../types/resume'
 import { ModeIndicator } from './ModeIndicator'
 import { DownloadMenu } from './DownloadMenu'
 import EnhancedResultsDisplay from './EnhancedResultsDisplay'
+import DocxResumeViewer from './DocxResumeViewer'
 import UserMenu from './UserMenu'
+import { buildAnnotations } from '../utils/buildAnnotations'
+import type { Annotation } from '../utils/buildAnnotations'
+import PdfResumeViewer from './PdfResumeViewer'
 
 export default function ResultsPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const result = location.state?.result as UploadResponse | undefined
 
+  // File states for viewer
+  const [docxBlob, setDocxBlob] = useState<Blob | null>(null)
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
+  const [fileType, setFileType] = useState<'pdf' | 'docx' | null>(null)
+
+  // Resume plain text (for download / annotation matching)
+  const [resumeText, setResumeText] = useState('')
+  const [annotations, setAnnotations] = useState<Annotation[]>([])
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+
+  // Undo / redo stacks
+  const [undoStack, setUndoStack] = useState<string[]>([])
+  const [redoStack, setRedoStack] = useState<string[]>([])
+  const [undoAnnotationStack, setUndoAnnotationStack] = useState<Annotation[][]>([])
+  const [redoAnnotationStack, setRedoAnnotationStack] = useState<Annotation[][]>([])
+
   useEffect(() => {
-    // Redirect if no result data
     if (!result) {
       navigate('/', { replace: true })
+      return
     }
+
+    // Build plain text for annotations
+    const text = buildResumeContent(result)
+    setResumeText(text)
+
+    // Build initial annotations from plain text
+    const anns = buildAnnotations(text, result.score.breakdown, result.score.issues)
+    setAnnotations(anns)
+
+    // Fetch the DOCX blob or PDF URL for the viewer
+    const originalUrl = result.originalFileUrl
+    const docxUrl = result.docxFileUrl
+    
+    // We prefer PDF if it was originally a PDF for exact layout matches
+    const isOriginalPdf = result.fileName?.toLowerCase().endsWith('.pdf') || originalUrl?.toLowerCase().endsWith('.pdf')
+    
+    if (isOriginalPdf && originalUrl) {
+      // It's a PDF - use PDF viewer
+      setFileType('pdf')
+      setPdfUrl(originalUrl)
+    } else if (docxUrl || originalUrl) {
+      // It's a DOCX - fetch blob for docx-preview
+      const fetchUrl = docxUrl || originalUrl
+      setFileType('docx')
+      fetch(fetchUrl!)
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`)
+          return res.blob()
+        })
+        .then(blob => {
+          setDocxBlob(blob)
+        })
+        .catch(err => {
+          console.error('Failed to fetch docx file:', err)
+        })
+    }    
   }, [result, navigate])
 
-  // Build resume content text from parsed data
-  const buildResumeContent = (): string => {
-    if (!result) return ''
-
+  // ── Build resume text from parsed data ──────────────────────────
+  const buildResumeContent = (r: UploadResponse): string => {
     const parts: string[] = []
 
-    // Contact Information
-    if (result.contact) {
-      parts.push('Contact Information')
-      if (result.contact.name) parts.push(`Name: ${result.contact.name}`)
-      if (result.contact.email) parts.push(`Email: ${result.contact.email}`)
-      if (result.contact.phone) parts.push(`Phone: ${result.contact.phone}`)
-      if (result.contact.location) parts.push(`Location: ${result.contact.location}`)
-      if (result.contact.linkedin) parts.push(`LinkedIn: ${result.contact.linkedin}`)
+    if (r.contact) {
+      if (r.contact.name) parts.push(r.contact.name)
+      const contactLine = [r.contact.email, r.contact.phone, r.contact.location, r.contact.linkedin]
+        .filter(Boolean)
+        .join(' • ')
+      if (contactLine) parts.push(contactLine)
       parts.push('')
     }
 
-    // Experience
-    if (result.experience && result.experience.length > 0) {
-      parts.push('Experience')
+    if ((r as any).summary) {
+      parts.push('SUMMARY')
+      parts.push((r as any).summary)
       parts.push('')
-      result.experience.forEach((exp: any) => {
-        if (exp.title) parts.push(exp.title)
-        if (exp.company) parts.push(exp.company)
-        if (exp.startDate || exp.endDate) {
-          parts.push(`${exp.startDate || ''} - ${exp.endDate || 'Present'}`)
-        }
-        if (exp.location) parts.push(exp.location)
+    }
+
+    if (r.experience && r.experience.length > 0) {
+      parts.push('PROFESSIONAL EXPERIENCE')
+      parts.push('')
+      r.experience.forEach((exp: any) => {
+        const titleLine = [exp.title, exp.company].filter(Boolean).join(' — ')
+        if (titleLine) parts.push(titleLine)
+        const dateLine = [exp.startDate, exp.endDate].filter(Boolean).join(' – ')
+        const metaLine = [dateLine, exp.location].filter(Boolean).join(' | ')
+        if (metaLine) parts.push(metaLine)
         if (exp.description) {
-          parts.push('')
           parts.push(exp.description)
         }
         parts.push('')
       })
     }
 
-    // Education
-    if (result.education && result.education.length > 0) {
-      parts.push('Education')
+    if (r.education && r.education.length > 0) {
+      parts.push('EDUCATION')
       parts.push('')
-      result.education.forEach((edu: any) => {
+      r.education.forEach((edu: any) => {
         if (edu.degree) parts.push(edu.degree)
-        if (edu.institution) parts.push(edu.institution)
-        if (edu.graduationDate) parts.push(`Graduated: ${edu.graduationDate}`)
-        if (edu.location) parts.push(edu.location)
+        const instLine = [edu.institution, edu.location].filter(Boolean).join(', ')
+        if (instLine) parts.push(instLine)
+        if (edu.graduationDate) parts.push(edu.graduationDate)
         if (edu.gpa) parts.push(`GPA: ${edu.gpa}`)
         parts.push('')
       })
     }
 
-    // Skills
-    if (result.skills && result.skills.length > 0) {
-      parts.push('Skills')
-      parts.push('')
-      parts.push(result.skills.join(', '))
+    if (r.skills && r.skills.length > 0) {
+      parts.push('SKILLS')
+      parts.push(r.skills.join(', '))
       parts.push('')
     }
 
-    // Certifications
-    if (result.certifications && result.certifications.length > 0) {
-      parts.push('Certifications')
-      parts.push('')
-      result.certifications.forEach((cert: any) => {
-        if (cert.name) parts.push(cert.name)
-        if (cert.issuer) parts.push(`Issued by: ${cert.issuer}`)
-        if (cert.date) parts.push(`Date: ${cert.date}`)
-        parts.push('')
+    if (r.certifications && r.certifications.length > 0) {
+      parts.push('CERTIFICATIONS')
+      r.certifications.forEach((cert: any) => {
+        const cLine = [cert.name, cert.issuer].filter(Boolean).join(' — ')
+        if (cLine) parts.push(cLine)
+        if (cert.date) parts.push(cert.date)
       })
+      parts.push('')
     }
 
     return parts.join('\n')
   }
 
-  if (!result) {
-    return null
-  }
+  // ── Text change handler (with undo tracking) ───────────────────
+  const handleTextChange = useCallback((newText: string) => {
+    setUndoStack(prev => [...prev, resumeText])
+    setUndoAnnotationStack(prev => [...prev, annotations])
+    setRedoStack([])
+    setRedoAnnotationStack([])
+    setResumeText(newText)
+  }, [resumeText, annotations])
+
+  const handleAnnotationsChange = useCallback((newAnnotations: Annotation[]) => {
+    setAnnotations(newAnnotations)
+  }, [])
+
+  // ── Undo / Redo ────────────────────────────────────────────────
+  const handleUndo = useCallback(() => {
+    if (undoStack.length === 0) return
+    const prevText = undoStack[undoStack.length - 1]
+    const prevAnnotations = undoAnnotationStack[undoAnnotationStack.length - 1]
+
+    setRedoStack(prev => [...prev, resumeText])
+    setRedoAnnotationStack(prev => [...prev, annotations])
+    setUndoStack(prev => prev.slice(0, -1))
+    setUndoAnnotationStack(prev => prev.slice(0, -1))
+    setResumeText(prevText)
+    if (prevAnnotations) setAnnotations(prevAnnotations)
+  }, [undoStack, undoAnnotationStack, resumeText, annotations])
+
+  const handleRedo = useCallback(() => {
+    if (redoStack.length === 0) return
+    const nextText = redoStack[redoStack.length - 1]
+    const nextAnnotations = redoAnnotationStack[redoAnnotationStack.length - 1]
+
+    setUndoStack(prev => [...prev, resumeText])
+    setUndoAnnotationStack(prev => [...prev, annotations])
+    setRedoStack(prev => prev.slice(0, -1))
+    setRedoAnnotationStack(prev => prev.slice(0, -1))
+    setResumeText(nextText)
+    if (nextAnnotations) setAnnotations(nextAnnotations)
+  }, [redoStack, redoAnnotationStack, resumeText, annotations])
+
+  // ── Category selection handler ─────────────────────────────────
+  const handleCategorySelect = useCallback((categoryName: string | null) => {
+    setSelectedCategory(prev => prev === categoryName ? null : categoryName)
+  }, [])
+
+  if (!result) return null
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={() => navigate('/')}
-              className="text-blue-600 hover:text-blue-800 font-medium flex items-center"
-            >
-              ← Back to Upload
-            </button>
-            <UserMenu />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Resume Analysis Results
-              </h1>
-              <p className="text-gray-600">
-                {result.fileName}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <DownloadMenu
-                resumeContent={buildResumeContent()}
-                resumeName={result.contact?.name || 'Resume'}
-                resumeData={result}
-                scoreData={result.score}
-                mode={result.scoringMode || 'quality_coach'}
-                role={result.role || 'software_engineer'}
-                level={result.level || 'mid'}
-              />
-              <button
-                onClick={() => navigate('/editor', { state: { result } })}
-                className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-semibold"
-              >
-                Edit Resume
-              </button>
-            </div>
-          </div>
+    <div className="h-screen w-screen flex flex-col bg-gray-100 overflow-hidden">
+      {/* ── Top Header Bar ─────────────────────────────────────── */}
+      <header className="flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-200 shadow-sm flex-shrink-0 z-10">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/')}
+            className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 text-sm"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back
+          </button>
+          <div className="h-5 w-px bg-gray-300" />
+          <h1 className="text-sm font-semibold text-gray-800 truncate max-w-xs">
+            {result.fileName}
+          </h1>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column: Mode Indicator */}
-          <div className="lg:col-span-1">
-            <ModeIndicator
-              mode={result.scoringMode || result.score.mode || 'quality_coach'}
-              score={result.score.overallScore}
-              keywordDetails={result.score.keywordDetails}
-              breakdown={result.score.breakdown}
-              autoReject={result.score.autoReject}
-            />
-
-            {/* Metadata */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-6">
-              <div className="space-y-3">
-                <h3 className="font-semibold text-gray-900 mb-3">📄 Resume Info</h3>
-                <div className="text-sm space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Pages:</span>
-                    <span className="font-medium">{result.metadata.pageCount}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Words:</span>
-                    <span className="font-medium">{result.metadata.wordCount}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Format:</span>
-                    <span className="font-medium uppercase">{result.metadata.fileFormat}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Photo:</span>
-                    <span className="font-medium">
-                      {result.metadata.hasPhoto ? '❌ Yes' : '✓ No'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Contact Info */}
-              {result.contact.name && (
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <h3 className="font-semibold text-gray-900 mb-3">👤 Contact</h3>
-                  <div className="text-sm space-y-1 text-gray-700">
-                    {result.contact.name && <p>{result.contact.name}</p>}
-                    {result.contact.email && <p>{result.contact.email}</p>}
-                    {result.contact.phone && <p>{result.contact.phone}</p>}
-                    {result.contact.location && <p>{result.contact.location}</p>}
-                  </div>
-                </div>
-              )}
-            </div>
+        <div className="flex items-center gap-2">
+          {/* Undo / Redo */}
+          <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+            <button
+              onClick={handleUndo}
+              disabled={undoStack.length === 0}
+              className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+              title="Undo (Ctrl+Z)"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a5 5 0 015 5v2M3 10l4-4M3 10l4 4" />
+              </svg>
+              Undo
+            </button>
+            <div className="w-px h-6 bg-gray-200" />
+            <button
+              onClick={handleRedo}
+              disabled={redoStack.length === 0}
+              className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+              title="Redo (Ctrl+Y)"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10H11a5 5 0 00-5 5v2M21 10l-4-4M21 10l-4 4" />
+              </svg>
+              Redo
+            </button>
           </div>
 
-          {/* Right Column: Details */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Issues List */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <EnhancedResultsDisplay
-                overallScore={result.score.overallScore}
+          <div className="h-5 w-px bg-gray-300" />
+
+          <DownloadMenu
+            resumeContent={resumeText}
+            resumeName={result.contact?.name || 'Resume'}
+            resumeData={result}
+            scoreData={result.score}
+            mode={result.scoringMode || 'quality_coach'}
+            role={result.role || 'software_engineer'}
+            level={result.level || 'mid'}
+          />
+
+          <UserMenu />
+        </div>
+      </header>
+
+      {/* ── Main Split Layout ─────────────────────────────────── */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* LEFT: Resume Viewer (70%) */}
+        <div className="w-[70%] min-w-[70%] max-w-[70%] border-r border-gray-200 bg-gray-100 flex flex-col overflow-hidden">
+          {fileType === 'pdf' && pdfUrl ? (
+            <PdfResumeViewer
+              pdfUrl={pdfUrl}
+              annotations={annotations}
+              selectedCategory={selectedCategory}
+              onAnnotationsChange={setAnnotations}
+              onTextChange={handleTextChange}
+            />
+          ) : fileType === 'docx' && docxBlob ? (
+            <DocxResumeViewer
+              docxBlob={docxBlob}
+              annotations={annotations}
+              selectedCategory={selectedCategory}
+              onAnnotationsChange={setAnnotations}
+              onTextChange={handleTextChange}
+            />
+          ) : (
+             <div className="flex h-full items-center justify-center">
+               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+             </div>
+          )}
+        </div>
+
+        {/* RIGHT: Scoring Sidebar (30%) */}
+        <div className="w-[30%] min-w-[30%] max-w-[30%] flex flex-col overflow-hidden bg-white">
+          <div className="flex-1 overflow-y-auto sidebar-scroll">
+            <div className="p-4 space-y-4">
+              {/* Score Circle */}
+              <ModeIndicator
+                mode={(result.scoringMode || result.score.mode || 'quality_coach') as any}
+                score={result.score.overallScore}
+                keywordDetails={result.score.keywordDetails}
                 breakdown={result.score.breakdown}
-                issues={result.score.issues}
-                strengths={result.score.strengths}
+                autoReject={result.score.autoReject}
               />
+
+              {/* Category Breakdown */}
+              <div className="bg-white rounded-lg">
+                <EnhancedResultsDisplay
+                  overallScore={result.score.overallScore}
+                  breakdown={result.score.breakdown}
+                  issues={result.score.issues}
+                  strengths={result.score.strengths}
+                  selectedCategory={selectedCategory}
+                  onCategorySelect={handleCategorySelect}
+                />
+              </div>
             </div>
-
-            {/* Strengths */}
-            {result.score.strengths.length > 0 && (
-              <div className="bg-green-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-green-900 mb-4">
-                  ✨ Strengths
-                </h3>
-                <ul className="space-y-2">
-                  {result.score.strengths.map((strength, idx) => (
-                    <li key={idx} className="text-sm text-green-900 flex items-start">
-                      <span className="text-green-600 mr-2">✓</span>
-                      <span>{strength}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Parsed Experience Section */}
-            {result.experience && result.experience.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  💼 Extracted Experience
-                </h3>
-                <div className="space-y-4">
-                  {result.experience.map((exp: any, idx: number) => (
-                    <div key={idx} className="border-l-4 border-blue-500 pl-4">
-                      {exp.title && (
-                        <h4 className="font-semibold text-gray-900">{exp.title}</h4>
-                      )}
-                      {(exp.company || exp.location) && (
-                        <p className="text-sm text-gray-600">
-                          {[exp.company, exp.location].filter(Boolean).join(', ')}
-                        </p>
-                      )}
-                      {(exp.startDate || exp.endDate) && (
-                        <p className="text-xs text-gray-500 mb-2">
-                          {[exp.startDate, exp.endDate].filter(Boolean).join(' - ')}
-                        </p>
-                      )}
-                      {exp.description && (
-                        <div className="text-sm text-gray-700 whitespace-pre-line">
-                          {exp.description}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Parsed Education Section */}
-            {result.education && result.education.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  🎓 Extracted Education
-                </h3>
-                <div className="space-y-4">
-                  {result.education.map((edu: any, idx: number) => (
-                    <div key={idx} className="border-l-4 border-purple-500 pl-4">
-                      {edu.degree && (
-                        <h4 className="font-semibold text-gray-900">{edu.degree}</h4>
-                      )}
-                      {(edu.institution || edu.location) && (
-                        <p className="text-sm text-gray-600">
-                          {[edu.institution, edu.location].filter(Boolean).join(', ')}
-                        </p>
-                      )}
-                      {edu.graduationDate && (
-                        <p className="text-xs text-gray-500">
-                          Graduated: {edu.graduationDate}
-                        </p>
-                      )}
-                      {edu.gpa && (
-                        <p className="text-xs text-gray-500">GPA: {edu.gpa}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Parsed Skills Section */}
-            {result.skills && result.skills.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  ⚡ Extracted Skills
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {result.skills.map((skill: string, idx: number) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-200"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

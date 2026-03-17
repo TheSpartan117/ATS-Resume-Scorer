@@ -169,7 +169,6 @@ div.editor-content a:hover {
   background: white;
   padding: 20px;
   font-family: 'Calibri', 'Arial', sans-serif;
-  max-width: 8.5in;
   margin: 0 auto;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
@@ -218,3 +217,54 @@ div.editor-content a:hover {
 .docx-wrapper .docx li {
   margin: 4px 0;
 }
+
+/* ── Annotation tooltip animation ── */
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-tooltip-in {
+  animation: tooltip-in 0.15s ease-out;
+}
+
+/* ── Annotation marks ── */
+.annotation-mark {
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.annotation-mark:hover {
+  filter: brightness(0.92);
+}
+
+/* ── Resume document styling ── */
+.resume-document {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* ── Scrollbar for sidebar ── */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+

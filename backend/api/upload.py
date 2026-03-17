@@ -95,18 +95,17 @@ async def upload_resume(
     file_content = await file.read()
     original_content_type = file.content_type
 
-    # DISABLED: PDF to DOCX conversion loses text structure in multi-column layouts
-    # Parse PDF directly instead for better accuracy
+    # Convert PDF to DOCX for accurate preview (using LibreOffice headless)
     docx_content = None
-    # if file.content_type == "application/pdf":
-    #     try:
-    #         logger.info("Converting PDF to DOCX for better formatting preservation...")
-    #         docx_content = convert_pdf_to_docx(file_content)
-    #         logger.info(f"PDF converted to DOCX successfully ({len(docx_content)} bytes)")
-    #     except Exception as e:
-    #         logger.warning(f"PDF to DOCX conversion failed, will process as PDF: {str(e)}")
-    #         # Continue with PDF if conversion fails
-    #         docx_content = None
+    if file.content_type == "application/pdf":
+        try:
+            logger.info("Converting PDF to DOCX using LibreOffice headless...")
+            docx_content = convert_pdf_to_docx(file_content)
+            logger.info(f"PDF converted to DOCX successfully ({len(docx_content)} bytes)")
+        except Exception as e:
+            logger.warning(f"PDF to DOCX conversion failed, will process as PDF: {str(e)}")
+            # Continue with PDF if conversion fails
+            docx_content = None
 
     # Save original file for preview
     file_id = str(uuid.uuid4())
@@ -184,18 +183,19 @@ async def upload_resume(
             # Continue without editable HTML - not critical
 
     # Parse resume based on file type
-    # Use converted DOCX if available for better parsing
+    # 5. Extract text and fields
+    # ALWAYS parse the original file for text extraction.
+    # If it was a PDF, PyMuPDF is much better at reading it than python-docx is at reading
+    # the LibreOffice-converted DOCX (which uses floating text boxes).
+    logger.info(f"Parsing original '{original_content_type}' file")
     try:
-        if docx_content:
-            logger.info("Parsing converted DOCX (from PDF)")
-            resume_data = parse_docx(docx_content, file.filename)
-        elif original_content_type == "application/pdf":
-            logger.info("Parsing original PDF")
-            resume_data = parse_pdf(file_content, file.filename)
-        else:  # Original DOCX
+        if original_content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
             logger.info("Parsing original DOCX")
             resume_data = parse_docx(file_content, file.filename)
-
+        else: # original_content_type == "application/pdf"
+            logger.info("Parsing original PDF")
+            resume_data = parse_pdf(file_content, file.filename)
+            
         # Debug logging
         logger.info(f"Parsed resume - Word count: {resume_data.metadata.get('wordCount', 0)}")
         logger.info(f"Experience entries: {len(resume_data.experience)}")
@@ -398,6 +398,15 @@ async def upload_resume(
         issues=format_check_result["issues"]
     )
 
+    # Determine DOCX file URL for the faithful preview
+    docx_file_url = None
+    if docx_file_path:
+        # PDF was converted to DOCX
+        docx_file_url = f"/api/files/{file_id}_converted.docx"
+    elif original_content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        # Original file is already DOCX
+        docx_file_url = f"/api/files/{file_id}.docx"
+
     return UploadResponse(
         resumeId=None,  # Guest user, no saved resume
         fileName=file.filename,
@@ -405,6 +414,7 @@ async def upload_resume(
         originalFileUrl=f"/api/files/{file_id}{file_extension}",
         previewPdfUrl=preview_pdf_url,  # Only set for DOCX files
         editableHtml=editable_html,  # Rich HTML for WYSIWYG editing
+        docxFileUrl=docx_file_url,   # URL to DOCX for docx-preview rendering
         contact=contact_response,
         summary=resume_data.summary,  # Professional summary/objective
         experience=resume_data.experience,

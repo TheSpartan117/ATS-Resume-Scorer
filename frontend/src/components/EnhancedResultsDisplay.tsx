@@ -95,9 +95,11 @@ interface EnhancedResultsProps {
     suggestions: string[]
   }
   strengths?: string[]
+  selectedCategory?: string | null
+  onCategorySelect?: (categoryName: string | null) => void
 }
 
-export default function EnhancedResultsDisplay({ overallScore, breakdown, issues, strengths }: EnhancedResultsProps) {
+export default function EnhancedResultsDisplay({ overallScore, breakdown, issues, strengths, selectedCategory, onCategorySelect }: EnhancedResultsProps) {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
 
   // Calculate category percentages
@@ -257,8 +259,11 @@ export default function EnhancedResultsDisplay({ overallScore, breakdown, issues
               <div key={categoryName} className={`border-2 ${status.borderColor} rounded-xl overflow-hidden transition-all`}>
                 {/* Category Header */}
                 <button
-                  onClick={() => setExpandedCategory(isExpanded ? null : categoryName)}
-                  className={`w-full ${status.bgColor} ${status.hoverBg} p-4 flex items-center justify-between transition-colors`}
+                  onClick={() => {
+                    setExpandedCategory(isExpanded ? null : categoryName)
+                    if (onCategorySelect) onCategorySelect(isExpanded ? null : categoryName)
+                  }}
+                  className={`w-full ${status.bgColor} ${status.hoverBg} p-4 flex items-center justify-between transition-colors ${selectedCategory === categoryName ? 'ring-2 ring-blue-400 ring-inset' : ''}`}
                 >
                   <div className="flex items-center gap-3 flex-1">
                     <span className="text-2xl">{status.emoji}</span>

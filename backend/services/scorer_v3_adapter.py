@@ -470,6 +470,7 @@ class ScorerV3Adapter:
             "Repetition: The same words or phrases are used excessively throughout — diversify your vocabulary and avoid repeating the same verbs or nouns",
             "Repetition: Some words or phrases are repeated too often — vary your language to keep the resume engaging and avoid keyword stuffing",
         ),
+        # Extra context for P6.3 is injected via _get_issue_message; see extra_context usage below.
         'P6.4': (
             "Date Formatting: Employment dates are inconsistently formatted or missing — use a consistent format (e.g., 'Jan 2021 – Mar 2023') for every role",
             "Date Formatting: Some employment dates are inconsistently formatted — standardise all date formats across the resume",
@@ -488,12 +489,18 @@ class ScorerV3Adapter:
         ),
     }
 
-    def _get_issue_message(self, param_code: str, percentage: float) -> str:
+    def _get_issue_message(self, param_code: str, percentage: float, extra_context: Optional[Dict[str, Any]] = None) -> str:
         """
         Return a human-readable, actionable issue description for a parameter.
 
         Uses zero-score wording when percentage == 0, and gentler partial-score
         wording for 0 < percentage < 60.
+
+        Args:
+            param_code: Parameter code (e.g. 'P6.3')
+            percentage: Score percentage (0-100)
+            extra_context: Optional dict carrying additional details to enrich the message.
+                           For P6.3 this should contain 'repeated_verbs': List[str].
         """
         messages = self._ISSUE_MESSAGES.get(param_code)
         if messages is None:
@@ -501,7 +508,16 @@ class ScorerV3Adapter:
             param_name = param_code
             return f"{param_name}: Score {percentage:.0f}% — review and improve this area"
         zero_msg, partial_msg = messages
-        return zero_msg if percentage == 0 else partial_msg
+        base_msg = zero_msg if percentage == 0 else partial_msg
+
+        # Enrich P6.3 message with the actual repeated verbs
+        if param_code == 'P6.3' and extra_context:
+            repeated_verbs = extra_context.get('repeated_verbs', [])
+            if repeated_verbs:
+                verbs_str = ', '.join(f'"{v}"' for v in repeated_verbs)
+                base_msg = base_msg + f" (overused: {verbs_str})"
+
+        return base_msg
 
     def _convert_to_api_format(
         self,
@@ -533,8 +549,15 @@ class ScorerV3Adapter:
                 if param_result.get('status') == 'success':
                     # Add feedback as issues if score is low
                     if param_result['percentage'] < 60:
+                        # For P6.3, pass repeated_verbs from details so the message names them
+                        extra_context = None
+                        if param_code == 'P6.3':
+                            details = param_result.get('details', {})
+                            repeated_verbs = details.get('repeated_verbs', [])
+                            if repeated_verbs:
+                                extra_context = {'repeated_verbs': repeated_verbs}
                         issues.append(
-                            self._get_issue_message(param_code, param_result['percentage'])
+                            self._get_issue_message(param_code, param_result['percentage'], extra_context)
                         )
 
             breakdown[category_name] = {

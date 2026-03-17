@@ -120,6 +120,7 @@ export interface UploadResponse {
   originalFileUrl?: string
   previewPdfUrl?: string
   editableHtml?: string
+  docxFileUrl?: string
   contact: ContactInfo
   experience?: any[]
   education?: any[]

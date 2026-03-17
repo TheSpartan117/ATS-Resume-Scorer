@@ -64,21 +64,21 @@ export const ModeIndicator: React.FC<ModeIndicatorProps> = ({
       </div>
 
       {/* Score Circle */}
-      <div className="flex items-center justify-center mb-6">
+      <div className="flex items-center justify-center mb-4">
         <div className="relative">
-          <div className="w-32 h-32 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shadow-lg">
-            <div className="w-28 h-28 rounded-full bg-white flex flex-col items-center justify-center">
-              <span className={`text-4xl font-bold ${getScoreColor()}`}>
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shadow-lg">
+            <div className="w-20 h-20 rounded-full bg-white flex flex-col items-center justify-center">
+              <span className={`text-3xl font-bold ${getScoreColor()}`}>
                 {score}
               </span>
-              <span className="text-sm text-gray-500">/100</span>
+              <span className="text-xs text-gray-500">/100</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="text-center mb-6">
-        <span className="text-lg font-medium">{getScoreStatus()}</span>
+      <div className="text-center mb-4">
+        <span className="text-base font-medium">{getScoreStatus()}</span>
         {isATSMode && (
           <p className="text-sm text-gray-600 mt-1">
             60% match needed to pass ATS
