@@ -1,15 +1,21 @@
 """JWT token creation and verification"""
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import PyJWTError
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError(
+        "JWT_SECRET_KEY environment variable must be set. "
+        "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+    )
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_DAYS = 7
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "10080"))  # 7 days default
 
 
 def create_access_token(data: Dict, expires_delta: Optional[timedelta] = None) -> str:
@@ -28,12 +34,10 @@ def create_access_token(data: Dict, expires_delta: Optional[timedelta] = None) -
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-    return encoded_jwt
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
 def verify_token(token: str) -> Optional[Dict]:
@@ -49,5 +53,5 @@ def verify_token(token: str) -> Optional[Dict]:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except JWTError:
+    except PyJWTError:
         return None

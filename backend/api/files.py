@@ -61,4 +61,4 @@ async def download_file(filename: str):
         raise
     except Exception as e:
         logger.error(f"Error serving file: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")

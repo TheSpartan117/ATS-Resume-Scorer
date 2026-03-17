@@ -1,15 +1,23 @@
 """Export API for resume and report downloads"""
+import re
+import io
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel
 from typing import Dict, Optional
-import io
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from docx import Document
 
 router = APIRouter(prefix="/api/export", tags=["export"])
+
+
+def _safe_filename(name: str) -> str:
+    """Sanitize a user-supplied name for use in Content-Disposition filenames."""
+    safe = re.sub(r"[^\w\s-]", "", name, flags=re.ASCII)
+    safe = re.sub(r"\s+", "_", safe.strip())
+    return safe or "Resume"
 
 
 class ExportResumeRequest(BaseModel):
@@ -94,12 +102,12 @@ async def export_resume(request: ExportResumeRequest):
         c.save()
         buffer.seek(0)
 
-        filename = f"{request.name.replace(' ', '_')}_Resume.pdf"
+        filename = f"{_safe_filename(request.name)}_Resume.pdf"
 
         return Response(
             content=buffer.read(),
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
         )
 
     elif request.format == "docx":
@@ -107,7 +115,6 @@ async def export_resume(request: ExportResumeRequest):
         doc = Document()
 
         # Strip HTML for simple text
-        import re
         text = re.sub('<[^<]+?>', '', request.content)
 
         for line in text.split('\n'):
@@ -118,12 +125,12 @@ async def export_resume(request: ExportResumeRequest):
         doc.save(buffer)
         buffer.seek(0)
 
-        filename = f"{request.name.replace(' ', '_')}_Resume.docx"
+        filename = f"{_safe_filename(request.name)}_Resume.docx"
 
         return Response(
             content=buffer.read(),
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
         )
 
     else:
@@ -166,10 +173,10 @@ async def export_score_report(request: ExportReportRequest):
     c.save()
     buffer.seek(0)
 
-    filename = f"{name.replace(' ', '_')}_ATS_Report.pdf"
+    filename = f"{_safe_filename(name)}_ATS_Report.pdf"
 
     return Response(
         content=buffer.read(),
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )

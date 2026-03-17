@@ -42,7 +42,6 @@ async def get_preview_docx(session_id: str):
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         filename=f"{session_id}.docx",
         headers={
-            "Access-Control-Allow-Origin": "*",
             "Cache-Control": "no-cache, no-store, must-revalidate"
         }
     )

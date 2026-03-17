@@ -1,7 +1,9 @@
 """Authentication endpoints (signup, login, me)"""
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from datetime import datetime
 
 from backend.database import get_db
@@ -10,7 +12,7 @@ from backend.auth.password import hash_password, verify_password
 from backend.auth.jwt import create_access_token
 from backend.auth.dependencies import get_current_user
 
-
+limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/api", tags=["auth"])
 
 
@@ -18,6 +20,15 @@ class SignupRequest(BaseModel):
     """Signup request body"""
     email: EmailStr
     password: str
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        if len(v) > 128:
+            raise ValueError("Password must be at most 128 characters")
+        return v
 
 
 class LoginRequest(BaseModel):
@@ -44,7 +55,8 @@ class AuthResponse(BaseModel):
 
 
 @router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-async def signup(request: SignupRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+async def signup(http_request: Request, body: SignupRequest, db: Session = Depends(get_db)):
     """
     Create a new user account.
 
@@ -55,7 +67,7 @@ async def signup(request: SignupRequest, db: Session = Depends(get_db)):
     """
 
     # Check if user already exists
-    existing_user = db.query(User).filter(User.email == request.email.lower()).first()
+    existing_user = db.query(User).filter(User.email == body.email.lower()).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -63,9 +75,9 @@ async def signup(request: SignupRequest, db: Session = Depends(get_db)):
         )
 
     # Create new user
-    hashed_password = hash_password(request.password)
+    hashed_password = hash_password(body.password)
     new_user = User(
-        email=request.email.lower(),
+        email=body.email.lower(),
         password_hash=hashed_password,
         is_premium=False
     )
@@ -88,7 +100,8 @@ async def signup(request: SignupRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=AuthResponse)
-async def login(request: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+async def login(http_request: Request, body: LoginRequest, db: Session = Depends(get_db)):
     """
     Login with email and password.
 
@@ -99,7 +112,7 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
     """
 
     # Find user by email
-    user = db.query(User).filter(User.email == request.email.lower()).first()
+    user = db.query(User).filter(User.email == body.email.lower()).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -107,7 +120,7 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
         )
 
     # Verify password
-    if not verify_password(request.password, user.password_hash):
+    if not verify_password(body.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials"

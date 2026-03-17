@@ -1,6 +1,8 @@
 """Upload endpoint for resume file upload and initial scoring"""
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import FileResponse
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from typing import Optional
 from datetime import datetime, timezone
 import io
@@ -37,6 +39,7 @@ from backend.schemas.resume import (
 
 logger = logging.getLogger(__name__)
 
+limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/api", tags=["upload"])
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
@@ -48,7 +51,9 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @router.post("/upload", response_model=UploadResponse)
+@limiter.limit("20/minute")
 async def upload_resume(
+    http_request: Request,
     file: UploadFile = File(...),
     role: Optional[str] = Form(None),
     level: Optional[str] = Form(None),
@@ -94,6 +99,14 @@ async def upload_resume(
     # Now read file content
     file_content = await file.read()
     original_content_type = file.content_type
+
+    # Validate magic bytes — reject files whose content doesn't match the declared type
+    if original_content_type == "application/pdf":
+        if not file_content[:5] == b'%PDF-':
+            raise HTTPException(status_code=400, detail="File content does not match PDF format")
+    else:
+        if not file_content[:4] == b'PK\x03\x04':
+            raise HTTPException(status_code=400, detail="File content does not match DOCX format")
 
     # Convert PDF to DOCX for accurate preview (using LibreOffice headless)
     docx_content = None
@@ -206,7 +219,7 @@ async def upload_resume(
     except Exception as e:
         raise HTTPException(
             status_code=400,
-            detail=f"Unable to read file. May be corrupted or password-protected: {str(e)}"
+            detail="Unable to read file. The file may be corrupted or password-protected"
         )
 
     # Check if resume is empty (relaxed threshold)
@@ -302,7 +315,7 @@ async def upload_resume(
         logger.info(f"Enhanced suggestions added: {len(score_result.get('enhanced_suggestions', []))}")
     except Exception as e:
         logger.error(f"Scoring failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to score resume: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to score resume")
 
     # Format response
     contact_response = ContactInfoResponse(**resume_data.contact)
@@ -449,19 +462,28 @@ async def get_original_file(file_name: str):
     """
     file_path = UPLOAD_DIR / file_name
 
-    if not file_path.exists():
+    # Prevent path traversal: resolved path must stay inside UPLOAD_DIR
+    try:
+        resolved = file_path.resolve()
+        upload_root = UPLOAD_DIR.resolve()
+        if not str(resolved).startswith(str(upload_root) + os.sep) and resolved != upload_root:
+            raise HTTPException(status_code=403, detail="Access denied")
+    except (ValueError, OSError):
+        raise HTTPException(status_code=400, detail="Invalid file name")
+
+    if not resolved.exists():
         raise HTTPException(status_code=404, detail="File not found")
 
-    # Determine media type
-    if file_name.endswith(".pdf"):
+    # Determine media type from resolved path (not raw user input)
+    if str(resolved).endswith(".pdf"):
         media_type = "application/pdf"
-    elif file_name.endswith(".docx"):
+    elif str(resolved).endswith(".docx"):
         media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     else:
         raise HTTPException(status_code=400, detail="Invalid file type")
 
     return FileResponse(
-        path=file_path,
+        path=resolved,
         media_type=media_type,
-        filename=file_name
+        filename=resolved.name
     )

@@ -14,16 +14,21 @@ Requirements:
 
 import os
 import time
+import uuid as _uuid
 import jwt
 import json
 import hashlib
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
-from fastapi import APIRouter, HTTPException, Request, Body
+from urllib.parse import urlparse
+from fastapi import APIRouter, Depends, HTTPException, Request, Body
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
 import logging
 from pathlib import Path
+
+from backend.auth.dependencies import get_current_user
+from backend.models.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +36,12 @@ router = APIRouter(prefix="/api/onlyoffice", tags=["onlyoffice"])
 
 # Configuration
 ONLYOFFICE_SERVER_URL = os.getenv("ONLYOFFICE_SERVER_URL", "http://localhost:8080")
-JWT_SECRET = os.getenv("ONLYOFFICE_JWT_SECRET", "your-secret-key-change-in-production")
+JWT_SECRET = os.getenv("ONLYOFFICE_JWT_SECRET")
+if not JWT_SECRET:
+    raise RuntimeError(
+        "ONLYOFFICE_JWT_SECRET environment variable must be set. "
+        "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+    )
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 DATA_DIR = Path(__file__).parent.parent / "data"
 
@@ -140,8 +150,35 @@ def get_document_type(filename: str) -> str:
         return 'word'  # Default to word
 
 
+def _validate_session_id(session_id: str) -> str:
+    """Reject non-UUID session IDs to prevent path injection."""
+    try:
+        _uuid.UUID(session_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid session ID")
+    return session_id
+
+
+def _validate_callback_url(url: str) -> None:
+    """
+    Ensure the URL in an OnlyOffice callback matches the configured server origin.
+    Prevents SSRF by refusing to fetch arbitrary URLs.
+    """
+    allowed = urlparse(ONLYOFFICE_SERVER_URL)
+    incoming = urlparse(url)
+    if incoming.scheme != allowed.scheme or incoming.netloc != allowed.netloc:
+        raise ValueError(
+            f"Callback URL origin {incoming.netloc!r} does not match "
+            f"expected OnlyOffice origin {allowed.netloc!r}"
+        )
+
+
 @router.post("/config/{session_id}")
-async def get_editor_config(session_id: str, request: Request):
+async def get_editor_config(
+    session_id: str,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+):
     """
     Generate OnlyOffice editor configuration with JWT token
 
@@ -156,7 +193,7 @@ async def get_editor_config(session_id: str, request: Request):
         OnlyOffice configuration with JWT token
     """
     try:
-        # For now, use session_id as filename (you can map this to actual files)
+        _validate_session_id(session_id)
         filename = f"{session_id}.docx"
         file_path = DATA_DIR / filename
 
@@ -237,7 +274,7 @@ async def get_editor_config(session_id: str, request: Request):
 
     except Exception as e:
         logger.error(f"Error generating OnlyOffice config: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/download/{session_id}")
@@ -255,6 +292,7 @@ async def download_document(session_id: str):
         Document file
     """
     try:
+        _validate_session_id(session_id)
         filename = f"{session_id}.docx"
         file_path = DATA_DIR / filename
 
@@ -274,7 +312,7 @@ async def download_document(session_id: str):
         raise
     except Exception as e:
         logger.error(f"Error serving document: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/callback")
@@ -298,14 +336,13 @@ async def handle_callback(request: Request, data: Dict[str, Any] = Body(...)):
         Success response with error code 0
     """
     try:
-        # Verify JWT token if present
+        # Verify JWT token — hard rejection if header is present but invalid
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header[7:]
-            try:
-                verify_jwt_token(token)
-            except HTTPException:
-                logger.warning("Invalid JWT token in callback")
+            verify_jwt_token(token)  # raises HTTPException(403) on failure
+        elif auth_header:
+            raise HTTPException(status_code=403, detail="Invalid authorization header format")
 
         status = data.get("status", 0)
         key = data.get("key", "")
@@ -319,18 +356,26 @@ async def handle_callback(request: Request, data: Dict[str, Any] = Body(...)):
                 logger.error("No URL provided in callback")
                 return JSONResponse(content={"error": 1})
 
-            # Download the saved document from OnlyOffice
+            # Validate URL to prevent SSRF — must come from the OnlyOffice server
+            try:
+                _validate_callback_url(url)
+            except ValueError as exc:
+                logger.error(f"Callback URL rejected (SSRF guard): {exc}")
+                return JSONResponse(content={"error": 1})
+
+            # Sanitize key before using as filename
+            safe_key = key.replace("/", "").replace("..", "")
+            filename = f"{safe_key}.docx"
+            file_path = (DATA_DIR / filename).resolve()
+            if not str(file_path).startswith(str(DATA_DIR) + os.sep):
+                logger.error(f"Path traversal attempt in callback key: {key!r}")
+                return JSONResponse(content={"error": 1})
+
             import httpx
             async with httpx.AsyncClient() as client:
                 response = await client.get(url, timeout=30.0)
                 response.raise_for_status()
 
-                # Find the file to save (extract session_id from key or use key as filename)
-                # For simplicity, save as key.docx
-                filename = f"{key}.docx"
-                file_path = DATA_DIR / filename
-
-                # Write the downloaded content
                 with open(file_path, 'wb') as f:
                     f.write(response.content)
 
@@ -339,6 +384,8 @@ async def handle_callback(request: Request, data: Dict[str, Any] = Body(...)):
         # Return success response
         return JSONResponse(content={"error": 0})
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error handling callback: {e}", exc_info=True)
         return JSONResponse(content={"error": 1})
@@ -377,25 +424,25 @@ async def health_check():
 
 
 @router.post("/upload/{session_id}")
-async def upload_document(session_id: str, request: Request):
-    """
-    Upload a document for editing
-
-    Args:
-        session_id: Unique session identifier
-        request: FastAPI request with file data
-
-    Returns:
-        Success message
-    """
+async def upload_document(
+    session_id: str,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+):
+    """Upload a document for editing. Requires authentication."""
     try:
-        from fastapi import UploadFile, File
+        _validate_session_id(session_id)
 
-        # Read the file from request
         file_data = await request.body()
 
+        # Validate DOCX magic bytes
+        if file_data[:4] != b'PK\x03\x04':
+            raise HTTPException(status_code=400, detail="File content does not match DOCX format")
+
         filename = f"{session_id}.docx"
-        file_path = DATA_DIR / filename
+        file_path = (DATA_DIR / filename).resolve()
+        if not str(file_path).startswith(str(DATA_DIR) + os.sep):
+            raise HTTPException(status_code=403, detail="Access denied")
 
         # Save the file
         with open(file_path, 'wb') as f:
@@ -411,4 +458,4 @@ async def upload_document(session_id: str, request: Request):
 
     except Exception as e:
         logger.error(f"Error uploading document: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")

@@ -297,7 +297,7 @@ async def update_section(request: UpdateSectionRequest):
         raise
     except Exception as e:
         logger.error(f"Failed to update section: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 class ApplySuggestionRequest(BaseModel):

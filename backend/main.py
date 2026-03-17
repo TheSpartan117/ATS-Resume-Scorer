@@ -16,6 +16,10 @@ sys.path.insert(0, str(parent_dir))
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from dotenv import load_dotenv
 import logging
 
@@ -62,6 +66,8 @@ async def lifespan(app: FastAPI):
     yield
 
 
+limiter = Limiter(key_func=get_remote_address)
+
 app = FastAPI(
     title="ATS Resume Scorer API",
     description="API for scoring and analyzing resumes for ATS compatibility",
@@ -69,16 +75,21 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
 # Environment-aware CORS configuration
-ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+# Default to "production" so an unset variable never silently enables permissive CORS.
+ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
 cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176").split(",")
 
-if ENVIRONMENT == "production":
-    allow_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-    allow_headers = ["Content-Type", "Authorization", "Accept", "Origin"]
-else:
+if ENVIRONMENT == "development":
     allow_methods = ["*"]
     allow_headers = ["*"]
+else:
+    allow_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    allow_headers = ["Content-Type", "Authorization", "Accept", "Origin"]
 
 app.add_middleware(
     CORSMiddleware,

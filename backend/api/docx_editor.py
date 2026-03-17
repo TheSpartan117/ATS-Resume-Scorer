@@ -2,19 +2,46 @@
 DOCX Binary Editor API Endpoints
 Provides structure-preserving DOCX editing capabilities
 """
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import List, Dict, Any
-import logging
+import uuid
 import os
+import logging
 from pathlib import Path
+from typing import List, Dict, Any
 
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from backend.auth.dependencies import get_current_user
+from backend.models.user import User
+from backend.database import get_db
 from backend.services.docx_structure_parser import parse_docx_structure
 from backend.services.docx_structure_rebuilder import update_docx_text
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/docx-editor", tags=["docx-editor"])
+
+DATA_DIR = (Path(__file__).parent.parent / "data").resolve()
+
+
+def _validate_session_id(session_id: str) -> str:
+    """Validate that session_id is a UUID to prevent path injection."""
+    try:
+        uuid.UUID(session_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid session ID")
+    return session_id
+
+
+def _safe_session_path(session_id: str) -> Path:
+    """Build and containment-check a path from a validated UUID session_id."""
+    _validate_session_id(session_id)
+    candidate = (DATA_DIR / f"{session_id}.docx").resolve()
+    if not str(candidate).startswith(str(DATA_DIR) + os.sep):
+        raise HTTPException(status_code=403, detail="Access denied")
+    return candidate
 
 
 class EditRequest(BaseModel):
@@ -23,130 +50,89 @@ class EditRequest(BaseModel):
 
 
 @router.get("/structure/{session_id}")
-async def get_docx_structure(session_id: str):
-    """
-    Parse DOCX structure for editing
+async def get_docx_structure(
+    session_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Parse DOCX structure for editing. Requires authentication."""
+    docx_path = _safe_session_path(session_id)
 
-    Args:
-        session_id: Session ID
+    if not docx_path.exists():
+        raise HTTPException(status_code=404, detail="DOCX file not found for session")
 
-    Returns:
-        Document structure with editable text and formatting metadata
-    """
+    logger.info(f"Parsing DOCX structure for session {session_id}")
+
     try:
-        # Find the DOCX file for this session
-        data_dir = Path("backend/data")
-        docx_path = None
-
-        # Look for session file
-        for file in data_dir.glob(f"{session_id}*.docx"):
-            docx_path = str(file)
-            break
-
-        if not docx_path or not os.path.exists(docx_path):
-            raise HTTPException(status_code=404, detail="DOCX file not found for session")
-
-        logger.info(f"Parsing DOCX structure for session {session_id}: {docx_path}")
-
-        # Parse document structure
-        structure = parse_docx_structure(docx_path)
-
-        return {
-            "session_id": session_id,
-            "structure": structure,
-            "original_file": os.path.basename(docx_path)
-        }
-
+        structure = parse_docx_structure(str(docx_path))
     except Exception as e:
         logger.error(f"Failed to parse DOCX structure: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to parse document: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to parse document")
+
+    return {
+        "session_id": session_id,
+        "structure": structure,
+        "original_file": docx_path.name,
+    }
 
 
 @router.post("/update/{session_id}")
-async def update_docx(session_id: str, request: EditRequest):
-    """
-    Update DOCX with edited text
+async def update_docx(
+    session_id: str,
+    request: EditRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Update DOCX with edited text. Requires authentication."""
+    docx_path = _safe_session_path(session_id)
 
-    Args:
-        session_id: Session ID
-        request: Edit request with text changes
+    if not docx_path.exists():
+        raise HTTPException(status_code=404, detail="DOCX file not found for session")
 
-    Returns:
-        Updated document path
-    """
+    output_name = f"{session_id}_edited.docx"
+    output_path = DATA_DIR / output_name
+
+    logger.info(f"Updating DOCX for session {session_id}")
+
     try:
-        # Find the original DOCX file
-        data_dir = Path("backend/data")
-        docx_path = None
-
-        for file in data_dir.glob(f"{session_id}*.docx"):
-            docx_path = str(file)
-            break
-
-        if not docx_path or not os.path.exists(docx_path):
-            raise HTTPException(status_code=404, detail="DOCX file not found for session")
-
-        logger.info(f"Updating DOCX for session {session_id}: {docx_path}")
-
-        # Create output path
-        original_name = Path(docx_path).stem
-        output_path = str(data_dir / f"{original_name}_edited.docx")
-
-        # Update document with edits
-        update_docx_text(docx_path, request.edits, output_path)
-
-        logger.info(f"Successfully updated DOCX: {output_path}")
-
-        return {
-            "session_id": session_id,
-            "updated_file": os.path.basename(output_path),
-            "file_path": output_path
-        }
-
+        update_docx_text(str(docx_path), request.edits, str(output_path))
     except Exception as e:
         logger.error(f"Failed to update DOCX: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to update document: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to update document")
+
+    logger.info(f"Successfully updated DOCX: {output_name}")
+
+    return {
+        "session_id": session_id,
+        "updated_file": output_name,
+    }
 
 
 @router.get("/download/{session_id}")
-async def download_edited_docx(session_id: str):
-    """
-    Download edited DOCX file
+async def download_edited_docx(
+    session_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Download edited DOCX. Falls back to original if no edited version. Requires authentication."""
+    _validate_session_id(session_id)
 
-    Args:
-        session_id: Session ID
+    edited_path = (DATA_DIR / f"{session_id}_edited.docx").resolve()
+    original_path = (DATA_DIR / f"{session_id}.docx").resolve()
 
-    Returns:
-        File download response
-    """
-    from fastapi.responses import FileResponse
+    for p in (edited_path, original_path):
+        if not str(p).startswith(str(DATA_DIR) + os.sep):
+            raise HTTPException(status_code=403, detail="Access denied")
 
-    try:
-        # Find the edited DOCX file
-        data_dir = Path("backend/data")
-        edited_path = None
+    if edited_path.exists():
+        serve_path = edited_path
+    elif original_path.exists():
+        serve_path = original_path
+    else:
+        raise HTTPException(status_code=404, detail="DOCX file not found")
 
-        for file in data_dir.glob(f"{session_id}*_edited.docx"):
-            edited_path = str(file)
-            break
-
-        if not edited_path or not os.path.exists(edited_path):
-            # Fall back to original if no edited version
-            for file in data_dir.glob(f"{session_id}*.docx"):
-                if "_edited" not in file.name:
-                    edited_path = str(file)
-                    break
-
-        if not edited_path or not os.path.exists(edited_path):
-            raise HTTPException(status_code=404, detail="DOCX file not found")
-
-        filename = Path(edited_path).name
-        return FileResponse(
-            edited_path,
-            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            filename=filename
-        )
-
-    except Exception as e:
-        logger.error(f"Failed to download DOCX: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to download document: {str(e)}")
+    return FileResponse(
+        str(serve_path),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        filename=serve_path.name,
+    )

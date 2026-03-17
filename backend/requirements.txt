@@ -10,7 +10,7 @@ spacy>=3.7.2,<3.8.0
 sqlalchemy==2.0.25
 psycopg2-binary==2.9.9
 alembic==1.13.1
-python-jose[cryptography]==3.3.0
+# python-jose removed: CVE-2024-33663 (algorithm confusion). Using pyjwt instead.
 passlib[bcrypt]==1.7.4
 python-dotenv==1.0.1
 pydantic==2.6.0

@@ -62,7 +62,7 @@ async def convert_docx_to_latex_endpoint(file: UploadFile = File(...)):
 
     except Exception as e:
         logger.error(f"Failed to convert DOCX to LaTeX: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Conversion failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Conversion failed")
 
 
 class CompileRequest(BaseModel):
