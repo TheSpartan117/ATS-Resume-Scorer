@@ -27,7 +27,7 @@ This guide covers everything you need to develop, extend, and contribute to the 
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/JoHn11117/ATS-Resume-Scorer.git
+git clone https://github.com/TheSpartan117/ATS-Resume-Scorer.git
 cd ATS-Resume-Scorer
 ```
 
